@@ -12,6 +12,7 @@ import { useEmotional } from '@/lib/emotional/EmotionalProvider';
 import { supabase } from '@/lib/supabase';
 import { DATA_SOURCE, getRewardsAdapter } from '@/lib/adapters';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SparkCelebrationOverlay } from '@/components/ui/SparkCelebrationOverlay';
 
 import { useRouter } from 'next/navigation';
 import type { Reward, RewardRequest } from '@/types';
@@ -61,6 +62,7 @@ export default function HomePage() {
   );
   const [sparkBalance, setSparkBalance] = useState(12);
   const [showRewards, setShowRewards] = useState(false);
+  const [currentCelebration, setCurrentCelebration] = useState<{ id: string; delta: number; note: string } | null>(null);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [lastRedemptions, setLastRedemptions] = useState<Record<string, string>>({});
@@ -137,15 +139,54 @@ export default function HomePage() {
       }
     };
 
+    const checkUnseenBonuses = async () => {
+      const { data, error } = await supabase
+        .from('spark_ledger')
+        .select('*')
+        .eq('child_id', profile.id)
+        .eq('source_type', 'parent_bonus')
+        .gt('delta', 0)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (!error && data && data.length > 0) {
+        const unseen = data.find(bonus => !localStorage.getItem(`seen_bonus_${bonus.id}`));
+        if (unseen) {
+          localStorage.setItem(`seen_bonus_${unseen.id}`, 'true');
+          setCurrentCelebration({
+            id: unseen.id,
+            delta: unseen.delta,
+            note: unseen.note || '¡Por tu magnífica labor o comportamiento!'
+          });
+        }
+      }
+    };
+
     fetchBalance();
     fetchLastRedemptions();
+    checkUnseenBonuses();
 
     const channel = supabase
       .channel(`sparks:${profile.id}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'spark_ledger', filter: `child_id=eq.${profile.id}` },
-        () => {
+        (payload: any) => {
+          if (payload.eventType === 'INSERT') {
+            const newRow = payload.new;
+            if (newRow && newRow.source_type === 'parent_bonus' && newRow.delta > 0) {
+              const bonusId = newRow.id;
+              const seenKey = `seen_bonus_${bonusId}`;
+              if (!localStorage.getItem(seenKey)) {
+                localStorage.setItem(seenKey, 'true');
+                setCurrentCelebration({
+                  id: bonusId,
+                  delta: newRow.delta,
+                  note: newRow.note || '¡Por tu magnífica labor o comportamiento!'
+                });
+              }
+            }
+          }
           fetchBalance();
           fetchLastRedemptions();
         }
@@ -552,6 +593,16 @@ export default function HomePage() {
               )}
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {currentCelebration && (
+          <SparkCelebrationOverlay
+            key="celebration"
+            delta={currentCelebration.delta}
+            note={currentCelebration.note}
+            onClose={() => setCurrentCelebration(null)}
+          />
         )}
       </AnimatePresence>
     </div>
