@@ -17,23 +17,6 @@ CREATE TABLE IF NOT EXISTS families (
 
 ALTER TABLE families ENABLE ROW LEVEL SECURITY;
 
--- Family members can read their own family
-CREATE POLICY "families: members read own" ON families
-  FOR SELECT USING (
-    id IN (
-      SELECT family_id FROM profiles WHERE id = auth.uid()
-    )
-  );
-
--- Parents can update family settings
-CREATE POLICY "families: parent update" ON families
-  FOR UPDATE USING (
-    id IN (
-      SELECT family_id FROM profiles
-      WHERE id = auth.uid() AND role = 'parent'
-    )
-  );
-
 -- ─────────────────────────────────────────
 -- PROFILES
 -- Extends Supabase auth.users
@@ -51,22 +34,6 @@ CREATE TABLE IF NOT EXISTS profiles (
 );
 
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-
--- Family members can read all profiles in their family
-CREATE POLICY "profiles: family read" ON profiles
-  FOR SELECT USING (
-    family_id IN (
-      SELECT family_id FROM profiles WHERE id = auth.uid()
-    )
-  );
-
--- Users can update their own profile
-CREATE POLICY "profiles: own update" ON profiles
-  FOR UPDATE USING (id = auth.uid());
-
--- Users can insert their own profile (called on signup)
-CREATE POLICY "profiles: own insert" ON profiles
-  FOR INSERT WITH CHECK (id = auth.uid());
 
 -- ─────────────────────────────────────────
 -- FAMILY INVITES
@@ -86,6 +53,48 @@ CREATE TABLE IF NOT EXISTS family_invites (
 
 ALTER TABLE family_invites ENABLE ROW LEVEL SECURITY;
 
+-- ─────────────────────────────────────────
+-- POLICIES ON FAMILIES
+-- ─────────────────────────────────────────
+-- Family members can read their own family
+CREATE POLICY "families: members read own" ON families
+  FOR SELECT USING (
+    id IN (
+      SELECT family_id FROM profiles WHERE id = auth.uid()
+    )
+  );
+
+-- Parents can update family settings
+CREATE POLICY "families: parent update" ON families
+  FOR UPDATE USING (
+    id IN (
+      SELECT family_id FROM profiles
+      WHERE id = auth.uid() AND role = 'parent'
+    )
+  );
+
+-- ─────────────────────────────────────────
+-- POLICIES ON PROFILES
+-- ─────────────────────────────────────────
+-- Family members can read all profiles in their family
+CREATE POLICY "profiles: family read" ON profiles
+  FOR SELECT USING (
+    family_id IN (
+      SELECT family_id FROM profiles WHERE id = auth.uid()
+    )
+  );
+
+-- Users can update their own profile
+CREATE POLICY "profiles: own update" ON profiles
+  FOR UPDATE USING (id = auth.uid());
+
+-- Users can insert their own profile (called on signup)
+CREATE POLICY "profiles: own insert" ON profiles
+  FOR INSERT WITH CHECK (id = auth.uid());
+
+-- ─────────────────────────────────────────
+-- POLICIES ON FAMILY INVITES
+-- ─────────────────────────────────────────
 -- Family members can read their family's invites
 CREATE POLICY "invites: family read" ON family_invites
   FOR SELECT USING (
