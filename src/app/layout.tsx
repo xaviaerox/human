@@ -5,7 +5,6 @@ import { Providers } from '@/components/Providers';
 export const metadata: Metadata = {
   title: 'Mira',
   description: 'Un espacio de calma para crecer juntos',
-  manifest: '/manifest.json',
   appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Mira' },
 };
 
@@ -23,6 +22,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           {children}
         </Providers>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/human/sw.js').then(
+                    function(reg) {
+                      console.log('SW registered with scope:', reg.scope);
+                    },
+                    function(err) {
+                      console.error('SW registration failed:', err);
+                    }
+                  );
+                });
+              }
+            `
+          }}
+        />
       </body>
     </html>
   );
