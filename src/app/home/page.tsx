@@ -20,7 +20,7 @@ const rewardsAdapter = getRewardsAdapter();
 
 export default function HomePage() {
   const router = useRouter();
-  const { session, loading: authLoading } = useAuth();
+  const { session, loading: authLoading, signOut } = useAuth();
   const profile = session?.profile ?? null;
   
   const { display, getDialogue, setAppearanceContext, isVisible } = useCompanion();
@@ -149,9 +149,22 @@ export default function HomePage() {
       {/* Header */}
       <header className="px-5 pt-8 pb-4 flex items-center justify-between">
         <div>
-          <p className="text-xs text-stone-400 uppercase tracking-widest font-body">
-            {greeting}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-stone-400 uppercase tracking-widest font-body">
+              {greeting}
+            </p>
+            <button
+              onClick={async () => {
+                if (confirm('¿Quieres cerrar sesión?')) {
+                  await signOut();
+                  router.replace('/login');
+                }
+              }}
+              className="text-[10px] text-stone-400 hover:text-stone-600 bg-stone-100 hover:bg-stone-200/60 px-2 py-0.5 rounded-full transition-all cursor-pointer font-medium"
+            >
+              Salir
+            </button>
+          </div>
           <h1 className="font-display text-2xl text-stone-800 mt-0.5">
             {profile?.display_name}
           </h1>
