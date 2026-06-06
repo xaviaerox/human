@@ -3,7 +3,7 @@
 // ============================================================
 
 import type { IRewardsAdapter } from './IRewardsAdapter';
-import type { Reward, Result } from '@/types';
+import type { Reward, RewardRequest, Result } from '@/types';
 
 const STATIC_REWARDS: Reward[] = [
   { id: 'dinner', family_id: 'static-family-1', title: 'Elegir la cena', cost: 5, emoji: '🍕' },
@@ -14,6 +14,7 @@ const STATIC_REWARDS: Reward[] = [
 
 export class StaticRewardsAdapter implements IRewardsAdapter {
   private _rewards: Reward[] = [...STATIC_REWARDS];
+  private _requests: RewardRequest[] = [];
 
   async getRewards(familyId: string): Promise<Result<Reward[]>> {
     // If the family is not the static one, initialize it with a copy of static rewards for convenience
@@ -58,6 +59,48 @@ export class StaticRewardsAdapter implements IRewardsAdapter {
       return { ok: false, error: { code: 'not_found', message: 'Reward not found' } };
     }
     this._rewards.splice(index, 1);
+    return { ok: true, data: undefined };
+  }
+
+  async getRewardRequests(familyId: string): Promise<Result<RewardRequest[]>> {
+    const familyRequests = this._requests.filter(r => r.family_id === familyId);
+    return { ok: true, data: familyRequests };
+  }
+
+  async createRewardRequest(familyId: string, childId: string, request: { title: string; emoji: string }): Promise<Result<RewardRequest>> {
+    const newRequest: RewardRequest = {
+      id: Math.random().toString(36).substr(2, 9),
+      family_id: familyId,
+      child_id: childId,
+      title: request.title,
+      emoji: request.emoji,
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      child: {
+        display_name: 'Mikel' // Mock display name for static adapter
+      }
+    };
+    this._requests.push(newRequest);
+    return { ok: true, data: newRequest };
+  }
+
+  async updateRewardRequestStatus(requestId: string, status: 'approved' | 'rejected'): Promise<Result<RewardRequest>> {
+    const req = this._requests.find(r => r.id === requestId);
+    if (!req) {
+      return { ok: false, error: { code: 'not_found', message: 'Request not found' } };
+    }
+    req.status = status;
+    req.updated_at = new Date().toISOString();
+    return { ok: true, data: req };
+  }
+
+  async deleteRewardRequest(requestId: string): Promise<Result<void>> {
+    const index = this._requests.findIndex(r => r.id === requestId);
+    if (index === -1) {
+      return { ok: false, error: { code: 'not_found', message: 'Request not found' } };
+    }
+    this._requests.splice(index, 1);
     return { ok: true, data: undefined };
   }
 }

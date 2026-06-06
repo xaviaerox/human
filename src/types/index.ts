@@ -392,3 +392,18 @@ export interface Reward {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface RewardRequest {
+  id: string;
+  family_id: string;
+  child_id: string;
+  title: string;
+  emoji: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  updated_at: string;
+  child?: {
+    display_name: string;
+  };
+}
+

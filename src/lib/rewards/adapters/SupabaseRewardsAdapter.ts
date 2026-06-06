@@ -4,7 +4,7 @@
 
 import { SupabaseClient } from '@supabase/supabase-js';
 import type { IRewardsAdapter } from './IRewardsAdapter';
-import type { Reward, Result } from '@/types';
+import type { Reward, RewardRequest, Result } from '@/types';
 
 export class SupabaseRewardsAdapter implements IRewardsAdapter {
   constructor(private readonly client: SupabaseClient) {}
@@ -57,6 +57,66 @@ export class SupabaseRewardsAdapter implements IRewardsAdapter {
       .from('rewards')
       .delete()
       .eq('id', rewardId);
+
+    if (error) {
+      return { ok: false, error: { code: 'delete_failed', message: error.message } };
+    }
+
+    return { ok: true, data: undefined };
+  }
+
+  async getRewardRequests(familyId: string): Promise<Result<RewardRequest[]>> {
+    const { data, error } = await this.client
+      .from('reward_requests')
+      .select('*, child:profiles(display_name)')
+      .eq('family_id', familyId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return { ok: false, error: { code: 'fetch_failed', message: error.message } };
+    }
+
+    return { ok: true, data: (data as any) ?? [] };
+  }
+
+  async createRewardRequest(
+    familyId: string,
+    childId: string,
+    request: { title: string; emoji: string }
+  ): Promise<Result<RewardRequest>> {
+    const { data, error } = await this.client
+      .from('reward_requests')
+      .insert({ family_id: familyId, child_id: childId, ...request })
+      .select()
+      .single();
+
+    if (error || !data) {
+      return { ok: false, error: { code: 'create_failed', message: error?.message ?? 'Failed to create request' } };
+    }
+
+    return { ok: true, data: data as any };
+  }
+
+  async updateRewardRequestStatus(requestId: string, status: 'approved' | 'rejected'): Promise<Result<RewardRequest>> {
+    const { data, error } = await this.client
+      .from('reward_requests')
+      .update({ status })
+      .eq('id', requestId)
+      .select()
+      .single();
+
+    if (error || !data) {
+      return { ok: false, error: { code: 'update_failed', message: error?.message ?? 'Failed to update request' } };
+    }
+
+    return { ok: true, data: data as any };
+  }
+
+  async deleteRewardRequest(requestId: string): Promise<Result<void>> {
+    const { error } = await this.client
+      .from('reward_requests')
+      .delete()
+      .eq('id', requestId);
 
     if (error) {
       return { ok: false, error: { code: 'delete_failed', message: error.message } };
