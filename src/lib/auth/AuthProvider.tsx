@@ -96,8 +96,19 @@ export function AuthProvider({ adapter, children }: AuthProviderProps) {
   }, [adapter]);
 
   const updateProfile = useCallback(
-    (updates: Partial<Pick<Profile, 'display_name' | 'avatar_seed' | 'onboarding_complete' | 'unlocked_accessories' | 'avatar_accessory' | 'avatar_base_emoji'>>) =>
-      adapter.updateProfile(updates),
+    async (updates: Partial<Pick<Profile, 'display_name' | 'avatar_seed' | 'onboarding_complete' | 'unlocked_accessories' | 'avatar_accessory' | 'avatar_base_emoji'>>) => {
+      const result = await adapter.updateProfile(updates);
+      if (result.ok) {
+        setSession(prev => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            profile: result.data
+          };
+        });
+      }
+      return result;
+    },
     [adapter]
   );
 
