@@ -11,7 +11,7 @@ const NAV = [
   { href: '/dashboard/routines', label: 'Rutinas',     icon: '◎' },
   { href: '/dashboard/goals',    label: 'Objetivos',   icon: '◈' },
   { href: '/dashboard/rewards',  label: 'Premios',     icon: '🎁' },
-  { href: '/dashboard/child',    label: 'Mi hijo',     icon: '♡' },
+  { href: '/dashboard/family',   label: 'Familia',     icon: '♡' },
 ];
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
