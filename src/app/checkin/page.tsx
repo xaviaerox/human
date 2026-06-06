@@ -28,7 +28,7 @@ const VALENCE_OPTIONS = [
 ];
 
 export default function CheckinPage() {
-  const { submitCheckin, recentCheckins } = useEmotional();
+  const { submitCheckin, recentCheckins, lastCheckin } = useEmotional();
   const { display, getDialogue, interact } = useCompanion();
 
   const [step, setStep] = useState<Step>('energy');
@@ -87,11 +87,24 @@ export default function CheckinPage() {
   const stepIndex = ['energy', 'valence', 'word', 'note', 'done'].indexOf(step);
   const progress = (stepIndex / 4) * 100;
 
+  const lastCheckinTime = lastCheckin ? new Date(lastCheckin.occurred_at).getTime() : 0;
+  const isCooldown = Date.now() - lastCheckinTime < 8 * 60 * 60 * 1000;
+
   return (
     <div className="min-h-dvh bg-stone-50 flex flex-col">
       <header className="px-5 pt-8 pb-4">
         <h1 className="font-display text-2xl text-stone-800">¿Cómo estoy?</h1>
       </header>
+
+      {/* Friendly Cooldown Notice */}
+      {step !== 'done' && isCooldown && (
+        <div className="mx-5 mb-4 p-4 bg-amber-50 border border-amber-100 rounded-3xl flex items-start gap-2.5 text-xs text-amber-800 font-medium leading-relaxed animate-fade-in shadow-soft">
+          <span className="text-sm">✨</span>
+          <p>
+            Puedes registrar cómo te sientes en cualquier momento, pero solo ganarás estrellas y afecto con tu compañero una vez cada 8 horas.
+          </p>
+        </div>
+      )}
 
       {/* Progress bar */}
       {step !== 'done' && (

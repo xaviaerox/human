@@ -25,6 +25,8 @@ function NewRewardForm() {
   const [title, setTitle] = useState(paramTitle);
   const [cost, setCost] = useState(5);
   const [emoji, setEmoji] = useState(paramEmoji);
+  const [cooldownQty, setCooldownQty] = useState(0);
+  const [cooldownUnit, setCooldownUnit] = useState<'hours' | 'days'>('hours');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -43,10 +45,13 @@ function NewRewardForm() {
     setLoading(true);
     setError('');
 
+    const cooldown_hours = cooldownQty * (cooldownUnit === 'days' ? 24 : 1);
+
     const res = await rewardsAdapter.createReward(family.id, {
       title: title.trim(),
       cost,
       emoji: emoji.trim() || '🎁',
+      cooldown_hours,
     });
 
     if (res.ok) {
@@ -80,6 +85,32 @@ function NewRewardForm() {
           min={0}
           required
         />
+
+        <div className="flex flex-col gap-2">
+          <label className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+            Tiempo de espera (Cooldown)
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              value={cooldownQty}
+              onChange={e => setCooldownQty(Math.max(0, Number(e.target.value)))}
+              min={0}
+              className="w-24 p-2.5 rounded-2xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-bloom-200 text-sm text-stone-700 bg-stone-50/50"
+            />
+            <select
+              value={cooldownUnit}
+              onChange={e => setCooldownUnit(e.target.value as 'hours' | 'days')}
+              className="flex-1 p-2.5 rounded-2xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-bloom-200 text-sm text-stone-700 bg-stone-50/50"
+            >
+              <option value="hours">Horas</option>
+              <option value="days">Días</option>
+            </select>
+          </div>
+          <p className="text-[10px] text-stone-400">
+            Evita que el niño canjee este premio repetidamente hasta que transcurra este tiempo. Usa 0 para sin límite.
+          </p>
+        </div>
 
         <div className="flex flex-col gap-2">
           <label className="text-xs font-semibold text-stone-500 uppercase tracking-wider">

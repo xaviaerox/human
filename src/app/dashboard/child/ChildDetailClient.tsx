@@ -142,7 +142,7 @@ export default function ChildDetailClient() {
     setSubmittingAction(false);
   }
 
-  async function handleRedeemReward(rewardTitle: string, cost: number) {
+  async function handleRedeemReward(rewardId: string, rewardTitle: string, cost: number) {
     if (!childId) return;
     if (sparkBalance < cost) {
       alert('El niño no tiene suficientes estrellas');
@@ -151,10 +151,12 @@ export default function ChildDetailClient() {
     
     setSubmittingAction(true);
     if (DATA_SOURCE === 'supabase') {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rewardId);
       const { error } = await supabase.rpc('award_sparks', {
         p_child_id: childId,
         p_delta: -cost,
         p_source_type: 'redemption',
+        p_source_id: isUuid ? rewardId : null,
         p_note: `Canjeado: ${rewardTitle}`
       });
       if (error) {
@@ -280,7 +282,7 @@ export default function ChildDetailClient() {
                           <span className="font-semibold text-stone-700">{reward.emoji} {reward.title}</span>
                           <button
                             disabled={!canAfford || submittingAction}
-                            onClick={() => handleRedeemReward(reward.title, reward.cost)}
+                            onClick={() => handleRedeemReward(reward.id, reward.title, reward.cost)}
                             className={cn(
                               'px-2.5 py-1.5 rounded-lg font-bold transition-all text-[11px] cursor-pointer',
                               canAfford

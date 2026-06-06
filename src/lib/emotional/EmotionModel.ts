@@ -69,11 +69,11 @@ export function shouldPromptCheckin(
   const prompt = schedule.find(p => p.context === context && p.enabled);
   if (!prompt) return false;
 
-  // Never prompt within 2 hours of last check-in
+  // Never prompt within 8 hours of last check-in
   if (lastCheckinAt) {
     const elapsed = now.getTime() - lastCheckinAt.getTime();
-    const TWO_HOURS = 2 * 60 * 60 * 1000;
-    if (elapsed < TWO_HOURS) return false;
+    const EIGHT_HOURS = 8 * 60 * 60 * 1000;
+    if (elapsed < EIGHT_HOURS) return false;
   }
 
   if (prompt.time) {

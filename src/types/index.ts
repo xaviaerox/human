@@ -389,6 +389,7 @@ export interface Reward {
   title: string;
   cost: number;
   emoji: string;
+  cooldown_hours: number;
   created_at?: string;
   updated_at?: string;
 }

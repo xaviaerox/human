@@ -22,6 +22,8 @@ function EditRewardForm() {
   const [title, setTitle] = useState('');
   const [cost, setCost] = useState(5);
   const [emoji, setEmoji] = useState('🎁');
+  const [cooldownQty, setCooldownQty] = useState(0);
+  const [cooldownUnit, setCooldownUnit] = useState<'hours' | 'days'>('hours');
   const [fetching, setFetching] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -35,6 +37,14 @@ function EditRewardForm() {
           setTitle(item.title);
           setCost(item.cost);
           setEmoji(item.emoji);
+          const hours = item.cooldown_hours || 0;
+          if (hours > 0 && hours % 24 === 0) {
+            setCooldownQty(hours / 24);
+            setCooldownUnit('days');
+          } else {
+            setCooldownQty(hours);
+            setCooldownUnit('hours');
+          }
         } else {
           setError('Recompensa no encontrada');
         }
@@ -59,10 +69,13 @@ function EditRewardForm() {
     setLoading(true);
     setError('');
 
+    const cooldown_hours = cooldownQty * (cooldownUnit === 'days' ? 24 : 1);
+
     const res = await rewardsAdapter.updateReward(id, {
       title: title.trim(),
       cost,
       emoji: emoji.trim() || '🎁',
+      cooldown_hours,
     });
 
     setLoading(false);
@@ -101,6 +114,32 @@ function EditRewardForm() {
           min={0}
           required
         />
+
+        <div className="flex flex-col gap-2">
+          <label className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+            Tiempo de espera (Cooldown)
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              value={cooldownQty}
+              onChange={e => setCooldownQty(Math.max(0, Number(e.target.value)))}
+              min={0}
+              className="w-24 p-2.5 rounded-2xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-bloom-200 text-sm text-stone-700 bg-stone-50/50"
+            />
+            <select
+              value={cooldownUnit}
+              onChange={e => setCooldownUnit(e.target.value as 'hours' | 'days')}
+              className="flex-1 p-2.5 rounded-2xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-bloom-200 text-sm text-stone-700 bg-stone-50/50"
+            >
+              <option value="hours">Horas</option>
+              <option value="days">Días</option>
+            </select>
+          </div>
+          <p className="text-[10px] text-stone-400">
+            Evita que el niño canjee este premio repetidamente hasta que transcurra este tiempo. Usa 0 para sin límite.
+          </p>
+        </div>
 
         <div className="flex flex-col gap-2">
           <label className="text-xs font-semibold text-stone-500 uppercase tracking-wider">

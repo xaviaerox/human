@@ -12,10 +12,10 @@ import type { Reward, RewardRequest } from '@/types';
 const rewardsAdapter = getRewardsAdapter();
 
 const SUGGESTED_REWARDS = [
-  { title: 'Elegir la cena', cost: 5, emoji: '🍕' },
-  { title: '30 min de pantalla extra', cost: 10, emoji: '🎮' },
-  { title: 'Tarde de parque', cost: 15, emoji: '🛝' },
-  { title: 'Elegir película familiar', cost: 20, emoji: '🍿' },
+  { title: 'Elegir la cena', cost: 5, emoji: '🍕', cooldown_hours: 0 },
+  { title: '30 min de pantalla extra', cost: 10, emoji: '🎮', cooldown_hours: 0 },
+  { title: 'Tarde de parque', cost: 15, emoji: '🛝', cooldown_hours: 0 },
+  { title: 'Elegir película familiar', cost: 20, emoji: '🍿', cooldown_hours: 0 },
 ];
 
 export default function RewardsDashboardPage() {

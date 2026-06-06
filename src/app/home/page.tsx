@@ -18,6 +18,37 @@ import type { Reward, RewardRequest } from '@/types';
 
 const rewardsAdapter = getRewardsAdapter();
 
+function getCooldownStatus(reward: Reward, lastRedeemStr?: string): { isLocked: boolean; text?: string } {
+  if (!reward.cooldown_hours || !lastRedeemStr) {
+    return { isLocked: false };
+  }
+
+  const lastRedeem = new Date(lastRedeemStr);
+  const cooldownMs = reward.cooldown_hours * 60 * 60 * 1000;
+  const elapsedMs = Date.now() - lastRedeem.getTime();
+  const remainingMs = cooldownMs - elapsedMs;
+
+  if (remainingMs <= 0) {
+    return { isLocked: false };
+  }
+
+  const remainingMinutesTotal = Math.ceil(remainingMs / (1000 * 60));
+  const days = Math.floor(remainingMinutesTotal / (24 * 60));
+  const hours = Math.floor((remainingMinutesTotal % (24 * 60)) / 60);
+  const mins = remainingMinutesTotal % 60;
+
+  let text = '';
+  if (days > 0) {
+    text = `Espera ${days}d ${hours}h`;
+  } else if (hours > 0) {
+    text = `Espera ${hours}h`;
+  } else {
+    text = `Espera ${mins}m`;
+  }
+
+  return { isLocked: true, text };
+}
+
 export default function HomePage() {
   const router = useRouter();
   const { session, loading: authLoading, signOut } = useAuth();
@@ -32,6 +63,8 @@ export default function HomePage() {
   const [showRewards, setShowRewards] = useState(false);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
+  const [lastRedemptions, setLastRedemptions] = useState<Record<string, string>>({});
+  const [tick, setTick] = useState(0);
   const [rewardRequests, setRewardRequests] = useState<RewardRequest[]>([]);
 
   // State for proposing a new reward
@@ -68,7 +101,7 @@ export default function HomePage() {
     }
   }, [session, authLoading, router]);
 
-  // Fetch and subscribe to real-time spark balance
+  // Fetch and subscribe to real-time spark balance and redemptions
   useEffect(() => {
     if (authLoading || !profile?.id || profile.role !== 'child') return;
 
@@ -84,7 +117,28 @@ export default function HomePage() {
       }
     };
 
+    const fetchLastRedemptions = async () => {
+      const { data, error } = await supabase
+        .from('spark_ledger')
+        .select('source_id, created_at')
+        .eq('child_id', profile.id)
+        .eq('source_type', 'redemption');
+
+      if (!error && data) {
+        const map: Record<string, string> = {};
+        data.forEach(r => {
+          if (r.source_id) {
+            if (!map[r.source_id] || new Date(r.created_at) > new Date(map[r.source_id])) {
+              map[r.source_id] = r.created_at;
+            }
+          }
+        });
+        setLastRedemptions(map);
+      }
+    };
+
     fetchBalance();
+    fetchLastRedemptions();
 
     const channel = supabase
       .channel(`sparks:${profile.id}`)
@@ -93,6 +147,7 @@ export default function HomePage() {
         { event: '*', schema: 'public', table: 'spark_ledger', filter: `child_id=eq.${profile.id}` },
         () => {
           fetchBalance();
+          fetchLastRedemptions();
         }
       )
       .subscribe();
@@ -100,7 +155,16 @@ export default function HomePage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.id, profile?.role]);
+  }, [profile?.id, profile?.role, authLoading]);
+
+  // Tick timer to refresh cooldown countdowns in UI
+  useEffect(() => {
+    if (!showRewards) return;
+    const interval = setInterval(() => {
+      setTick(t => t + 1);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [showRewards]);
 
   useEffect(() => {
     setAppearanceContext('home');
@@ -116,14 +180,17 @@ export default function HomePage() {
     hour < 18 ? 'Buenas tardes' :
     'Buenas noches';
 
-  async function handleRedeem(rewardTitle: string, cost: number) {
+  async function handleRedeem(rewardId: string, rewardTitle: string, cost: number) {
     if (sparkBalance < cost || !profile?.id) return;
-    setRedeemingId(rewardTitle);
+    setRedeemingId(rewardId);
+
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rewardId);
 
     const { error } = await supabase.rpc('award_sparks', {
       p_child_id: profile.id,
       p_delta: -cost,
       p_source_type: 'redemption',
+      p_source_id: isUuid ? rewardId : null,
       p_note: `Canjeado: ${rewardTitle}`
     });
 
@@ -383,7 +450,9 @@ export default function HomePage() {
                   <div className="flex flex-col gap-2.5 max-h-[200px] overflow-y-auto pr-1">
                     {rewards.map(reward => {
                       const canAfford = sparkBalance >= reward.cost;
-                      const isRedeeming = redeemingId === reward.title;
+                      const isRedeeming = redeemingId === reward.id;
+                      const lastRedeemTime = lastRedemptions[reward.id];
+                      const cooldown = getCooldownStatus(reward, lastRedeemTime);
 
                       return (
                         <div
@@ -403,17 +472,27 @@ export default function HomePage() {
                           </div>
 
                           <button
-                            disabled={!canAfford || isRedeeming}
-                            onClick={() => handleRedeem(reward.title, reward.cost)}
+                            disabled={!canAfford || isRedeeming || cooldown.isLocked}
+                            onClick={() => handleRedeem(reward.id, reward.title, reward.cost)}
                             className={`
                               text-xs font-bold px-3 py-2 rounded-xl transition-all duration-200
-                              ${canAfford
+                              ${isRedeeming
+                                ? 'bg-stone-200 text-stone-400 cursor-wait'
+                                : cooldown.isLocked
+                                ? 'bg-stone-100 text-stone-450 border border-stone-200 cursor-not-allowed'
+                                : canAfford
                                 ? 'bg-amber-500 text-white hover:bg-amber-600 active:scale-[0.96] cursor-pointer shadow-soft'
                                 : 'bg-stone-200 text-stone-400 cursor-not-allowed'
                               }
                             `}
                           >
-                            {isRedeeming ? 'Canjeando...' : canAfford ? 'Canjear' : 'Faltan sparks'}
+                            {isRedeeming
+                              ? 'Canjeando...'
+                              : cooldown.isLocked
+                              ? `⌛ ${cooldown.text}`
+                              : canAfford
+                              ? 'Canjear'
+                              : 'Faltan sparks'}
                           </button>
                         </div>
                       );
