@@ -3,7 +3,7 @@
 
 
 
-:root {
+@theme {
   --font-display: 'Lora', Georgia, serif;
   --font-body: 'DM Sans', system-ui, sans-serif;
 
@@ -40,6 +40,71 @@
 
   --shadow-soft: 0 2px 16px -4px rgba(0,0,0,0.08);
   --shadow-card: 0 4px 24px -8px rgba(0,0,0,0.10);
+
+  /* Mira palette — warm, calm, accessible */
+  --color-stone-50: #faf9f7;
+  --color-stone-100: #f2f0eb;
+  --color-stone-200: #e5e1d8;
+  --color-stone-300: #d2ccc0;
+  --color-stone-400: #b5ada0;
+  --color-stone-500: #988f80;
+  --color-stone-600: #7d7468;
+  --color-stone-700: #655e53;
+  --color-stone-800: #524e45;
+  --color-stone-900: #45413a;
+
+  --color-bloom-50: #fdf6f0;
+  --color-bloom-100: #fae8d8;
+  --color-bloom-200: #f5cfaf;
+  --color-bloom-300: #eeae7e;
+  --color-bloom-400: #e6884a;
+  --color-bloom-500: #df6b28;
+  --color-bloom-600: #d1541d;
+  --color-bloom-700: #ad4019;
+  --color-bloom-800: #8b351a;
+  --color-bloom-900: #712d18;
+
+  --color-moss-50: #f4f7f0;
+  --color-moss-100: #e5ecda;
+  --color-moss-200: #cddab8;
+  --color-moss-300: #aec18e;
+  --color-moss-400: #8fa56a;
+  --color-moss-500: #748b52;
+  --color-moss-600: #5b6f3f;
+  --color-moss-700: #475735;
+  --color-moss-800: #3a462c;
+  --color-moss-900: #313c26;
+
+  --color-sky-50: #f0f7fa;
+  --color-sky-100: #d8ecf3;
+  --color-sky-200: #b5d8e9;
+  --color-sky-300: #84bdd8;
+  --color-sky-400: #4f9dc3;
+  --color-sky-500: #3081ab;
+  --color-sky-600: #246690;
+  --color-sky-700: #1e5275;
+  --color-sky-800: #1c4562;
+  --color-sky-900: #1b3a52;
+
+  --color-lavender-50: #f5f3fa;
+  --color-lavender-100: #ede8f5;
+  --color-lavender-200: #ddd4ed;
+  --color-lavender-300: #c5b5e0;
+  --color-lavender-400: #a88fce;
+  --color-lavender-500: #8e6dbc;
+  --color-lavender-600: #7a56a9;
+  --color-lavender-700: #664590;
+  --color-lavender-800: #553b77;
+  --color-lavender-900: #473263;
+
+  --animate-pulse-gentle: pulse-gentle 3s ease-in-out infinite;
+  --animate-breathe: breathe 4s ease-in-out infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-sway: sway 5s ease-in-out infinite;
+  --animate-glow-pulse: glow-pulse 3s ease-in-out infinite;
+  --animate-fade-in: fade-in 0.4s ease-out;
+  --animate-slide-up: slide-up 0.4s ease-out;
+  --animate-bloom: bloom 0.6s ease-out;
 }
 
 /* Calm base styles */

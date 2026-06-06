@@ -30,26 +30,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           size === 'xl' && 'px-10 py-5 text-xl gap-3 rounded-3xl',
 
           // Variants
-          variant === 'primary' && [
-            'bg-bloom-500 text-white shadow-soft',
-            'hover:bg-bloom-600 hover:shadow-card',
-            'focus-visible:ring-bloom-400',
-          ],
-          variant === 'secondary' && [
-            'bg-stone-100 text-stone-700 border border-stone-200',
-            'hover:bg-stone-200 hover:border-stone-300',
-            'focus-visible:ring-stone-400',
-          ],
-          variant === 'ghost' && [
-            'bg-transparent text-stone-600',
-            'hover:bg-stone-100',
-            'focus-visible:ring-stone-400',
-          ],
-          variant === 'calm' && [
-            'bg-moss-100 text-moss-800 border border-moss-200',
-            'hover:bg-moss-200 hover:border-moss-300',
-            'focus-visible:ring-moss-400',
-          ],
+          variant === 'primary' && 'bg-bloom-500 text-white shadow-soft hover:bg-bloom-600 hover:shadow-card focus-visible:ring-bloom-400 disabled:bg-bloom-300 disabled:text-white/80',
+          variant === 'secondary' && 'bg-stone-100 text-stone-700 border border-stone-200 hover:bg-stone-200 hover:border-stone-300 focus-visible:ring-stone-400 disabled:bg-stone-50 disabled:text-stone-400',
+          variant === 'ghost' && 'bg-transparent text-stone-600 hover:bg-stone-100 focus-visible:ring-stone-400 disabled:bg-transparent disabled:text-stone-300',
+          variant === 'calm' && 'bg-moss-100 text-moss-800 border border-moss-200 hover:bg-moss-200 hover:border-moss-300 focus-visible:ring-moss-400 disabled:bg-moss-50 disabled:text-moss-400',
 
           className
         )}

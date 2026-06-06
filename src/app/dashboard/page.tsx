@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useFamily } from '@/lib/family/FamilyProvider';
 import { useAuth } from '@/lib/auth/AuthProvider';
-import { getEmotionalAdapter, getRoutineAdapter } from '@/lib/adapters';
+import { getEmotionalAdapter, getRoutineAdapter, DATA_SOURCE } from '@/lib/adapters';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { SparkBadge } from '@/components/ui/SparkBadge';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import type { Profile, EmotionalWeeklySummary } from '@/types';
+import { supabase } from '@/lib/supabase';
 
 const emotionalAdapter = getEmotionalAdapter();
 const routineAdapter   = getRoutineAdapter();
@@ -19,11 +20,15 @@ export default function DashboardPage() {
   const { profile } = useAuth();
   const [summaries, setSummaries]         = useState<Record<string, EmotionalWeeklySummary | null>>({});
   const [routineCounts, setRoutineCounts] = useState<Record<string, number>>({});
+  const [sparkBalances, setSparkBalances] = useState<Record<string, number>>({});
 
   useEffect(() => {
+    const channels: any[] = [];
+
     children.forEach(async child => {
       const s = await emotionalAdapter.getWeeklySummaries(child.id, 1);
       if (s.ok) setSummaries(prev => ({ ...prev, [child.id]: s.data[s.data.length - 1] ?? null }));
+      
       const now = new Date();
       const weekStart = new Date(now);
       weekStart.setDate(now.getDate() - now.getDay());
@@ -33,7 +38,44 @@ export default function DashboardPage() {
         now.toISOString().split('T')[0]!
       );
       if (c.ok) setRoutineCounts(prev => ({ ...prev, [child.id]: c.data.length }));
+
+      // Fetch spark balance
+      if (DATA_SOURCE === 'supabase') {
+        const fetchBalance = async () => {
+          const { data, error } = await supabase
+            .from('spark_ledger')
+            .select('delta')
+            .eq('child_id', child.id);
+          if (!error && data) {
+            const sum = data.reduce((acc, row) => acc + (row.delta || 0), 0);
+            setSparkBalances(prev => ({ ...prev, [child.id]: sum }));
+          }
+        };
+        
+        fetchBalance();
+
+        const channel = supabase
+          .channel(`sparks_dash:${child.id}`)
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'spark_ledger', filter: `child_id=eq.${child.id}` },
+            () => {
+              fetchBalance();
+            }
+          )
+          .subscribe();
+
+        channels.push(channel);
+      } else {
+        setSparkBalances(prev => ({ ...prev, [child.id]: 12 }));
+      }
     });
+
+    return () => {
+      if (DATA_SOURCE === 'supabase') {
+        channels.forEach(ch => supabase.removeChannel(ch));
+      }
+    };
   }, [children]);
 
   return (
@@ -48,6 +90,7 @@ export default function DashboardPage() {
           child={child}
           emotionalSummary={summaries[child.id] ?? null}
           routineCount={routineCounts[child.id] ?? 0}
+          sparkBalance={sparkBalances[child.id] ?? 0}
         />
       ))}
       {children.length === 0 && (
@@ -68,8 +111,8 @@ export default function DashboardPage() {
   );
 }
 
-function ChildSummaryCard({ child, emotionalSummary, routineCount }: {
-  child: Profile; emotionalSummary: EmotionalWeeklySummary | null; routineCount: number;
+function ChildSummaryCard({ child, emotionalSummary, routineCount, sparkBalance }: {
+  child: Profile; emotionalSummary: EmotionalWeeklySummary | null; routineCount: number; sparkBalance: number;
 }) {
   const valence  = emotionalSummary?.avg_valence  ?? null;
   const energy   = emotionalSummary?.avg_energy   ?? null;
@@ -88,9 +131,10 @@ function ChildSummaryCard({ child, emotionalSummary, routineCount }: {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>{child.display_name}</CardTitle>
-          <SparkBadge count={0} size="sm" />
+          <SparkBadge count={sparkBalance} size="sm" />
         </div>
       </CardHeader>
+
       <CardContent>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
