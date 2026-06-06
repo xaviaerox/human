@@ -45,7 +45,7 @@ interface CompanionContextValue {
   setAppearanceContext: (ctx: AppearanceContext) => void;
 
   /** Update companion customization details */
-  updateCompanionCustomization: (updates: Partial<Pick<Companion, 'equipped_accessory' | 'equipped_color_theme'>>) => Promise<boolean>;
+  updateCompanionCustomization: (updates: Partial<Pick<Companion, 'equipped_accessory' | 'equipped_color_theme' | 'name'>>) => Promise<boolean>;
 }
 
 const CompanionContext = createContext<CompanionContextValue | null>(null);
@@ -91,7 +91,7 @@ export function CompanionProvider({ adapter, children }: CompanionProviderProps)
     return result.ok;
   }, [adapter, childId]);
 
-  const updateCompanionCustomization = useCallback(async (updates: Partial<Pick<Companion, 'equipped_accessory' | 'equipped_color_theme'>>): Promise<boolean> => {
+  const updateCompanionCustomization = useCallback(async (updates: Partial<Pick<Companion, 'equipped_accessory' | 'equipped_color_theme' | 'name'>>): Promise<boolean> => {
     if (!companion) return false;
     const result = await adapter.updateCompanion(companion.id, updates);
     if (result.ok) setCompanion(result.data);

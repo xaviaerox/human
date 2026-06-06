@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useCompanion } from '@/lib/companion/CompanionProvider';
@@ -23,6 +23,24 @@ export function CustomizationModal({ isOpen, onClose, sparkBalance, onPurchaseSu
   const { companion, updateCompanionCustomization } = useCompanion();
   const [activeTab, setActiveTab] = useState<'avatar' | 'companion'>('avatar');
   const [buyingId, setBuyingId] = useState<string | null>(null);
+  const [companionName, setCompanionName] = useState(companion?.name || '');
+  const [renaming, setRenaming] = useState(false);
+
+  useEffect(() => {
+    if (companion?.name) {
+      setCompanionName(companion.name);
+    }
+  }, [companion?.name]);
+
+  async function handleRenameCompanion() {
+    if (!companionName.trim() || !companion) return;
+    setRenaming(true);
+    const ok = await updateCompanionCustomization({ name: companionName.trim() });
+    if (!ok) {
+      alert('Error al renombrar a tu compañero');
+    }
+    setRenaming(false);
+  }
 
   if (!profile || profile.role !== 'child') return null;
 
@@ -318,9 +336,30 @@ export function CustomizationModal({ isOpen, onClose, sparkBalance, onPurchaseSu
                     ) : (
                       <div className="w-16 h-16 border-2 border-stone-200 border-t-bloom-400 rounded-full animate-spin" />
                     )}
-                    <span className="text-xs text-stone-400 font-semibold mt-3">
-                      Vista previa de {companion?.name || 'tu compañero'}
-                    </span>
+                    <div className="flex flex-col items-center gap-1.5 w-full mt-3">
+                      <div className="flex items-center gap-2 w-full max-w-xs justify-center">
+                        <input
+                          type="text"
+                          value={companionName}
+                          onChange={(e) => setCompanionName(e.target.value)}
+                          className="text-center text-base font-bold text-stone-850 dark:text-stone-100 bg-transparent border-b border-transparent focus:border-stone-300 dark:focus:border-stone-750 focus:outline-none px-2 py-0.5 w-full max-w-[180px] hover:bg-stone-100/50 dark:hover:bg-stone-800 rounded transition-all"
+                          placeholder="Nombre de tu compañero..."
+                          maxLength={20}
+                        />
+                        {companionName !== (companion?.name || '') && (
+                          <button
+                            onClick={handleRenameCompanion}
+                            disabled={renaming || !companionName.trim()}
+                            className="text-[10px] font-extrabold px-3 py-1.5 bg-bloom-50 hover:bg-bloom-100 text-bloom-600 rounded-xl cursor-pointer transition-colors shadow-soft"
+                          >
+                            {renaming ? 'Guardando...' : 'Guardar'}
+                          </button>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-stone-400 font-semibold">
+                        Haz clic en el nombre arriba para cambiarlo ✏_
+                      </span>
+                    </div>
                   </div>
 
                   {/* COMPANION ACCESSORIES */}
