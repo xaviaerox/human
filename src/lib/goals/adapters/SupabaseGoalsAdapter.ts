@@ -119,6 +119,20 @@ export class SupabaseGoalsAdapter implements IGoalsAdapter {
     return { ok: true, data };
   }
 
+  async uncompleteMicrotask(microtaskId: string): Promise<Result<GoalMicrotask>> {
+    const { data, error } = await this.client
+      .from('goal_microtasks')
+      .update({ status: 'pending', completed_at: null, completed_by: null })
+      .eq('id', microtaskId)
+      .select()
+      .single();
+
+    if (error || !data) {
+      return { ok: false, error: { code: 'uncomplete_failed', message: error?.message ?? 'Failed' } };
+    }
+    return { ok: true, data };
+  }
+
   async addMicrotasks(goalId: string, microtasks: ParsedMicrotask[]): Promise<Result<GoalMicrotask[]>> {
     const { data, error } = await this.client
       .from('goal_microtasks')

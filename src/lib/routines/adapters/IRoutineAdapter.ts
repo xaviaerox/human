@@ -60,4 +60,8 @@ export interface IRoutineAdapter {
 
   /** Check if routine is already complete for today */
   isCompleteToday(routineId: string, childId: string): Promise<Result<boolean>>;
+
+  /** Uncomplete a routine completion */
+  uncompleteRoutine(routineId: string, childId: string, completedDate?: string): Promise<Result<void>>;
 }
+

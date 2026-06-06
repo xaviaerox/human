@@ -75,6 +75,18 @@ export default function RoutinesPage() {
     }
   }
 
+  async function handleUncomplete(routine: RoutineWithSteps) {
+    if (!profile?.id) return;
+    const result = await routineAdapter.uncompleteRoutine(routine.id, profile.id);
+    if (result.ok) {
+      setCompletedIds(prev => {
+        const next = new Set(prev);
+        next.delete(routine.id);
+        return next;
+      });
+    }
+  }
+
   const active = activeRoutine ? routines.find(r => r.id === activeRoutine) : null;
 
   if (loading) return (
@@ -183,15 +195,19 @@ export default function RoutinesPage() {
                     {routine.steps.length} pasos
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                   {showDelta === routine.id && <SparkDelta delta={routine.spark_value} />}
                   <SparkBadge count={routine.spark_value} size="sm" />
-                  {done && (
-                    <div className="w-5 h-5 rounded-full bg-moss-400 flex items-center justify-center">
-                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
+                  {done ? (
+                    <button
+                      onClick={() => handleUncomplete(routine)}
+                      className="text-xs text-stone-400 hover:text-stone-600 transition-colors font-medium border border-stone-200 hover:border-stone-300 rounded-xl px-2.5 py-1 bg-white ml-2 cursor-pointer"
+                      aria-label={`Desmarcar ${routine.title}`}
+                    >
+                      Desmarcar
+                    </button>
+                  ) : (
+                    <span className="text-stone-300 text-lg ml-2">→</span>
                   )}
                 </div>
               </div>

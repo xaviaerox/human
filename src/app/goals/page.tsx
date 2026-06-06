@@ -54,6 +54,23 @@ export default function GoalsPage() {
     setCompleting(null);
   }
 
+  async function handleUncompleteTask(task: GoalMicrotask) {
+    if (!profile?.id || completing) return;
+    setCompleting(task.id);
+
+    const result = await goalsAdapter.uncompleteMicrotask(task.id);
+    if (result.ok) {
+      // Refresh goal
+      const refreshed = await goalsAdapter.getGoals(profile.id);
+      if (refreshed.ok) {
+        setGoals(refreshed.data);
+        const updated = refreshed.data.find(g => g.id === selectedGoal?.id);
+        if (updated) setSelectedGoal(updated);
+      }
+    }
+    setCompleting(null);
+  }
+
   if (loading) return (
     <div className="flex items-center justify-center min-h-dvh">
       <div className="w-6 h-6 border-2 border-stone-200 border-t-bloom-400 rounded-full animate-spin" />
@@ -128,16 +145,25 @@ export default function GoalsPage() {
                     )}
                   >
                     <div className="flex items-start gap-3">
-                      <div className={cn(
-                        'w-6 h-6 rounded-full border-2 flex-shrink-0 mt-0.5 flex items-center justify-center',
-                        done ? 'bg-moss-400 border-moss-400' : isNext ? 'border-lavender-400' : 'border-stone-300'
-                      )}>
-                        {done && (
-                          <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      {done ? (
+                        <button
+                          type="button"
+                          onClick={() => handleUncompleteTask(task)}
+                          disabled={completing === task.id}
+                          className="w-6 h-6 rounded-full bg-moss-400 border-2 border-moss-400 text-white flex-shrink-0 mt-0.5 flex items-center justify-center cursor-pointer hover:bg-moss-500 hover:border-moss-500 transition-colors focus:outline-none"
+                          aria-label={`Desmarcar ${task.title}`}
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                           </svg>
-                        )}
-                      </div>
+                        </button>
+                      ) : (
+                        <div className={cn(
+                          'w-6 h-6 rounded-full border-2 flex-shrink-0 mt-0.5 flex items-center justify-center',
+                          isNext ? 'border-lavender-400' : 'border-stone-300'
+                        )}>
+                        </div>
+                      )}
                       <div className="flex-1 min-w-0">
                         <p className={cn(
                           'text-sm font-medium',
@@ -163,6 +189,19 @@ export default function GoalsPage() {
                       >
                         Lo he hecho ✓
                       </Button>
+                    )}
+
+                    {done && (
+                      <div className="mt-3 flex justify-end">
+                        <button
+                          onClick={() => handleUncompleteTask(task)}
+                          disabled={completing === task.id}
+                          className="text-xs text-stone-400 hover:text-stone-600 transition-colors font-medium border border-stone-200 hover:border-stone-300 rounded-xl px-2.5 py-1 bg-white cursor-pointer"
+                          aria-label={`Desmarcar ${task.title}`}
+                        >
+                          {completing === task.id ? 'Desmarcando...' : 'Desmarcar'}
+                        </button>
+                      </div>
                     )}
                   </div>
                 );

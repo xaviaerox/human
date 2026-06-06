@@ -176,4 +176,17 @@ export class SupabaseRoutineAdapter implements IRoutineAdapter {
     if (error) return { ok: false, error: { code: 'check_failed', message: error.message } };
     return { ok: true, data: data !== null };
   }
+
+  async uncompleteRoutine(routineId: string, childId: string, completedDate?: string): Promise<Result<void>> {
+    const date = completedDate ?? today();
+    const { error } = await this.client
+      .from('routine_completions')
+      .delete()
+      .eq('routine_id', routineId)
+      .eq('child_id', childId)
+      .eq('completed_date', date);
+
+    if (error) return { ok: false, error: { code: 'uncomplete_failed', message: error.message } };
+    return { ok: true, data: undefined };
+  }
 }

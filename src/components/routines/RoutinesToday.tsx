@@ -59,6 +59,24 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
     }
   }
 
+  async function handleUncomplete(routine: RoutineWithSteps) {
+    if (!profile?.id || !completedIds.has(routine.id)) return;
+
+    const result = await routineAdapter.uncompleteRoutine(
+      routine.id,
+      profile.id
+    );
+
+    if (result.ok) {
+      setCompletedIds(prev => {
+        const next = new Set(prev);
+        next.delete(routine.id);
+        return next;
+      });
+      onComplete?.();
+    }
+  }
+
   if (loading) return null;
   if (routines.length === 0) return null;
 
@@ -90,22 +108,24 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
                   : 'bg-stone-50 border border-stone-200'
               )}
             >
-              {/* Status indicator */}
-              <div
+              {/* Status indicator button */}
+              <button
+                type="button"
+                onClick={() => done ? handleUncomplete(routine) : handleComplete(routine)}
                 className={cn(
-                  'w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all',
+                  'w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2',
                   done
-                    ? 'bg-moss-400 border-moss-400 text-white'
-                    : 'border-stone-300'
+                    ? 'bg-moss-400 border-moss-400 text-white hover:bg-moss-500 hover:border-moss-500 focus:ring-moss-400'
+                    : 'border-stone-300 hover:border-stone-400 focus:ring-stone-400'
                 )}
-                aria-hidden="true"
+                aria-label={done ? `Desmarcar ${routine.title}` : `Completar ${routine.title}`}
               >
                 {done && (
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 )}
-              </div>
+              </button>
 
               <div className="flex-1 min-w-0">
                 <p className={cn(
@@ -121,19 +141,29 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
                 )}
               </div>
 
-              {!done && (
-                <div className="flex items-center gap-2">
-                  <SparkBadge count={routine.spark_value} size="sm" />
-                  <Button
-                    variant="calm"
-                    size="sm"
-                    onClick={() => handleComplete(routine)}
-                    aria-label={`Completar ${routine.title}`}
+              <div className="flex items-center gap-2">
+                {done ? (
+                  <button
+                    onClick={() => handleUncomplete(routine)}
+                    className="text-xs text-stone-400 hover:text-stone-600 transition-colors font-medium border border-stone-200 hover:border-stone-300 rounded-xl px-2.5 py-1"
+                    aria-label={`Desmarcar ${routine.title}`}
                   >
-                    Hecho
-                  </Button>
-                </div>
-              )}
+                    Desmarcar
+                  </button>
+                ) : (
+                  <>
+                    <SparkBadge count={routine.spark_value} size="sm" />
+                    <Button
+                      variant="calm"
+                      size="sm"
+                      onClick={() => handleComplete(routine)}
+                      aria-label={`Completar ${routine.title}`}
+                    >
+                      Hecho
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           );
         })}

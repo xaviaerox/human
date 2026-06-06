@@ -35,6 +35,9 @@ export interface IGoalsAdapter {
   /** Complete a microtask */
   completeMicrotask(microtaskId: string, completedBy: string): Promise<Result<GoalMicrotask>>;
 
+  /** Uncomplete a microtask */
+  uncompleteMicrotask(microtaskId: string): Promise<Result<GoalMicrotask>>;
+
   /** Add AI-generated microtasks to an existing goal */
   addMicrotasks(goalId: string, microtasks: ParsedMicrotask[]): Promise<Result<GoalMicrotask[]>>;
 }

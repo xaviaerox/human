@@ -177,4 +177,12 @@ export class StaticRoutineAdapter implements IRoutineAdapter {
     );
     return { ok: true, data: exists };
   }
+
+  async uncompleteRoutine(routineId: string, childId: string, completedDate?: string): Promise<Result<void>> {
+    const date = completedDate ?? today();
+    this._completions = this._completions.filter(
+      c => !(c.routine_id === routineId && c.child_id === childId && c.completed_date === date)
+    );
+    return { ok: true, data: undefined };
+  }
 }

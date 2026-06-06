@@ -148,6 +148,34 @@ export class StaticGoalsAdapter implements IGoalsAdapter {
     return { ok: false, error: { code: 'not_found', message: `Microtask ${microtaskId} not found` } };
   }
 
+  async uncompleteMicrotask(microtaskId: string): Promise<Result<GoalMicrotask>> {
+    for (const goal of this._goals) {
+      const idx = goal.microtasks.findIndex(t => t.id === microtaskId);
+      if (idx !== -1) {
+        const updated: GoalMicrotask = {
+          ...goal.microtasks[idx]!,
+          status: 'pending',
+          completed_at: undefined,
+          completed_by: undefined,
+        };
+        goal.microtasks[idx] = updated;
+
+        // Update progress
+        goal.progress = Math.round(
+          (goal.microtasks.filter(t => t.status === 'complete').length / goal.microtasks.length) * 100
+        );
+
+        // Reset goal status if it was completed
+        if (goal.status === 'completed') {
+          goal.status = 'active';
+        }
+
+        return { ok: true, data: updated };
+      }
+    }
+    return { ok: false, error: { code: 'not_found', message: `Microtask ${microtaskId} not found` } };
+  }
+
   async addMicrotasks(goalId: string, microtasks: import('../MicrotaskEngine').ParsedMicrotask[]): Promise<Result<GoalMicrotask[]>> {
     const goal = this._goals.find(g => g.id === goalId);
     if (!goal) return { ok: false, error: { code: 'not_found', message: 'Goal not found' } };
