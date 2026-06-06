@@ -18,15 +18,13 @@ BEGIN
     'Rutina desmarcada: ' || v_routine.title
   );
 
-  -- Restar puntuación en dimensiones de valor
+  -- Borrar los eventos de puntuación originales
+  DELETE FROM value_score_events
+  WHERE source_type = 'routine_complete' AND source_id = OLD.id;
+
+  -- Restar puntuación en child_value_scores
   IF v_routine.value_dimensions IS NOT NULL THEN
     FOREACH v_dim IN ARRAY v_routine.value_dimensions LOOP
-      INSERT INTO value_score_events (
-        child_id, dimension_id, delta, source_type, source_id
-      ) VALUES (
-        OLD.child_id, v_dim, -1, 'routine_complete', OLD.id
-      );
-
       UPDATE child_value_scores
       SET score = GREATEST(0, score - 1),
           updated_at = NOW()
