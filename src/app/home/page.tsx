@@ -518,7 +518,11 @@ export default function HomePage() {
                       return (
                         <div
                           key={reward.id}
-                          className="flex items-center justify-between p-3.5 bg-stone-50 rounded-2xl border border-stone-200 shadow-sm"
+                          className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-200 shadow-sm ${
+                            cooldown.isLocked
+                              ? 'bg-stone-100/50 border-stone-200/80 grayscale opacity-70'
+                              : 'bg-stone-50 border-stone-200'
+                          }`}
                         >
                           <div className="flex items-center gap-3">
                             <span className="text-2xl">{reward.emoji}</span>
