@@ -31,6 +31,9 @@ export interface Profile {
   avatar_seed?: string;
   birth_year?: number;
   onboarding_complete: boolean;
+  unlocked_accessories?: string[];
+  avatar_accessory?: string | null;
+  avatar_base_emoji?: string;
   created_at: string;
   updated_at: string;
 }
@@ -74,6 +77,8 @@ export interface Companion {
   bonding_score: number;
   emotional_responsiveness: number; // 10–100, never zero
   personality_traits: string[];
+  equipped_accessory?: string | null;
+  equipped_color_theme?: string | null;
   created_at: string;
   updated_at: string;
 }

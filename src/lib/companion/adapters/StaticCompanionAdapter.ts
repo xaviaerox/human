@@ -107,6 +107,12 @@ export class StaticCompanionAdapter implements ICompanionAdapter {
     return { ok: true, data: counts };
   }
 
+  async updateCompanion(companionId: string, updates: Partial<Companion>): Promise<Result<Companion>> {
+    this._companion = { ...this._companion, ...updates, updated_at: new Date().toISOString() };
+    this._emit();
+    return { ok: true, data: { ...this._companion } };
+  }
+
   subscribeToCompanion(childId: string, callback: (companion: Companion) => void): () => void {
     this._listeners.push(callback);
     setTimeout(() => callback({ ...this._companion }), 0);

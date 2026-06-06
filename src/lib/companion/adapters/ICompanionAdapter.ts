@@ -25,6 +25,9 @@ export interface ICompanionAdapter {
   /** Get interaction counts per type (for trait unlock checks) */
   getInteractionCounts(companionId: string): Promise<Result<Record<CompanionInteractionType, number>>>;
 
+  /** Update companion customization options */
+  updateCompanion(companionId: string, updates: Partial<Companion>): Promise<Result<Companion>>;
+
   /** Subscribe to companion changes (realtime bonding updates) */
   subscribeToCompanion(childId: string, callback: (companion: Companion) => void): () => void;
 }

@@ -36,7 +36,7 @@ interface AuthContextValue {
   signUpWithInvite: (params: SignUpChildParams) => Promise<Result<AuthSession>>;
   signIn: (params: SignInParams) => Promise<Result<AuthSession>>;
   signOut: () => Promise<Result<void>>;
-  updateProfile: (updates: Partial<Pick<Profile, 'display_name' | 'avatar_seed' | 'onboarding_complete'>>) => Promise<Result<Profile>>;
+  updateProfile: (updates: Partial<Pick<Profile, 'display_name' | 'avatar_seed' | 'onboarding_complete' | 'unlocked_accessories' | 'avatar_accessory' | 'avatar_base_emoji'>>) => Promise<Result<Profile>>;
 }
 
 // ─────────────────────────────────────────
@@ -96,7 +96,7 @@ export function AuthProvider({ adapter, children }: AuthProviderProps) {
   }, [adapter]);
 
   const updateProfile = useCallback(
-    (updates: Partial<Pick<Profile, 'display_name' | 'avatar_seed' | 'onboarding_complete'>>) =>
+    (updates: Partial<Pick<Profile, 'display_name' | 'avatar_seed' | 'onboarding_complete' | 'unlocked_accessories' | 'avatar_accessory' | 'avatar_base_emoji'>>) =>
       adapter.updateProfile(updates),
     [adapter]
   );

@@ -43,6 +43,9 @@ interface CompanionContextValue {
 
   /** Control companion visibility */
   setAppearanceContext: (ctx: AppearanceContext) => void;
+
+  /** Update companion customization details */
+  updateCompanionCustomization: (updates: Partial<Pick<Companion, 'equipped_accessory' | 'equipped_color_theme'>>) => Promise<boolean>;
 }
 
 const CompanionContext = createContext<CompanionContextValue | null>(null);
@@ -88,6 +91,13 @@ export function CompanionProvider({ adapter, children }: CompanionProviderProps)
     return result.ok;
   }, [adapter, childId]);
 
+  const updateCompanionCustomization = useCallback(async (updates: Partial<Pick<Companion, 'equipped_accessory' | 'equipped_color_theme'>>): Promise<boolean> => {
+    if (!companion) return false;
+    const result = await adapter.updateCompanion(companion.id, updates);
+    if (result.ok) setCompanion(result.data);
+    return result.ok;
+  }, [adapter, companion]);
+
   const interact = useCallback(async (
     type: CompanionInteractionType,
     context: Record<string, unknown> = {}
@@ -130,7 +140,8 @@ export function CompanionProvider({ adapter, children }: CompanionProviderProps)
     interact,
     getDialogue,
     setAppearanceContext: setAppearanceCtx,
-  }), [companion, display, loading, isVisible, createCompanion, interact, getDialogue]);
+    updateCompanionCustomization,
+  }), [companion, display, loading, isVisible, createCompanion, interact, getDialogue, updateCompanionCustomization]);
 
   return (
     <CompanionContext.Provider value={value}>

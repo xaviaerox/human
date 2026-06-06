@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import type { CompanionStage } from '@/types';
+import { COMPANION_THEME_COLORS } from '@/lib/customization/CustomizationItems';
 
 interface CompanionBlobProps {
   stage: CompanionStage;
@@ -9,6 +10,30 @@ interface CompanionBlobProps {
   animationCue?: string;
   className?: string;
   'aria-label'?: string;
+  customTheme?: string | null;
+  customAccessory?: string | null;
+}
+
+function getAccessoryPosition(emoji: string) {
+  if (emoji === '🕶️') {
+    return { top: '32%', left: '50%', transform: 'translateX(-50%)' };
+  }
+  if (emoji === '👑') {
+    return { top: '-12%', left: '50%', transform: 'translateX(-50%) rotate(-8deg)' };
+  }
+  if (emoji === '🎩') {
+    return { top: '-22%', left: '50%', transform: 'translateX(-50%) rotate(-4deg)' };
+  }
+  if (emoji === '🎓') {
+    return { top: '-18%', left: '48%', transform: 'translateX(-50%) rotate(-6deg)' };
+  }
+  if (emoji === '🎀') {
+    return { top: '10%', right: '10%', transform: 'rotate(15deg)' };
+  }
+  if (emoji === '🎧') {
+    return { top: '25%', left: '50%', transform: 'translateX(-50%) scale(1.15)' };
+  }
+  return { top: '-5%', left: '50%', transform: 'translateX(-50%)' };
 }
 
 const STAGE_COLORS: Record<CompanionStage, { fill: string; glow: string; secondary: string }> = {
@@ -67,8 +92,12 @@ export function CompanionBlob({
   animationCue,
   className,
   'aria-label': ariaLabel,
+  customTheme,
+  customAccessory,
 }: CompanionBlobProps) {
-  const colors = STAGE_COLORS[stage];
+  const colors = (customTheme && COMPANION_THEME_COLORS[customTheme])
+    ? COMPANION_THEME_COLORS[customTheme]
+    : STAGE_COLORS[stage];
   const px = SIZES[size];
   const animClass = animationCue
     ? (ANIMATION_CLASSES[animationCue] ?? STAGE_ANIMATION[stage])
@@ -166,6 +195,19 @@ export function CompanionBlob({
           </>
         )}
       </svg>
+
+      {/* Accessory Overlay */}
+      {customAccessory && (
+        <div
+          className="absolute pointer-events-none select-none"
+          style={{
+            fontSize: size === 'xl' ? '2.5rem' : size === 'lg' ? '1.8rem' : size === 'md' ? '1.2rem' : '0.8rem',
+            ...getAccessoryPosition(customAccessory)
+          }}
+        >
+          {customAccessory}
+        </div>
+      )}
     </div>
   );
 }

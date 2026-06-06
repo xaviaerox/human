@@ -133,7 +133,7 @@ export class SupabaseAuthAdapter implements IAuthAdapter {
   }
 
   async updateProfile(
-    updates: Partial<Pick<Profile, 'display_name' | 'avatar_seed' | 'onboarding_complete'>>
+    updates: Partial<Pick<Profile, 'display_name' | 'avatar_seed' | 'onboarding_complete' | 'unlocked_accessories' | 'avatar_accessory' | 'avatar_base_emoji'>>
   ): Promise<Result<Profile>> {
     const { data: { session } } = await this.client.auth.getSession();
     if (!session) {

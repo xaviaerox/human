@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useCompanion } from '@/lib/companion/CompanionProvider';
 import { CompanionWidget } from '@/components/companion/CompanionWidget';
@@ -13,6 +13,8 @@ import { supabase } from '@/lib/supabase';
 import { DATA_SOURCE, getRewardsAdapter } from '@/lib/adapters';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SparkCelebrationOverlay } from '@/components/ui/SparkCelebrationOverlay';
+import { ChildAvatar } from '@/components/ui/ChildAvatar';
+import { CustomizationModal } from '@/components/companion/CustomizationModal';
 
 import { useRouter } from 'next/navigation';
 import type { Reward, RewardRequest } from '@/types';
@@ -62,6 +64,7 @@ export default function HomePage() {
   );
   const [sparkBalance, setSparkBalance] = useState(12);
   const [showRewards, setShowRewards] = useState(false);
+  const [showCustomization, setShowCustomization] = useState(false);
   const [currentCelebration, setCurrentCelebration] = useState<{ id: string; delta: number; note: string } | null>(null);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
@@ -103,41 +106,43 @@ export default function HomePage() {
     }
   }, [session, authLoading, router]);
 
+  const fetchBalance = useCallback(async () => {
+    if (!profile?.id) return;
+    const { data, error } = await supabase
+      .from('spark_ledger')
+      .select('delta')
+      .eq('child_id', profile.id);
+
+    if (!error && data) {
+      const sum = data.reduce((acc, row) => acc + (row.delta || 0), 0);
+      setSparkBalance(sum);
+    }
+  }, [profile?.id]);
+
+  const fetchLastRedemptions = useCallback(async () => {
+    if (!profile?.id) return;
+    const { data, error } = await supabase
+      .from('spark_ledger')
+      .select('source_id, created_at')
+      .eq('child_id', profile.id)
+      .eq('source_type', 'redemption');
+
+    if (!error && data) {
+      const map: Record<string, string> = {};
+      data.forEach(r => {
+        if (r.source_id) {
+          if (!map[r.source_id] || new Date(r.created_at) > new Date(map[r.source_id])) {
+            map[r.source_id] = r.created_at;
+          }
+        }
+      });
+      setLastRedemptions(map);
+    }
+  }, [profile?.id]);
+
   // Fetch and subscribe to real-time spark balance and redemptions
   useEffect(() => {
     if (authLoading || !profile?.id || profile.role !== 'child') return;
-
-    const fetchBalance = async () => {
-      const { data, error } = await supabase
-        .from('spark_ledger')
-        .select('delta')
-        .eq('child_id', profile.id);
-
-      if (!error && data) {
-        const sum = data.reduce((acc, row) => acc + (row.delta || 0), 0);
-        setSparkBalance(sum);
-      }
-    };
-
-    const fetchLastRedemptions = async () => {
-      const { data, error } = await supabase
-        .from('spark_ledger')
-        .select('source_id, created_at')
-        .eq('child_id', profile.id)
-        .eq('source_type', 'redemption');
-
-      if (!error && data) {
-        const map: Record<string, string> = {};
-        data.forEach(r => {
-          if (r.source_id) {
-            if (!map[r.source_id] || new Date(r.created_at) > new Date(map[r.source_id])) {
-              map[r.source_id] = r.created_at;
-            }
-          }
-        });
-        setLastRedemptions(map);
-      }
-    };
 
     const checkUnseenBonuses = async () => {
       const { data, error } = await supabase
@@ -196,7 +201,7 @@ export default function HomePage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.id, profile?.role, authLoading]);
+  }, [profile?.id, profile?.role, authLoading, fetchBalance, fetchLastRedemptions]);
 
   // Tick timer to refresh cooldown countdowns in UI
   useEffect(() => {
@@ -256,33 +261,48 @@ export default function HomePage() {
 
       {/* Header */}
       <header className="px-5 pt-8 pb-4 flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <p className="text-xs text-stone-400 uppercase tracking-widest font-body">
-              {greeting}
-            </p>
-            <button
-              onClick={async () => {
-                if (confirm('¿Quieres cerrar sesión?')) {
-                  await signOut();
-                  router.replace('/login');
-                }
-              }}
-              className="text-[10px] text-stone-400 hover:text-stone-600 bg-stone-100 hover:bg-stone-200/60 px-2 py-0.5 rounded-full transition-all cursor-pointer font-medium"
-            >
-              Salir
-            </button>
-          </div>
-          <h1 className="font-display text-2xl text-stone-800 mt-0.5">
-            {profile?.display_name}
-          </h1>
-        </div>
         <div className="flex items-center gap-3">
+          <ChildAvatar
+            baseEmoji={profile?.avatar_base_emoji}
+            accessory={profile?.avatar_accessory}
+            size="md"
+            className="shadow-sm cursor-pointer hover:scale-105 active:scale-95 transition-all"
+            onClick={() => setShowCustomization(true)}
+          />
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-stone-400 uppercase tracking-widest font-body leading-none">
+                {greeting}
+              </p>
+              <button
+                onClick={async () => {
+                  if (confirm('¿Quieres cerrar sesión?')) {
+                    await signOut();
+                    router.replace('/login');
+                  }
+                }}
+                className="text-[10px] text-stone-400 hover:text-stone-600 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200/60 px-2 py-0.5 rounded-full transition-all cursor-pointer font-medium leading-none"
+              >
+                Salir
+              </button>
+            </div>
+            <h1 className="font-display text-2xl text-stone-800 dark:text-stone-100 mt-1 flex items-center gap-1.5">
+              {profile?.display_name}
+            </h1>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowCustomization(true)}
+            className="text-xs font-semibold px-3 py-1.5 rounded-full bg-bloom-50 text-bloom-600 border border-bloom-200 hover:bg-bloom-100 transition-colors shadow-soft cursor-pointer flex items-center gap-1"
+          >
+            🎨 Armario
+          </button>
           <button
             onClick={() => setShowRewards(true)}
-            className="text-xs font-semibold px-3 py-1.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200 hover:bg-amber-100 transition-colors shadow-soft"
+            className="text-xs font-semibold px-3 py-1.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200 hover:bg-amber-100 transition-colors shadow-soft cursor-pointer flex items-center gap-1"
           >
-            🎁 Recompensas
+            🎁 Premios
           </button>
           <SparkBadge count={sparkBalance} size="md" />
         </div>
@@ -605,6 +625,13 @@ export default function HomePage() {
           />
         )}
       </AnimatePresence>
+
+      <CustomizationModal
+        isOpen={showCustomization}
+        onClose={() => setShowCustomization(false)}
+        sparkBalance={sparkBalance}
+        onPurchaseSuccess={fetchBalance}
+      />
     </div>
   );
 }

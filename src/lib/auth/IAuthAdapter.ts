@@ -54,5 +54,5 @@ export interface IAuthAdapter {
   signOut(): Promise<Result<void>>;
 
   /** Update own profile */
-  updateProfile(updates: Partial<Pick<Profile, 'display_name' | 'avatar_seed' | 'onboarding_complete'>>): Promise<Result<Profile>>;
+  updateProfile(updates: Partial<Pick<Profile, 'display_name' | 'avatar_seed' | 'onboarding_complete' | 'unlocked_accessories' | 'avatar_accessory' | 'avatar_base_emoji'>>): Promise<Result<Profile>>;
 }

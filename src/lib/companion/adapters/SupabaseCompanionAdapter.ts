@@ -113,6 +113,20 @@ export class SupabaseCompanionAdapter implements ICompanionAdapter {
     return { ok: true, data: counts };
   }
 
+  async updateCompanion(companionId: string, updates: Partial<Companion>): Promise<Result<Companion>> {
+    const { data, error } = await this.client
+      .from('companions')
+      .update(updates)
+      .eq('id', companionId)
+      .select()
+      .single();
+
+    if (error || !data) {
+      return { ok: false, error: { code: 'update_failed', message: error?.message ?? 'Failed' } };
+    }
+    return { ok: true, data };
+  }
+
   subscribeToCompanion(childId: string, callback: (companion: Companion) => void): () => void {
     // Initial fetch
     this.getCompanion(childId).then(result => {

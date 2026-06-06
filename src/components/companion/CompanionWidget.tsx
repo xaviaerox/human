@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { CompanionBlob } from './CompanionBlob';
 import type { CompanionDisplayState, DialogueLine } from '@/types';
+import { useCompanion } from '@/lib/companion/CompanionProvider';
 
 interface CompanionWidgetProps {
   display: CompanionDisplayState;
@@ -22,6 +23,16 @@ export function CompanionWidget({
 }: CompanionWidgetProps) {
   const [visibleText, setVisibleText] = useState('');
   const [showBubble, setShowBubble] = useState(false);
+
+  let companionContext = null;
+  try {
+    companionContext = useCompanion();
+  } catch (e) {
+    // Fail silently if used outside provider
+  }
+  const companion = companionContext?.companion;
+  const customTheme = companion?.equipped_color_theme || null;
+  const customAccessory = companion?.equipped_accessory || null;
 
   useEffect(() => {
     if (!dialogue?.text) return;
@@ -104,6 +115,8 @@ export function CompanionWidget({
           stage={display.stage}
           size={size}
           animationCue={dialogue?.animationCue}
+          customTheme={customTheme}
+          customAccessory={customAccessory}
         />
 
         {/* New stage indicator — subtle glow ring */}
