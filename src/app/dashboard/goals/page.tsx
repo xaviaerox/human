@@ -105,38 +105,48 @@ function GoalCard({ goal }: { goal: GoalWithMicrotasks }) {
 
   return (
     <Card variant="bordered" className="p-4">
-      <button
-        className="w-full text-left"
-        onClick={() => setExpanded(e => !e)}
-        aria-expanded={expanded}
-      >
-        <div className="flex items-start gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="font-medium text-stone-700 text-sm truncate">{goal.title}</p>
-              {goal.co_created && (
-                <span className="text-xs text-lavender-500 bg-lavender-50 px-1.5 py-0.5 rounded-full border border-lavender-200 flex-shrink-0">
-                  co-creado
-                </span>
-              )}
-            </div>
-            {goal.why && (
-              <p className="text-xs text-stone-400 mt-0.5 truncate">"{goal.why}"</p>
+      <div className="flex items-start gap-3">
+        <div
+          className="flex-1 min-w-0 cursor-pointer"
+          onClick={() => setExpanded(e => !e)}
+        >
+          <div className="flex items-center gap-2">
+            <p className="font-medium text-stone-700 text-sm truncate">{goal.title}</p>
+            {goal.co_created && (
+              <span className="text-xs text-lavender-500 bg-lavender-50 px-1.5 py-0.5 rounded-full border border-lavender-200 flex-shrink-0">
+                co-creado
+              </span>
             )}
-            <div className="mt-2 flex items-center gap-3">
-              <ProgressBar value={goal.progress} color="lavender" className="flex-1" />
-              <span className="text-xs text-stone-400 flex-shrink-0">{done}/{total}</span>
-            </div>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <SparkBadge count={goal.total_sparks} size="sm" />
-            <span className={cn(
-              'text-stone-400 transition-transform text-xs',
-              expanded && 'rotate-180'
-            )} aria-hidden="true">▼</span>
+          {goal.why && (
+            <p className="text-xs text-stone-400 mt-0.5 truncate">"{goal.why}"</p>
+          )}
+          <div className="mt-2 flex items-center gap-3">
+            <ProgressBar value={goal.progress} color="lavender" className="flex-1" />
+            <span className="text-xs text-stone-400 flex-shrink-0">{done}/{total}</span>
           </div>
         </div>
-      </button>
+
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <SparkBadge count={goal.total_sparks} size="sm" />
+          <Link href={`/dashboard/goals/edit?id=${goal.id}`}>
+            <button
+              className="text-xs text-stone-300 hover:text-bloom-500 transition-colors"
+              aria-label={`Editar ${goal.title}`}
+            >
+              ✏️
+            </button>
+          </Link>
+          <span
+            onClick={() => setExpanded(e => !e)}
+            className={cn(
+              'text-stone-400 transition-transform text-xs cursor-pointer px-1',
+              expanded && 'rotate-180'
+            )}
+            aria-hidden="true"
+          >▼</span>
+        </div>
+      </div>
 
       {expanded && (
         <div className="mt-4 flex flex-col gap-2 border-t border-stone-100 pt-4 animate-slide-up">

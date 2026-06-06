@@ -132,6 +132,14 @@ function RoutineRow({
 
         <div className="flex items-center gap-2 flex-shrink-0">
           <SparkBadge count={routine.spark_value} size="sm" />
+          <Link href={`/dashboard/routines/edit?id=${routine.id}`}>
+            <button
+              className="text-xs text-stone-300 hover:text-bloom-500 transition-colors"
+              aria-label={`Editar ${routine.title}`}
+            >
+              ✏️
+            </button>
+          </Link>
           <button
             onClick={onArchive}
             className="text-xs text-stone-300 hover:text-red-400 transition-colors"

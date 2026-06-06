@@ -101,19 +101,56 @@ export class SupabaseRoutineAdapter implements IRoutineAdapter {
 
   async updateRoutine(
     routineId: string,
-    updates: Partial<Omit<Routine, 'id' | 'family_id' | 'created_at'>>
-  ): Promise<Result<Routine>> {
-    const { data, error } = await this.client
+    updates: Partial<Omit<Routine, 'id' | 'family_id' | 'created_at'>>,
+    steps?: Omit<RoutineStep, 'id' | 'routine_id'>[]
+  ): Promise<Result<RoutineWithSteps>> {
+    const { data: routine, error } = await this.client
       .from('routines')
       .update(updates)
       .eq('id', routineId)
       .select()
       .single();
 
-    if (error || !data) {
+    if (error || !routine) {
       return { ok: false, error: { code: 'update_failed', message: error?.message ?? 'Update failed' } };
     }
-    return { ok: true, data };
+
+    let updatedSteps: RoutineStep[] = [];
+    if (steps) {
+      // Delete existing steps
+      const { error: deleteError } = await this.client
+        .from('routine_steps')
+        .delete()
+        .eq('routine_id', routineId);
+
+      if (deleteError) {
+        return { ok: false, error: { code: 'steps_delete_failed', message: deleteError.message } };
+      }
+
+      if (steps.length > 0) {
+        const { data: stepsData, error: insertError } = await this.client
+          .from('routine_steps')
+          .insert(steps.map(s => ({ ...s, routine_id: routineId })))
+          .select();
+
+        if (insertError) {
+          return { ok: false, error: { code: 'steps_insert_failed', message: insertError.message } };
+        }
+        updatedSteps = (stepsData ?? []).sort((a, b) => a.position - b.position);
+      }
+    } else {
+      // Fetch existing steps
+      const { data: stepsData, error: fetchError } = await this.client
+        .from('routine_steps')
+        .select('*')
+        .eq('routine_id', routineId);
+
+      if (!fetchError && stepsData) {
+        updatedSteps = (stepsData ?? []).sort((a, b) => a.position - b.position);
+      }
+    }
+
+    return { ok: true, data: { ...routine, steps: updatedSteps } };
   }
 
   async archiveRoutine(routineId: string): Promise<Result<void>> {

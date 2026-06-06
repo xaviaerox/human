@@ -47,7 +47,11 @@ export interface IRoutineAdapter {
   createRoutine(params: CreateRoutineParams): Promise<Result<RoutineWithSteps>>;
 
   /** Update a routine */
-  updateRoutine(routineId: string, updates: Partial<Omit<Routine, 'id' | 'family_id' | 'created_at'>>): Promise<Result<Routine>>;
+  updateRoutine(
+    routineId: string,
+    updates: Partial<Omit<Routine, 'id' | 'family_id' | 'created_at'>>,
+    steps?: Omit<RoutineStep, 'id' | 'routine_id'>[]
+  ): Promise<Result<RoutineWithSteps>>;
 
   /** Archive (soft-delete) a routine */
   archiveRoutine(routineId: string): Promise<Result<void>>;

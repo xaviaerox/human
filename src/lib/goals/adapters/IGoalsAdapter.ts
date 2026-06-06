@@ -30,7 +30,11 @@ export interface IGoalsAdapter {
   createGoal(params: CreateGoalParams): Promise<Result<GoalWithMicrotasks>>;
 
   /** Update goal metadata */
-  updateGoal(goalId: string, updates: Partial<Pick<Goal, 'title' | 'description' | 'why' | 'status' | 'target_date' | 'visibility'>>): Promise<Result<Goal>>;
+  updateGoal(
+    goalId: string,
+    updates: Partial<Pick<Goal, 'title' | 'description' | 'why' | 'status' | 'target_date' | 'visibility' | 'co_created' | 'child_id'>>,
+    microtasks?: Omit<GoalMicrotask, 'id' | 'goal_id'>[]
+  ): Promise<Result<GoalWithMicrotasks>>;
 
   /** Complete a microtask */
   completeMicrotask(microtaskId: string, completedBy: string): Promise<Result<GoalMicrotask>>;

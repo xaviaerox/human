@@ -112,12 +112,39 @@ export class StaticGoalsAdapter implements IGoalsAdapter {
 
   async updateGoal(
     goalId: string,
-    updates: Partial<Pick<Goal, 'title' | 'description' | 'why' | 'status' | 'target_date' | 'visibility'>>
-  ): Promise<Result<Goal>> {
+    updates: Partial<Pick<Goal, 'title' | 'description' | 'why' | 'status' | 'target_date' | 'visibility' | 'co_created' | 'child_id'>>,
+    microtasks?: Omit<GoalMicrotask, 'id' | 'goal_id'>[]
+  ): Promise<Result<GoalWithMicrotasks>> {
     const idx = this._goals.findIndex(g => g.id === goalId);
     if (idx === -1) return { ok: false, error: { code: 'not_found', message: 'Goal not found' } };
-    this._goals[idx] = { ...this._goals[idx]!, ...updates, updated_at: new Date().toISOString() };
-    return { ok: true, data: this._goals[idx]! };
+
+    const currentGoal = this._goals[idx]!;
+    let updatedMicrotasks: GoalMicrotask[] = currentGoal.microtasks;
+
+    if (microtasks) {
+      updatedMicrotasks = microtasks.map((t, i) => ({
+        ...t,
+        id: (t as any).id || this._nextId(),
+        goal_id: goalId,
+        position: t.position ?? i + 1,
+        status: t.status ?? 'pending',
+        ai_generated: t.ai_generated ?? false,
+      }));
+    }
+
+    const updated: GoalWithMicrotasks = {
+      ...currentGoal,
+      ...updates,
+      updated_at: new Date().toISOString(),
+      microtasks: updatedMicrotasks,
+      total_sparks: updatedMicrotasks.reduce((sum, t) => sum + t.spark_value, 0),
+      progress: Math.round(
+        (updatedMicrotasks.filter(t => t.status === 'complete').length / Math.max(updatedMicrotasks.length, 1)) * 100
+      ),
+    };
+
+    this._goals[idx] = updated;
+    return { ok: true, data: updated };
   }
 
   async completeMicrotask(microtaskId: string, completedBy: string): Promise<Result<GoalMicrotask>> {

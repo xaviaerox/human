@@ -91,18 +91,68 @@ export class SupabaseGoalsAdapter implements IGoalsAdapter {
     return { ok: true, data: { ...goal, microtasks, progress: 0 } };
   }
 
-  async updateGoal(goalId: string, updates: Partial<Pick<Goal, 'title' | 'description' | 'why' | 'status' | 'target_date' | 'visibility'>>): Promise<Result<Goal>> {
-    const { data, error } = await this.client
+  async updateGoal(
+    goalId: string,
+    updates: Partial<Pick<Goal, 'title' | 'description' | 'why' | 'status' | 'target_date' | 'visibility' | 'co_created' | 'child_id'>>,
+    microtasks?: Omit<GoalMicrotask, 'id' | 'goal_id'>[]
+  ): Promise<Result<GoalWithMicrotasks>> {
+    const { data: goal, error } = await this.client
       .from('goals')
       .update(updates)
       .eq('id', goalId)
       .select()
       .single();
 
-    if (error || !data) {
+    if (error || !goal) {
       return { ok: false, error: { code: 'update_failed', message: error?.message ?? 'Failed' } };
     }
-    return { ok: true, data };
+
+    let updatedTasks: GoalMicrotask[] = [];
+    if (microtasks) {
+      // Delete existing microtasks
+      const { error: deleteError } = await this.client
+        .from('goal_microtasks')
+        .delete()
+        .eq('goal_id', goalId);
+
+      if (deleteError) {
+        return { ok: false, error: { code: 'tasks_delete_failed', message: deleteError.message } };
+      }
+
+      if (microtasks.length > 0) {
+        const { data: tasksData, error: insertError } = await this.client
+          .from('goal_microtasks')
+          .insert(microtasks.map(t => ({
+            goal_id:      goalId,
+            position:     t.position,
+            title:        t.title,
+            description:  t.description,
+            effort_level: t.effort_level,
+            spark_value:  t.spark_value,
+            value_dimensions: t.value_dimensions,
+            status:       t.status ?? 'pending',
+            ai_generated: t.ai_generated ?? false,
+          })))
+          .select();
+
+        if (insertError) {
+          return { ok: false, error: { code: 'tasks_insert_failed', message: insertError.message } };
+        }
+        updatedTasks = (tasksData ?? []).sort((a, b) => a.position - b.position);
+      }
+    } else {
+      // Fetch existing microtasks
+      const { data: tasksData, error: fetchError } = await this.client
+        .from('goal_microtasks')
+        .select('*')
+        .eq('goal_id', goalId);
+
+      if (!fetchError && tasksData) {
+        updatedTasks = (tasksData ?? []).sort((a, b) => a.position - b.position);
+      }
+    }
+
+    return { ok: true, data: { ...goal, microtasks: updatedTasks, progress: computeGoalProgress(updatedTasks) } };
   }
 
   async completeMicrotask(microtaskId: string, completedBy: string): Promise<Result<GoalMicrotask>> {

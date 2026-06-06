@@ -115,13 +115,33 @@ export class StaticRoutineAdapter implements IRoutineAdapter {
 
   async updateRoutine(
     routineId: string,
-    updates: Partial<Omit<Routine, 'id' | 'family_id' | 'created_at'>>
-  ): Promise<Result<Routine>> {
+    updates: Partial<Omit<Routine, 'id' | 'family_id' | 'created_at'>>,
+    steps?: Omit<RoutineStep, 'id' | 'routine_id'>[]
+  ): Promise<Result<RoutineWithSteps>> {
     const idx = this._routines.findIndex(r => r.id === routineId);
     if (idx === -1) {
       return { ok: false, error: { code: 'not_found', message: 'Routine not found' } };
     }
-    const updated = { ...this._routines[idx]!, ...updates, updated_at: new Date().toISOString() };
+
+    const currentRoutine = this._routines[idx]!;
+    let updatedSteps: RoutineStep[] = currentRoutine.steps;
+
+    if (steps) {
+      updatedSteps = steps.map((s, i) => ({
+        ...s,
+        id: this._nextId(),
+        routine_id: routineId,
+        position: s.position ?? i + 1,
+      }));
+    }
+
+    const updated: RoutineWithSteps = {
+      ...currentRoutine,
+      ...updates,
+      updated_at: new Date().toISOString(),
+      steps: updatedSteps,
+    };
+
     this._routines[idx] = updated;
     return { ok: true, data: updated };
   }
