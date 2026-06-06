@@ -64,7 +64,7 @@ export function CustomizationModal({ isOpen, onClose, sparkBalance, onPurchaseSu
     const { error: sparkError } = await supabase.rpc('award_sparks', {
       p_child_id: profile.id,
       p_delta: -item.cost,
-      p_source_type: 'customization_purchase',
+      p_source_type: 'redemption',
       p_note: `Tienda: Comprado ${item.name}`
     });
 
