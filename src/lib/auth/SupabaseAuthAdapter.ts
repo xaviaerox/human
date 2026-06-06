@@ -29,7 +29,18 @@ export class SupabaseAuthAdapter implements IAuthAdapter {
           callback(null);
           return;
         }
-        const authSession = await this._buildSession(session.user.id, session.user.email ?? '');
+        
+        let authSession = await this._buildSession(session.user.id, session.user.email ?? '');
+        
+        // Retry logic: if profile isn't inserted yet during signup flow, wait and retry
+        if (!authSession) {
+          for (let i = 0; i < 3; i++) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            authSession = await this._buildSession(session.user.id, session.user.email ?? '');
+            if (authSession) break;
+          }
+        }
+        
         callback(authSession);
       }
     );
