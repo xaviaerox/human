@@ -1,0 +1,30 @@
+// ============================================================
+// MIRA — ICompanionAdapter
+// ============================================================
+
+import type { Companion, CompanionInteraction, CompanionInteractionType, Result } from '@/types';
+
+export interface ICompanionAdapter {
+  /** Get companion for a child; null if not yet created */
+  getCompanion(childId: string): Promise<Result<Companion | null>>;
+
+  /** Create companion at onboarding — name is required */
+  createCompanion(childId: string, name: string): Promise<Result<Companion>>;
+
+  /** Name an existing companion (one-time action) */
+  nameCompanion(companionId: string, name: string): Promise<Result<Companion>>;
+
+  /** Record an interaction and update bonding score */
+  recordInteraction(
+    companionId: string,
+    childId: string,
+    type: CompanionInteractionType,
+    context?: Record<string, unknown>
+  ): Promise<Result<CompanionInteraction>>;
+
+  /** Get interaction counts per type (for trait unlock checks) */
+  getInteractionCounts(companionId: string): Promise<Result<Record<CompanionInteractionType, number>>>;
+
+  /** Subscribe to companion changes (realtime bonding updates) */
+  subscribeToCompanion(childId: string, callback: (companion: Companion) => void): () => void;
+}
