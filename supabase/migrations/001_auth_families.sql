@@ -161,7 +161,7 @@ BEGIN
   -- Validate invite
   SELECT * INTO v_invite
   FROM family_invites
-  WHERE invite_code = p_invite_code
+  WHERE LOWER(invite_code) = LOWER(p_invite_code)
     AND used_by IS NULL
     AND expires_at > NOW();
 
