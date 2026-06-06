@@ -11,12 +11,21 @@ type Step = 'intro' | 'pulse' | 'naming' | 'reveal';
 
 export default function CompanionOnboardingPage() {
   const router = useRouter();
-  const { createCompanion } = useCompanion();
+  const { companion, loading: companionLoading, createCompanion } = useCompanion();
   const { updateProfile } = useAuth();
   const [step, setStep] = useState<Step>('intro');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Redirect to home if companion already exists
+  useEffect(() => {
+    if (!companionLoading && companion) {
+      updateProfile({ onboarding_complete: true }).then(() => {
+        router.replace('/home');
+      });
+    }
+  }, [companion, companionLoading, router, updateProfile]);
 
   // Progress through intro steps automatically
   useEffect(() => {
