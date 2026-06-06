@@ -54,23 +54,34 @@ CREATE TABLE IF NOT EXISTS family_invites (
 ALTER TABLE family_invites ENABLE ROW LEVEL SECURITY;
 
 -- ─────────────────────────────────────────
+-- SECURITY DEFINER HELPERS FOR RLS
+-- (Prevents infinite recursion in RLS policies)
+-- ─────────────────────────────────────────
+CREATE OR REPLACE FUNCTION get_my_family_id()
+RETURNS UUID AS $$
+  SELECT family_id FROM public.profiles WHERE id = auth.uid();
+$$ LANGUAGE sql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION is_parent()
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'parent'
+  );
+$$ LANGUAGE sql SECURITY DEFINER;
+
+-- ─────────────────────────────────────────
 -- POLICIES ON FAMILIES
 -- ─────────────────────────────────────────
 -- Family members can read their own family
 CREATE POLICY "families: members read own" ON families
   FOR SELECT USING (
-    id IN (
-      SELECT family_id FROM profiles WHERE id = auth.uid()
-    )
+    id = get_my_family_id()
   );
 
 -- Parents can update family settings
 CREATE POLICY "families: parent update" ON families
   FOR UPDATE USING (
-    id IN (
-      SELECT family_id FROM profiles
-      WHERE id = auth.uid() AND role = 'parent'
-    )
+    id = get_my_family_id() AND is_parent()
   );
 
 -- ─────────────────────────────────────────
@@ -79,9 +90,7 @@ CREATE POLICY "families: parent update" ON families
 -- Family members can read all profiles in their family
 CREATE POLICY "profiles: family read" ON profiles
   FOR SELECT USING (
-    family_id IN (
-      SELECT family_id FROM profiles WHERE id = auth.uid()
-    )
+    family_id = get_my_family_id()
   );
 
 -- Users can update their own profile
@@ -98,18 +107,13 @@ CREATE POLICY "profiles: own insert" ON profiles
 -- Family members can read their family's invites
 CREATE POLICY "invites: family read" ON family_invites
   FOR SELECT USING (
-    family_id IN (
-      SELECT family_id FROM profiles WHERE id = auth.uid()
-    )
+    family_id = get_my_family_id()
   );
 
 -- Parents can create invites for their family
 CREATE POLICY "invites: parent insert" ON family_invites
   FOR INSERT WITH CHECK (
-    family_id IN (
-      SELECT family_id FROM profiles
-      WHERE id = auth.uid() AND role = 'parent'
-    )
+    family_id = get_my_family_id() AND is_parent()
   );
 
 -- Anyone can read a specific invite by code (for join flow)
