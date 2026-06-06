@@ -3,19 +3,20 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useFamily } from '@/lib/family/FamilyProvider';
-import { getEmotionalAdapter, getGoalsAdapter, getRoutineAdapter, DATA_SOURCE } from '@/lib/adapters';
+import { getEmotionalAdapter, getGoalsAdapter, getRoutineAdapter, getRewardsAdapter, DATA_SOURCE } from '@/lib/adapters';
 import { analyseEmotionTrend } from '@/lib/emotional/EmotionModel';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { SparkBadge } from '@/components/ui/SparkBadge';
 import { cn } from '@/lib/utils';
-import type { EmotionalWeeklySummary, GoalWithMicrotasks } from '@/types';
+import type { EmotionalWeeklySummary, GoalWithMicrotasks, Reward } from '@/types';
 import { supabase } from '@/lib/supabase';
 
 const emotionalAdapter = getEmotionalAdapter();
 const goalsAdapter     = getGoalsAdapter();
 const routineAdapter   = getRoutineAdapter();
+const rewardsAdapter   = getRewardsAdapter();
 
 const TREND_CONFIG = {
   improving:         { label: 'Mejorando',       color: 'text-moss-600',  bg: 'bg-moss-50',  border: 'border-moss-200' },
@@ -24,17 +25,10 @@ const TREND_CONFIG = {
   insufficient_data: { label: 'Pocos datos aún', color: 'text-stone-400', bg: 'bg-stone-50', border: 'border-stone-200' },
 };
 
-const DEMO_REWARDS = [
-  { id: 'dinner', title: 'Elegir la cena', cost: 5, emoji: '🍕' },
-  { id: 'screen', title: '30 min de pantalla extra', cost: 10, emoji: '🎮' },
-  { id: 'park', title: 'Tarde de parque', cost: 15, emoji: '🛝' },
-  { id: 'movie', title: 'Elegir película familiar', cost: 20, emoji: '🍿' },
-];
-
 export default function ChildDetailClient() {
   const router       = useRouter();
   const params       = useSearchParams();
-  const { children } = useFamily();
+  const { family, children } = useFamily();
   const childId      = params.get('id') ?? children[0]?.id ?? '';
   const child        = children.find(c => c.id === childId);
 
@@ -50,6 +44,14 @@ export default function ChildDetailClient() {
   const [showAwardForm,   setShowAwardForm]   = useState(false);
   const [showRedeemForm,  setShowRedeemForm]  = useState(false);
   const [submittingAction, setSubmittingAction] = useState(false);
+  const [rewards,         setRewards]         = useState<Reward[]>([]);
+
+  useEffect(() => {
+    if (!family?.id) return;
+    rewardsAdapter.getRewards(family.id).then(res => {
+      if (res.ok) setRewards(res.data);
+    });
+  }, [family?.id, showRedeemForm]);
 
   const fetchBalanceAndLedger = async () => {
     if (!childId) return;
@@ -271,7 +273,7 @@ export default function ChildDetailClient() {
                 <div className="flex flex-col gap-3 p-4 bg-stone-50 rounded-2xl border border-stone-200 animate-slide-up">
                   <h4 className="text-xs font-bold text-stone-700">Canjear un premio del catálogo</h4>
                   <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto pr-1">
-                    {DEMO_REWARDS.map(reward => {
+                    {rewards.map(reward => {
                       const canAfford = sparkBalance >= reward.cost;
                       return (
                         <div key={reward.id} className="flex items-center justify-between p-2 bg-white rounded-xl border border-stone-100 text-xs">
@@ -291,6 +293,11 @@ export default function ChildDetailClient() {
                         </div>
                       );
                     })}
+                    {rewards.length === 0 && (
+                      <p className="text-stone-400 text-center py-4 text-xs italic">
+                        No hay recompensas configuradas. Ve al menú Recompensas para crearlas.
+                      </p>
+                    )}
                   </div>
                 </div>
               )}

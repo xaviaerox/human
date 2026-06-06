@@ -28,6 +28,10 @@ import { StaticEmotionalAdapter }   from './emotional/adapters/StaticEmotionalAd
 import { SupabaseEmotionalAdapter } from './emotional/adapters/SupabaseEmotionalAdapter';
 import type { IEmotionalAdapter }   from './emotional/adapters/IEmotionalAdapter';
 
+import { StaticRewardsAdapter }   from './rewards/adapters/StaticRewardsAdapter';
+import { SupabaseRewardsAdapter } from './rewards/adapters/SupabaseRewardsAdapter';
+import type { IRewardsAdapter }   from './rewards/adapters/IRewardsAdapter';
+
 export const DATA_SOURCE = process.env.NEXT_PUBLIC_DATA_SOURCE ?? 'static';
 export const isSupabase  = DATA_SOURCE === 'supabase';
 
@@ -37,6 +41,7 @@ let _companion: ICompanionAdapter | null = null;
 let _routines:  IRoutineAdapter   | null = null;
 let _goals:     IGoalsAdapter     | null = null;
 let _emotional: IEmotionalAdapter | null = null;
+let _rewards:   IRewardsAdapter   | null = null;
 
 export function getAuthAdapter(): IAuthAdapter {
   if (!_auth) _auth = isSupabase ? new SupabaseAuthAdapter(supabase) : new StaticAuthAdapter();
@@ -61,4 +66,8 @@ export function getGoalsAdapter(): IGoalsAdapter {
 export function getEmotionalAdapter(): IEmotionalAdapter {
   if (!_emotional) _emotional = isSupabase ? new SupabaseEmotionalAdapter(supabase) : new StaticEmotionalAdapter();
   return _emotional;
+}
+export function getRewardsAdapter(): IRewardsAdapter {
+  if (!_rewards) _rewards = isSupabase ? new SupabaseRewardsAdapter(supabase) : new StaticRewardsAdapter();
+  return _rewards;
 }

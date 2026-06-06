@@ -378,3 +378,17 @@ export interface OfflineQueueEntry {
 export type { ParsedMicrotask, DecompositionResult } from '@/lib/goals/MicrotaskEngine';
 // Re-exported from CompanionEngine
 export type { CompanionDisplayState, AppearanceContext, ResponsivenessLevel } from '@/lib/companion/CompanionEngine';
+
+// ─────────────────────────────────────────
+// REWARDS
+// ─────────────────────────────────────────
+
+export interface Reward {
+  id: string;
+  family_id: string;
+  title: string;
+  cost: number;
+  emoji: string;
+  created_at?: string;
+  updated_at?: string;
+}

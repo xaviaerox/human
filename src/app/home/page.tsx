@@ -10,17 +10,13 @@ import { SparkBadge } from '@/components/ui/SparkBadge';
 import { CheckinPromptCard } from '@/components/emotional/CheckinPromptCard';
 import { useEmotional } from '@/lib/emotional/EmotionalProvider';
 import { supabase } from '@/lib/supabase';
-import { DATA_SOURCE } from '@/lib/adapters';
+import { DATA_SOURCE, getRewardsAdapter } from '@/lib/adapters';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { useRouter } from 'next/navigation';
+import type { Reward } from '@/types';
 
-const DEMO_REWARDS = [
-  { id: 'dinner', title: 'Elegir la cena', cost: 5, emoji: '🍕' },
-  { id: 'screen', title: '30 min de pantalla extra', cost: 10, emoji: '🎮' },
-  { id: 'park', title: 'Tarde de parque', cost: 15, emoji: '🛝' },
-  { id: 'movie', title: 'Elegir película familiar', cost: 20, emoji: '🍿' },
-];
+const rewardsAdapter = getRewardsAdapter();
 
 export default function HomePage() {
   const router = useRouter();
@@ -35,6 +31,17 @@ export default function HomePage() {
   const [sparkBalance, setSparkBalance] = useState(12);
   const [showRewards, setShowRewards] = useState(false);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
+  const [rewards, setRewards] = useState<Reward[]>([]);
+
+  // Fetch rewards dynamically
+  useEffect(() => {
+    if (authLoading || !session?.family?.id) return;
+    rewardsAdapter.getRewards(session.family.id).then(res => {
+      if (res.ok) {
+        setRewards(res.data);
+      }
+    });
+  }, [session?.family?.id, authLoading, showRewards]);
 
   useEffect(() => {
     if (!authLoading && !session) {
@@ -221,7 +228,7 @@ export default function HomePage() {
               </p>
 
               <div className="flex flex-col gap-2.5 max-h-[300px] overflow-y-auto pr-1">
-                {DEMO_REWARDS.map(reward => {
+                {rewards.map(reward => {
                   const canAfford = sparkBalance >= reward.cost;
                   const isRedeeming = redeemingId === reward.title;
 
@@ -258,6 +265,12 @@ export default function HomePage() {
                     </div>
                   );
                 })}
+
+                {rewards.length === 0 && (
+                  <p className="text-stone-400 text-center py-8 text-sm italic">
+                    Habla con tus padres para añadir recompensas a tu catálogo.
+                  </p>
+                )}
               </div>
 
               <div className="text-center mt-2">

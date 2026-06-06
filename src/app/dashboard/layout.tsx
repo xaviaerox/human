@@ -7,10 +7,11 @@ import { useAuth } from '@/lib/auth/AuthProvider';
 import { cn } from '@/lib/utils';
 
 const NAV = [
-  { href: '/dashboard',          label: 'Inicio',    icon: '⌂' },
-  { href: '/dashboard/routines', label: 'Rutinas',   icon: '◎' },
-  { href: '/dashboard/goals',    label: 'Objetivos', icon: '◈' },
-  { href: '/dashboard/child',    label: 'Mi hijo',   icon: '♡' },
+  { href: '/dashboard',          label: 'Inicio',      icon: '⌂' },
+  { href: '/dashboard/routines', label: 'Rutinas',     icon: '◎' },
+  { href: '/dashboard/goals',    label: 'Objetivos',   icon: '◈' },
+  { href: '/dashboard/rewards',  label: 'Premios',     icon: '🎁' },
+  { href: '/dashboard/child',    label: 'Mi hijo',     icon: '♡' },
 ];
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
