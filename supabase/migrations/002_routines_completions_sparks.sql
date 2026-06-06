@@ -137,9 +137,14 @@ ALTER TABLE routine_steps ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "steps: family read" ON routine_steps
   FOR SELECT USING (
     routine_id IN (
-      SELECT id FROM routines WHERE family_id IN (
-        SELECT family_id FROM profiles WHERE id = auth.uid()
-      )
+      SELECT id FROM routines WHERE family_id = get_my_family_id()
+    )
+  );
+
+CREATE POLICY "steps: parent write" ON routine_steps
+  FOR ALL USING (
+    routine_id IN (
+      SELECT id FROM routines WHERE family_id = get_my_family_id() AND is_parent()
     )
   );
 
