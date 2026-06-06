@@ -12,17 +12,26 @@ import { SparkBadge } from '@/components/ui/SparkBadge';
 import { cn } from '@/lib/utils';
 import type { GoalWithMicrotasks, GoalMicrotask } from '@/types';
 
+import { useRouter } from 'next/navigation';
+
 const goalsAdapter = getGoalsAdapter();
 
 const EFFORT_LABELS: Record<string, string> = { easy: 'fácil', medium: 'normal', stretch: 'esfuerzo' };
 
 export default function GoalsPage() {
-  const { profile } = useAuth();
+  const router = useRouter();
+  const { session, loading: authLoading, profile } = useAuth();
   const { interact } = useCompanion();
   const [goals, setGoals] = useState<GoalWithMicrotasks[]>([]);
   const [selectedGoal, setSelectedGoal] = useState<GoalWithMicrotasks | null>(null);
   const [completing, setCompleting] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authLoading && !session) {
+      router.replace('/login');
+    }
+  }, [session, authLoading, router]);
 
   useEffect(() => {
     if (!profile?.id) return;
@@ -71,11 +80,13 @@ export default function GoalsPage() {
     setCompleting(null);
   }
 
-  if (loading) return (
+  if (authLoading || loading) return (
     <div className="flex items-center justify-center min-h-dvh">
       <div className="w-6 h-6 border-2 border-stone-200 border-t-bloom-400 rounded-full animate-spin" />
     </div>
   );
+
+  if (!session) return null;
 
   if (goals.length === 0) return (
     <div className="flex flex-col items-center justify-center min-h-dvh px-6 text-center gap-4">

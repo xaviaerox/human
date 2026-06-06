@@ -87,7 +87,13 @@ export function AuthProvider({ adapter, children }: AuthProviderProps) {
     [adapter]
   );
 
-  const signOut = useCallback(() => adapter.signOut(), [adapter]);
+  const signOut = useCallback(async () => {
+    const result = await adapter.signOut();
+    if (result.ok) {
+      setSession(null);
+    }
+    return result;
+  }, [adapter]);
 
   const updateProfile = useCallback(
     (updates: Partial<Pick<Profile, 'display_name' | 'avatar_seed' | 'onboarding_complete'>>) =>

@@ -1,8 +1,8 @@
 'use client';
 
-import { type ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { cn } from '@/lib/utils';
 
@@ -15,7 +15,25 @@ const NAV = [
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { profile, signOut } = useAuth();
+  const router = useRouter();
+  const { session, loading, signOut } = useAuth();
+  const profile = session?.profile ?? null;
+
+  useEffect(() => {
+    if (!loading && !session) {
+      router.replace('/login');
+    }
+  }, [session, loading, router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-dvh bg-stone-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-stone-200 border-t-bloom-400 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!session) return null;
 
   return (
     <div className="min-h-dvh bg-stone-50 flex flex-col">
@@ -27,7 +45,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <span className="text-sm text-stone-500">{profile?.display_name}</span>
         </div>
         <button
-          onClick={() => signOut()}
+          onClick={async () => {
+            await signOut();
+            router.replace('/login');
+          }}
           className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
         >
           Salir

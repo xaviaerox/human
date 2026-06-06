@@ -11,10 +11,16 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { cn } from '@/lib/utils';
 import type { RoutineWithSteps } from '@/types';
 
+import { useRouter } from 'next/navigation';
+
 const routineAdapter = getRoutineAdapter();
 
 export default function RoutinesPage() {
-  const { profile, family } = useAuth();
+  const router = useRouter();
+  const { session, loading: authLoading } = useAuth();
+  const profile = session?.profile ?? null;
+  const family = session?.family ?? null;
+
   const { interact, getDialogue, setAppearanceContext } = useCompanion();
   const [routines, setRoutines] = useState<RoutineWithSteps[]>([]);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
@@ -22,6 +28,12 @@ export default function RoutinesPage() {
   const [stepsDone, setStepsDone] = useState<Set<number>>(new Set());
   const [showDelta, setShowDelta] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authLoading && !session) {
+      router.replace('/login');
+    }
+  }, [session, authLoading, router]);
 
   useEffect(() => {
     setAppearanceContext('routine_active');
@@ -89,11 +101,13 @@ export default function RoutinesPage() {
 
   const active = activeRoutine ? routines.find(r => r.id === activeRoutine) : null;
 
-  if (loading) return (
+  if (authLoading || loading) return (
     <div className="flex items-center justify-center min-h-dvh">
       <div className="w-6 h-6 border-2 border-stone-200 border-t-bloom-400 rounded-full animate-spin" />
     </div>
   );
+
+  if (!session) return null;
 
   return (
     <div className="flex flex-col min-h-dvh">

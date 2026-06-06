@@ -13,6 +13,8 @@ import { supabase } from '@/lib/supabase';
 import { DATA_SOURCE } from '@/lib/adapters';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { useRouter } from 'next/navigation';
+
 const DEMO_REWARDS = [
   { id: 'dinner', title: 'Elegir la cena', cost: 5, emoji: '🍕' },
   { id: 'screen', title: '30 min de pantalla extra', cost: 10, emoji: '🎮' },
@@ -21,7 +23,10 @@ const DEMO_REWARDS = [
 ];
 
 export default function HomePage() {
-  const { profile } = useAuth();
+  const router = useRouter();
+  const { session, loading: authLoading } = useAuth();
+  const profile = session?.profile ?? null;
+  
   const { display, getDialogue, setAppearanceContext, isVisible } = useCompanion();
   const { shouldPrompt } = useEmotional();
   const [dialogue, setDialogue] = useState(() =>
@@ -31,9 +36,15 @@ export default function HomePage() {
   const [showRewards, setShowRewards] = useState(false);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!authLoading && !session) {
+      router.replace('/login');
+    }
+  }, [session, authLoading, router]);
+
   // Fetch and subscribe to real-time spark balance
   useEffect(() => {
-    if (DATA_SOURCE !== 'supabase' || !profile?.id || profile.role !== 'child') return;
+    if (authLoading || !profile?.id || profile.role !== 'child') return;
 
     const fetchBalance = async () => {
       const { data, error } = await supabase
@@ -97,6 +108,14 @@ export default function HomePage() {
       alert(`Error al canjear: ${error.message}`);
     }
   }
+
+  if (authLoading) return (
+    <div className="flex items-center justify-center min-h-dvh">
+      <div className="w-6 h-6 border-2 border-stone-200 border-t-bloom-400 rounded-full animate-spin" />
+    </div>
+  );
+
+  if (!session) return null;
 
   return (
     <div className="min-h-dvh bg-stone-50 flex flex-col relative">

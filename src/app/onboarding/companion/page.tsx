@@ -12,7 +12,13 @@ type Step = 'intro' | 'pulse' | 'naming' | 'reveal';
 export default function CompanionOnboardingPage() {
   const router = useRouter();
   const { companion, loading: companionLoading, createCompanion } = useCompanion();
-  const { updateProfile } = useAuth();
+  const { session, loading: authLoading, updateProfile } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading && !session) {
+      router.replace('/login');
+    }
+  }, [session, authLoading, router]);
   const [step, setStep] = useState<Step>('intro');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
@@ -61,6 +67,14 @@ export default function CompanionOnboardingPage() {
     await updateProfile({ onboarding_complete: true });
     router.replace('/home');
   }
+
+  if (authLoading) return (
+    <div className="min-h-dvh bg-stone-50 flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-stone-200 border-t-bloom-400 rounded-full animate-spin" />
+    </div>
+  );
+
+  if (!session) return null;
 
   return (
     <div className="min-h-dvh bg-stone-50 flex flex-col items-center justify-center px-6 py-12">
