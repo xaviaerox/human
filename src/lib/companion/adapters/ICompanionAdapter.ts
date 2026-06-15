@@ -1,8 +1,4 @@
-// ============================================================
-// MIRA — ICompanionAdapter
-// ============================================================
-
-import type { Companion, CompanionInteraction, CompanionInteractionType, Result } from '@/types';
+import type { Companion, CompanionInteraction, CompanionInteractionType, CompanionMemory, Result } from '@/types';
 
 export interface ICompanionAdapter {
   /** Get companion for a child; null if not yet created */
@@ -30,4 +26,16 @@ export interface ICompanionAdapter {
 
   /** Subscribe to companion changes (realtime bonding updates) */
   subscribeToCompanion(childId: string, callback: (companion: Companion) => void): () => void;
+
+  /** Get memories for a companion */
+  getMemories(childId: string): Promise<Result<CompanionMemory[]>>;
+
+  /** Save a new memory */
+  createMemory(
+    childId: string,
+    companionId: string,
+    type: 'routine_streak_milestone' | 'difficult_checkin' | 'adventure_complete' | 'parent_badge_award',
+    metadata: Record<string, any>
+  ): Promise<Result<CompanionMemory>>;
 }
+

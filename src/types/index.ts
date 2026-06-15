@@ -79,6 +79,10 @@ export interface Companion {
   personality_traits: string[];
   equipped_accessory?: string | null;
   equipped_color_theme?: string | null;
+  home_visual_state?: {
+    decor: string;
+    unlocked_themes: string[];
+  };
   created_at: string;
   updated_at: string;
 }
@@ -412,4 +416,35 @@ export interface RewardRequest {
     display_name: string;
   };
 }
+
+// ─────────────────────────────────────────
+// EVOLUTIONARY GROWTH ADDITIONS
+// ─────────────────────────────────────────
+
+export interface ChildBadge {
+  id: string;
+  child_id: string;
+  family_id: string;
+  dimension_id: ValueDimensionId;
+  badge_tier: 'bronze' | 'silver' | 'gold';
+  parent_note?: string;
+  awarded_by?: string;
+  created_at: string;
+}
+
+export interface CompanionMemory {
+  id: string;
+  child_id: string;
+  companion_id: string;
+  memory_type: 'routine_streak_milestone' | 'difficult_checkin' | 'adventure_complete' | 'parent_badge_award';
+  metadata: {
+    routine_title?: string;
+    emotion_word?: string;
+    adventure_title?: string;
+    badge_name?: string;
+  };
+  is_active: boolean;
+  created_at: string;
+}
+
 

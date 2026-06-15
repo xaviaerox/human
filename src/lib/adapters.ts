@@ -32,16 +32,26 @@ import { StaticRewardsAdapter }   from './rewards/adapters/StaticRewardsAdapter'
 import { SupabaseRewardsAdapter } from './rewards/adapters/SupabaseRewardsAdapter';
 import type { IRewardsAdapter }   from './rewards/adapters/IRewardsAdapter';
 
+import { StaticProgressionAdapter }   from './progression/adapters/StaticProgressionAdapter';
+import { SupabaseProgressionAdapter } from './progression/adapters/SupabaseProgressionAdapter';
+import type { IProgressionAdapter }   from './progression/adapters/IProgressionAdapter';
+
+import { StaticSparkAdapter }   from './sparks/adapters/StaticSparkAdapter';
+import { SupabaseSparkAdapter } from './sparks/adapters/SupabaseSparkAdapter';
+import type { ISparkAdapter }   from './sparks/adapters/ISparkAdapter';
+
 export const DATA_SOURCE = process.env.NEXT_PUBLIC_DATA_SOURCE ?? 'static';
 export const isSupabase  = DATA_SOURCE === 'supabase';
 
-let _auth:      IAuthAdapter      | null = null;
-let _family:    IFamilyAdapter    | null = null;
-let _companion: ICompanionAdapter | null = null;
-let _routines:  IRoutineAdapter   | null = null;
-let _goals:     IGoalsAdapter     | null = null;
-let _emotional: IEmotionalAdapter | null = null;
-let _rewards:   IRewardsAdapter   | null = null;
+let _auth:        IAuthAdapter        | null = null;
+let _family:      IFamilyAdapter      | null = null;
+let _companion:   ICompanionAdapter   | null = null;
+let _routines:    IRoutineAdapter     | null = null;
+let _goals:       IGoalsAdapter       | null = null;
+let _emotional:   IEmotionalAdapter   | null = null;
+let _rewards:     IRewardsAdapter     | null = null;
+let _progression: IProgressionAdapter | null = null;
+let _sparks:      ISparkAdapter       | null = null;
 
 export function getAuthAdapter(): IAuthAdapter {
   if (!_auth) _auth = isSupabase ? new SupabaseAuthAdapter(supabase) : new StaticAuthAdapter();
@@ -71,3 +81,12 @@ export function getRewardsAdapter(): IRewardsAdapter {
   if (!_rewards) _rewards = isSupabase ? new SupabaseRewardsAdapter(supabase) : new StaticRewardsAdapter();
   return _rewards;
 }
+export function getProgressionAdapter(): IProgressionAdapter {
+  if (!_progression) _progression = isSupabase ? new SupabaseProgressionAdapter(supabase) : new StaticProgressionAdapter();
+  return _progression;
+}
+export function getSparkAdapter(): ISparkAdapter {
+  if (!_sparks) _sparks = isSupabase ? new SupabaseSparkAdapter(supabase) : new StaticSparkAdapter();
+  return _sparks;
+}
+

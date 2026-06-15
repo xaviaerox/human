@@ -3,20 +3,29 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useFamily } from '@/lib/family/FamilyProvider';
-import { getEmotionalAdapter, getGoalsAdapter, getRoutineAdapter, getRewardsAdapter, DATA_SOURCE } from '@/lib/adapters';
+import { useAuth } from '@/lib/auth/AuthProvider';
+import {
+  getEmotionalAdapter,
+  getGoalsAdapter,
+  getRoutineAdapter,
+  getRewardsAdapter,
+  getProgressionAdapter,
+  DATA_SOURCE
+} from '@/lib/adapters';
 import { analyseEmotionTrend } from '@/lib/emotional/EmotionModel';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { SparkBadge } from '@/components/ui/SparkBadge';
 import { cn } from '@/lib/utils';
-import type { EmotionalWeeklySummary, GoalWithMicrotasks, Reward } from '@/types';
+import type { EmotionalWeeklySummary, GoalWithMicrotasks, Reward, RewardRequest, ChildBadge, ChildValueScore, ValueDimensionId } from '@/types';
 import { supabase } from '@/lib/supabase';
 
 const emotionalAdapter = getEmotionalAdapter();
 const goalsAdapter     = getGoalsAdapter();
 const routineAdapter   = getRoutineAdapter();
 const rewardsAdapter   = getRewardsAdapter();
+const progressionAdapter = getProgressionAdapter();
 
 const TREND_CONFIG = {
   improving:         { label: 'Mejorando',       color: 'text-moss-600',  bg: 'bg-moss-50',  border: 'border-moss-200' },
@@ -25,10 +34,35 @@ const TREND_CONFIG = {
   insufficient_data: { label: 'Pocos datos aún', color: 'text-stone-400', bg: 'bg-stone-50', border: 'border-stone-200' },
 };
 
+const VALUE_LABELS: Record<ValueDimensionId, string> = {
+  autonomy: 'Autonomía',
+  empathy: 'Empatía',
+  regulation: 'Regulación Emocional',
+  connection: 'Constancia',
+  courage: 'Valentía',
+  curiosity: 'Creatividad',
+};
+
+const VALUE_COLORS: Record<ValueDimensionId, 'moss' | 'empathy' | 'sky' | 'lavender' | 'bloom' | 'courage' | any> = {
+  autonomy: 'moss',
+  empathy: 'empathy',
+  regulation: 'sky',
+  connection: 'courage',
+  courage: 'bloom',
+  curiosity: 'lavender',
+};
+
+function getWorldPhase(score: number): { phase: 'seed' | 'sprout' | 'bloom'; label: string; icon: string } {
+  if (score >= 100) return { phase: 'bloom', label: 'Esplendor', icon: '🌸' };
+  if (score >= 31) return { phase: 'sprout', label: 'Brote', icon: '🌱' };
+  return { phase: 'seed', label: 'Semilla', icon: '🌰' };
+}
+
 export default function ChildDetailClient() {
   const router       = useRouter();
   const params       = useSearchParams();
   const { family, children } = useFamily();
+  const { profile: parentProfile } = useAuth();
   const childId      = params.get('id') ?? children[0]?.id ?? '';
   const child        = children.find(c => c.id === childId);
 
@@ -39,12 +73,25 @@ export default function ChildDetailClient() {
   const [sparkBalance, setSparkBalance] = useState(0);
   const [activities,   setActivities]   = useState<any[]>([]);
 
+  // Sparks award / custom rewards
   const [awardAmount,     setAwardAmount]     = useState(2);
   const [awardNote,       setAwardNote]       = useState('');
   const [showAwardForm,   setShowAwardForm]   = useState(false);
   const [showRedeemForm,  setShowRedeemForm]  = useState(false);
   const [submittingAction, setSubmittingAction] = useState(false);
   const [rewards,         setRewards]         = useState<Reward[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<RewardRequest[]>([]);
+
+  // Evolved Progression State (Child value scores and badges)
+  const [valueScores,     setValueScores]     = useState<Record<ValueDimensionId, number>>({
+    autonomy: 0, empathy: 0, regulation: 0, connection: 0, courage: 0, curiosity: 0
+  });
+  const [badges,          setBadges]          = useState<ChildBadge[]>([]);
+  const [showBadgeForm,   setShowBadgeForm]   = useState(false);
+  const [badgeDimension,  setBadgeDimension]  = useState<ValueDimensionId>('autonomy');
+  const [badgeTier,       setBadgeTier]       = useState<'bronze' | 'silver' | 'gold'>('bronze');
+  const [badgeNote,       setBadgeNote]       = useState('');
+  const [submittingBadge, setSubmittingBadge] = useState(false);
 
   useEffect(() => {
     if (!family?.id) return;
@@ -77,6 +124,36 @@ export default function ChildDetailClient() {
     }
   };
 
+  const fetchPendingRequests = async () => {
+    if (!family?.id || !childId) return;
+    const res = await rewardsAdapter.getRewardRequests(family.id);
+    if (res.ok) {
+      const pending = res.data.filter(r => r.status === 'pending' && r.child_id === childId);
+      setPendingRequests(pending);
+    }
+  };
+
+  const fetchProgressionData = async () => {
+    if (!childId) return;
+    const scoresRes = await progressionAdapter.getScores(childId);
+    if (scoresRes.ok) {
+      const scoreMap = {
+        autonomy: 0, empathy: 0, regulation: 0, connection: 0, courage: 0, curiosity: 0
+      };
+      scoresRes.data.forEach(s => {
+        if (s.dimension_id in scoreMap) {
+          scoreMap[s.dimension_id] = s.score;
+        }
+      });
+      setValueScores(scoreMap);
+    }
+
+    const badgesRes = await progressionAdapter.getBadges(childId);
+    if (badgesRes.ok) {
+      setBadges(badgesRes.data);
+    }
+  };
+
   useEffect(() => {
     if (!childId) return;
     const weekStart = new Date();
@@ -92,6 +169,8 @@ export default function ChildDetailClient() {
         new Date().toISOString().split('T')[0]!
       ),
       fetchBalanceAndLedger(),
+      fetchPendingRequests(),
+      fetchProgressionData(),
     ]).then(([s, g, r]) => {
       if (s.ok) setSummaries(s.data);
       if (g.ok) setGoals(g.data);
@@ -107,6 +186,7 @@ export default function ChildDetailClient() {
           { event: '*', schema: 'public', table: 'spark_ledger', filter: `child_id=eq.${childId}` },
           () => {
             fetchBalanceAndLedger();
+            fetchPendingRequests();
           }
         )
         .subscribe();
@@ -170,6 +250,67 @@ export default function ChildDetailClient() {
     setSubmittingAction(false);
   }
 
+  async function handleRequestStatus(requestId: string, status: 'approved' | 'rejected', cost = 10, title = '') {
+    setSubmittingAction(true);
+    
+    if (status === 'approved') {
+      // Deduct sparks for approved requests
+      if (sparkBalance < cost) {
+        alert('El niño no tiene suficientes Sparks para este premio. Puedes otorgarle estrellas primero.');
+        setSubmittingAction(false);
+        return;
+      }
+
+      if (DATA_SOURCE === 'supabase') {
+        // Log redemption transaction in spark ledger
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestId);
+        await supabase.rpc('award_sparks', {
+          p_child_id: childId,
+          p_delta: -cost,
+          p_source_type: 'redemption',
+          p_source_id: isUuid ? requestId : null,
+          p_note: `Aprobado: ${title}`
+        });
+      }
+    }
+
+    const res = await rewardsAdapter.updateRewardRequestStatus(requestId, status);
+    if (res.ok) {
+      alert(status === 'approved' ? '¡Propuesta aprobada y cobrada con éxito!' : 'Propuesta rechazada.');
+      fetchBalanceAndLedger();
+      fetchPendingRequests();
+    } else {
+      alert('Error al actualizar propuesta: ' + res.error.message);
+    }
+    setSubmittingAction(false);
+  }
+
+  async function handleAwardBadge() {
+    if (!childId || !family?.id) return;
+    setSubmittingBadge(true);
+
+    const res = await progressionAdapter.awardBadge(
+      childId,
+      family.id,
+      badgeDimension,
+      badgeTier,
+      badgeNote.trim() || undefined,
+      parentProfile?.id
+    );
+
+    setSubmittingBadge(false);
+
+    if (res.ok) {
+      alert(`¡Insignia de ${VALUE_LABELS[badgeDimension]} otorgada con éxito!`);
+      setBadgeNote('');
+      setShowBadgeForm(false);
+      fetchProgressionData();
+      fetchBalanceAndLedger(); // Score increases balance/sparks logs
+    } else {
+      alert('Error al otorgar insignia: ' + res.error.message);
+    }
+  }
+
   const trend    = summaries.length >= 2 ? analyseEmotionTrend(summaries) : null;
   const trendCfg = trend ? TREND_CONFIG[trend.direction] : TREND_CONFIG.insufficient_data;
   const activeGoals = goals.filter(g => g.status === 'active');
@@ -177,10 +318,10 @@ export default function ChildDetailClient() {
   if (!child) return null;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 max-w-2xl mx-auto w-full pb-16">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.back()} className="text-stone-400 hover:text-stone-600 text-lg">←</button>
+          <button onClick={() => router.back()} className="text-stone-400 hover:text-stone-600 text-lg cursor-pointer">←</button>
           <h1 className="font-display text-2xl text-stone-800">{child.display_name}</h1>
         </div>
         <SparkBadge count={sparkBalance} size="md" />
@@ -190,20 +331,204 @@ export default function ChildDetailClient() {
 
       {!loading && (
         <>
+          {/* PENDING REWARD REQUESTS SECTION */}
+          {pendingRequests.length > 0 && (
+            <Card variant="warm" className="border-amber-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-amber-700">
+                  <span>💡</span> Propuestas de Premios Pendientes
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-3">
+                {pendingRequests.map(req => {
+                  // Standard local costs for approvals
+                  const cost = 10;
+                  const canAfford = sparkBalance >= cost;
+                  return (
+                    <div key={req.id} className="flex flex-col md:flex-row md:items-center justify-between p-3 bg-white rounded-2xl border border-amber-100 gap-3 text-xs shadow-soft">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">{req.emoji}</span>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-stone-700">{req.title}</span>
+                          <span className="text-[10px] text-stone-400">Solicitado: {new Date(req.created_at).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 self-end md:self-center">
+                        <span className="font-bold text-amber-600 mr-2">{cost} Sparks ✦</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={submittingAction}
+                          onClick={() => handleRequestStatus(req.id, 'rejected', cost, req.title)}
+                          className="text-stone-400 hover:text-red-500 font-bold"
+                        >
+                          Rechazar
+                        </Button>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          disabled={submittingAction || !canAfford}
+                          onClick={() => handleRequestStatus(req.id, 'approved', cost, req.title)}
+                          className="bg-amber-500 hover:bg-amber-600 font-bold text-white shadow-soft"
+                        >
+                          {canAfford ? 'Aprobar y Cobrar' : 'Faltan Sparks'}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* DOUBLE PROGRESSION VALUES DASHBOARD */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <span>🎁</span> Gestión de Estrellas y Recompensas
+                <span>🌱</span> Nivel de Valores del Niño
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {(Object.keys(valueScores) as ValueDimensionId[]).map(dim => {
+                const score = valueScores[dim];
+                const phase = getWorldPhase(score);
+                const color = VALUE_COLORS[dim];
+
+                return (
+                  <div key={dim} className="flex flex-col gap-1.5 p-3.5 bg-stone-50 rounded-2xl border border-stone-200 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-stone-700 text-sm">{VALUE_LABELS[dim]}</span>
+                      <span className="text-xs font-semibold text-stone-500 flex items-center gap-1">
+                        {score} pts ({phase.label} {phase.icon})
+                      </span>
+                    </div>
+                    <ProgressBar value={Math.min(100, (score / 120) * 100)} color={color} />
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+
+          {/* BADGE AWARD PANEL (AFFECTIONATE AFFIRMATION) */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span>🎖️</span> Insignias de Valores Otorgadas
               </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
-              <div className="flex items-center justify-between p-3.5 bg-stone-50 rounded-2xl border border-stone-200">
-                <span className="text-sm text-stone-600 font-medium">Saldo disponible</span>
-                <span className="text-base font-bold text-amber-600 flex items-center gap-1">
-                  {sparkBalance} Sparks ✦
-                </span>
+              {/* Badges display list */}
+              <div className="flex flex-wrap gap-2.5">
+                {badges.map(b => {
+                  const label = VALUE_LABELS[b.dimension_id] || b.dimension_id;
+                  const tierColor =
+                    b.badge_tier === 'gold' ? 'bg-yellow-50 border-yellow-200 text-yellow-600' :
+                    b.badge_tier === 'silver' ? 'bg-slate-50 border-slate-200 text-slate-500' :
+                    'bg-amber-50 border-amber-200 text-amber-600';
+                  
+                  return (
+                    <div
+                      key={b.id}
+                      className={cn(
+                        'px-3.5 py-2 rounded-2xl border text-xs font-bold flex flex-col gap-0.5 shadow-soft max-w-xs',
+                        tierColor
+                      )}
+                    >
+                      <span className="capitalize">{label} ({b.badge_tier})</span>
+                      {b.parent_note && (
+                        <p className="text-[10px] text-stone-400 font-medium font-body mt-1 italic">
+                          &quot;{b.parent_note}&quot;
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {badges.length === 0 && (
+                  <p className="text-xs text-stone-400 italic">No hay insignias de valores otorgadas todavía.</p>
+                )}
               </div>
 
+              <div className="border-t border-stone-100 pt-3">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowBadgeForm(!showBadgeForm)}
+                  className="w-full text-xs font-bold"
+                >
+                  {showBadgeForm ? 'Cerrar Formulario' : '🎖️ Otorgar Nueva Insignia (Afirmación)'}
+                </Button>
+              </div>
+
+              {showBadgeForm && (
+                <div className="flex flex-col gap-3 p-4 bg-stone-50 rounded-2xl border border-stone-200 animate-slide-up">
+                  <h4 className="text-xs font-bold text-stone-700">Otorgar una insignia de valores</h4>
+                  
+                  <div className="flex flex-col md:flex-row gap-3">
+                    {/* Dimension Select */}
+                    <div className="flex-1 flex flex-col gap-1">
+                      <label className="text-[10px] text-stone-400 uppercase tracking-wider font-semibold">Valor</label>
+                      <select
+                        value={badgeDimension}
+                        onChange={e => setBadgeDimension(e.target.value as ValueDimensionId)}
+                        className="px-3 py-2 text-sm rounded-xl border border-stone-200 bg-white text-stone-700 focus:outline-none focus:ring-2 focus:ring-bloom-200 cursor-pointer"
+                      >
+                        {(Object.keys(VALUE_LABELS) as ValueDimensionId[]).map(k => (
+                          <option key={k} value={k}>{VALUE_LABELS[k]}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Tier Select */}
+                    <div className="flex-1 flex flex-col gap-1">
+                      <label className="text-[10px] text-stone-400 uppercase tracking-wider font-semibold">Nivel</label>
+                      <select
+                        value={badgeTier}
+                        onChange={e => setBadgeTier(e.target.value as any)}
+                        className="px-3 py-2 text-sm rounded-xl border border-stone-200 bg-white text-stone-700 focus:outline-none focus:ring-2 focus:ring-bloom-200 cursor-pointer"
+                      >
+                        <option value="bronze">Bronce</option>
+                        <option value="silver">Plata</option>
+                        <option value="gold">Oro</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-stone-400 uppercase tracking-wider font-semibold">Mensaje de Afirmación (Afectivo)</label>
+                    <textarea
+                      value={badgeNote}
+                      onChange={e => setBadgeNote(e.target.value)}
+                      placeholder="Escribe un mensaje recordándole al niño por qué demostró este valor hoy en el mundo real..."
+                      maxLength={180}
+                      rows={2}
+                      className="px-3 py-2 text-sm rounded-xl border border-stone-200 bg-white text-stone-700 focus:outline-none focus:ring-2 focus:ring-bloom-200 font-body resize-none"
+                    />
+                  </div>
+
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    loading={submittingBadge}
+                    onClick={handleAwardBadge}
+                    className="w-full font-bold text-xs"
+                  >
+                    Confirmar y Otorgar Insignia 🎖️
+                  </Button>
+                </div>
+              )}
+
+            </CardContent>
+          </Card>
+
+          {/* SPARKS & REWARDS CONTEXT */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span>🎁</span> Otorgar Estrellas Adicionales
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
               <div className="flex gap-2">
                 <Button
                   variant={showAwardForm ? 'primary' : 'secondary'}
@@ -219,7 +544,7 @@ export default function ChildDetailClient() {
                   className="flex-1 text-xs"
                   onClick={() => { setShowRedeemForm(!showRedeemForm); setShowAwardForm(false); }}
                 >
-                  🎁 Canjear Premio
+                  🎁 Canjear Premio de la Casa
                 </Button>
               </div>
 
@@ -306,6 +631,7 @@ export default function ChildDetailClient() {
             </CardContent>
           </Card>
 
+          {/* SPARKS HISTORY */}
           <Card>
             <CardHeader>
               <CardTitle>Historial de Estrellas</CardTitle>
@@ -344,6 +670,7 @@ export default function ChildDetailClient() {
             </CardContent>
           </Card>
 
+          {/* EMOTIONAL TRENDS */}
           <Card>
             <CardHeader><CardTitle>Estado emocional</CardTitle></CardHeader>
             <CardContent>
@@ -367,6 +694,7 @@ export default function ChildDetailClient() {
             </CardContent>
           </Card>
 
+          {/* WEEKLY ACTIVITY */}
           <Card>
             <CardHeader><CardTitle>Esta semana</CardTitle></CardHeader>
             <CardContent>
@@ -385,6 +713,7 @@ export default function ChildDetailClient() {
             </CardContent>
           </Card>
 
+          {/* GOALS */}
           {activeGoals.length > 0 && (
             <Card>
               <CardHeader><CardTitle>Objetivos en curso</CardTitle></CardHeader>
@@ -411,7 +740,6 @@ export default function ChildDetailClient() {
     </div>
   );
 }
-
 
 function WeekRow({ summary }: { summary: EmotionalWeeklySummary }) {
   const label   = new Date(summary.week_start).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });

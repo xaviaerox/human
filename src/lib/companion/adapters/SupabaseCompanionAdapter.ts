@@ -5,7 +5,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { ICompanionAdapter } from './ICompanionAdapter';
-import type { Companion, CompanionInteraction, CompanionInteractionType, Result } from '../../../types';
+import type { Companion, CompanionInteraction, CompanionInteractionType, CompanionMemory, Result } from '../../../types';
 import { BONDING_DELTAS } from '../CompanionEngine';
 
 export class SupabaseCompanionAdapter implements ICompanionAdapter {
@@ -144,4 +144,42 @@ export class SupabaseCompanionAdapter implements ICompanionAdapter {
 
     return () => { this.client.removeChannel(channel); };
   }
+
+  async getMemories(childId: string): Promise<Result<CompanionMemory[]>> {
+    const { data, error } = await this.client
+      .from('companion_memories')
+      .select('*')
+      .eq('child_id', childId)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return { ok: false, error: { code: 'fetch_failed', message: error.message } };
+    }
+    return { ok: true, data: data as CompanionMemory[] ?? [] };
+  }
+
+  async createMemory(
+    childId: string,
+    companionId: string,
+    type: 'routine_streak_milestone' | 'difficult_checkin' | 'adventure_complete' | 'parent_badge_award',
+    metadata: Record<string, any>
+  ): Promise<Result<CompanionMemory>> {
+    const { data, error } = await this.client
+      .from('companion_memories')
+      .insert({
+        child_id: childId,
+        companion_id: companionId,
+        memory_type: type,
+        metadata,
+      })
+      .select()
+      .single();
+
+    if (error || !data) {
+      return { ok: false, error: { code: 'create_failed', message: error?.message ?? 'Failed to save memory' } };
+    }
+    return { ok: true, data: data as CompanionMemory };
+  }
 }
+

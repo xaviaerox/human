@@ -83,13 +83,13 @@ export function ActiveGoalStep({ onComplete }: ActiveGoalStepProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Tu objetivo</CardTitle>
+        <CardTitle className="text-stone-700 dark:text-stone-300">Tu aventura</CardTitle>
       </CardHeader>
 
       <div className="flex flex-col gap-4">
         {/* Goal title + progress */}
         <div className="flex flex-col gap-2">
-          <p className="text-sm text-stone-600 font-body">{goal.title}</p>
+          <p className="text-sm font-semibold text-stone-850 font-display">{goal.title}</p>
           <ProgressBar value={goal.progress} color="lavender" />
         </div>
 
@@ -113,10 +113,13 @@ export function ActiveGoalStep({ onComplete }: ActiveGoalStepProps) {
             </div>
 
             <div className="flex-1">
+              <span className="text-[10px] uppercase tracking-widest text-stone-400 font-bold block mb-1">
+                Capítulo Activo
+              </span>
               <p className="text-sm font-medium text-stone-700">{nextTask.title}</p>
               {nextTask.effort_level && (
                 <span className={cn(
-                  'inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium',
+                  'inline-block mt-2 text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider',
                   EFFORT_COLORS[nextTask.effort_level] ?? 'text-stone-500 bg-stone-100'
                 )}>
                   {EFFORT_LABELS[nextTask.effort_level] ?? nextTask.effort_level}
@@ -134,15 +137,15 @@ export function ActiveGoalStep({ onComplete }: ActiveGoalStepProps) {
             size="md"
             onClick={handleComplete}
             loading={completing}
-            className="w-full"
+            className="w-full text-xs font-bold"
           >
-            Lo he hecho ✓
+            ¡He completado este capítulo! ✓
           </Button>
         )}
 
         {justDone && (
-          <p className="text-center text-sm text-moss-600 font-medium animate-fade-in">
-            ¡Bien hecho! ✦
+          <p className="text-center text-sm text-moss-600 font-semibold animate-fade-in">
+            ¡Gran esfuerzo! Capítulo completado ✦
           </p>
         )}
       </div>

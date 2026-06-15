@@ -8,5 +8,8 @@ export * from './emotional/EmotionalProvider';
 export * from './emotional/EmotionModel';
 export * from './goals/MicrotaskEngine';
 export * from './offline/OfflineQueue';
+export * from './progression/ProgressionProvider';
+export * from './sparks/SparkProvider';
 export * from './adapters';
 export { supabase } from './supabase';
+

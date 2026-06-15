@@ -3,7 +3,7 @@
 // ============================================================
 
 import type { ICompanionAdapter } from './ICompanionAdapter';
-import type { Companion, CompanionInteraction, CompanionInteractionType, Result } from '../../../types';
+import type { Companion, CompanionInteraction, CompanionInteractionType, CompanionMemory, Result } from '../../../types';
 import { BONDING_DELTAS, advanceStage, computeNewTraits } from '../CompanionEngine';
 
 const DEFAULT_COMPANION: Companion = {
@@ -119,7 +119,52 @@ export class StaticCompanionAdapter implements ICompanionAdapter {
     return () => { this._listeners = this._listeners.filter(l => l !== callback); };
   }
 
+  private _memories: CompanionMemory[] = [
+    {
+      id: 'mem-1',
+      child_id: 'static-child-id',
+      companion_id: 'companion-1',
+      memory_type: 'routine_streak_milestone',
+      metadata: { routine_title: 'Mañana' },
+      is_active: true,
+      created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
+    },
+    {
+      id: 'mem-2',
+      child_id: 'static-child-id',
+      companion_id: 'companion-1',
+      memory_type: 'parent_badge_award',
+      metadata: { badge_name: 'Constancia' },
+      is_active: true,
+      created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
+    }
+  ];
+
+  async getMemories(childId: string): Promise<Result<CompanionMemory[]>> {
+    return { ok: true, data: this._memories.filter(m => m.child_id === childId) };
+  }
+
+  async createMemory(
+    childId: string,
+    companionId: string,
+    type: 'routine_streak_milestone' | 'difficult_checkin' | 'adventure_complete' | 'parent_badge_award',
+    metadata: Record<string, any>
+  ): Promise<Result<CompanionMemory>> {
+    const memory: CompanionMemory = {
+      id: `mem-${Date.now()}`,
+      child_id: childId,
+      companion_id: companionId,
+      memory_type: type,
+      metadata,
+      is_active: true,
+      created_at: new Date().toISOString(),
+    };
+    this._memories.push(memory);
+    return { ok: true, data: memory };
+  }
+
   private _emit(): void {
     this._listeners.forEach(l => l({ ...this._companion }));
   }
 }
+

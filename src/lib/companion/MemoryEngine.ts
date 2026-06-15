@@ -1,0 +1,61 @@
+import type { CompanionMemory, DialogueLine, CompanionStage } from '@/types';
+import { resolveAnimationCue } from './dialogue/DialogueBank';
+
+/**
+ * Checks if there is a relevant active memory to mention and generates a custom DialogueLine.
+ * Returns null if no relevant memory is found or if it chooses to fall back to standard bank.
+ */
+export function selectMemoryDialogue(
+  memories: CompanionMemory[],
+  stage: CompanionStage,
+  companionName: string
+): DialogueLine | null {
+  // If stage is egg, the companion cannot speak
+  if (stage === 'egg') return null;
+
+  // Filter active memories
+  const active = memories.filter(m => m.is_active);
+  if (active.length === 0) return null;
+
+  // Pick the most recent memory
+  const latest = active.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+  if (!latest) return null;
+
+  let text = '';
+  switch (latest.memory_type) {
+    case 'routine_streak_milestone':
+      const rTitle = latest.metadata.routine_title ?? 'tu rutina';
+      text = `He estado pensando en lo constante que has sido con la rutina de "${rTitle}". ¡Eso es genial!`;
+      break;
+
+    case 'difficult_checkin':
+      const emoWord = latest.metadata.emotion_word ? `cuando te sentías "${latest.metadata.emotion_word}"` : 'ayer';
+      text = `Ayer te sentías un poco abrumado o cansado. Quería decirte que estoy aquí contigo hoy, sin prisa.`;
+      break;
+
+    case 'adventure_complete':
+      const advTitle = latest.metadata.adventure_title ?? 'tu aventura';
+      text = `¡Aún me acuerdo de cuando completamos juntos la aventura de "${advTitle}"! Fue un paso muy bonito.`;
+      break;
+
+    case 'parent_badge_award':
+      const bName = latest.metadata.badge_name ?? 'valores';
+      text = `¡Mira! Tus papás te han dejado una insignia de "${bName}" en tus recuerdos. ¿Vamos a verla juntos?`;
+      break;
+
+    default:
+      return null;
+  }
+
+  // Calculate duration
+  const BASE = 3000;
+  const PER_CHAR = 40;
+  const durationMs = Math.min(7000, BASE + text.length * PER_CHAR);
+
+  // Return custom dialogue line
+  return {
+    text,
+    animationCue: resolveAnimationCue(stage, 'idle_presence'),
+    durationMs,
+  };
+}
