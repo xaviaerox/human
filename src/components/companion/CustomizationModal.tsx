@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { ChildAvatar } from '../ui/ChildAvatar';
 import { CompanionBlob } from './CompanionBlob';
 import { CUSTOMIZATION_ITEMS, type CustomizationItem } from '@/lib/customization/CustomizationItems';
+import { getSparkAdapter, DATA_SOURCE } from '@/lib/adapters';
 
 interface CustomizationModalProps {
   isOpen: boolean;
@@ -60,18 +61,34 @@ export function CustomizationModal({ isOpen, onClose, sparkBalance, onPurchaseSu
 
     setBuyingId(item.id);
 
-    // 1. Deduct sparks
-    const { error: sparkError } = await supabase.rpc('award_sparks', {
-      p_child_id: profile.id,
-      p_delta: -item.cost,
-      p_source_type: 'customization_purchase',
-      p_note: `Tienda: Comprado ${item.name}`
-    });
+    // 1. Deduct sparks depending on active data source
+    if (DATA_SOURCE === 'supabase') {
+      const { error: sparkError } = await supabase.rpc('award_sparks', {
+        p_child_id: profile.id,
+        p_delta: -item.cost,
+        p_source_type: 'customization_purchase',
+        p_note: `Tienda: Comprado ${item.name}`
+      });
 
-    if (sparkError) {
-      alert('Error en la compra: ' + sparkError.message);
-      setBuyingId(null);
-      return;
+      if (sparkError) {
+        alert('Error en la compra: ' + sparkError.message);
+        setBuyingId(null);
+        return;
+      }
+    } else {
+      const sparkAdapter = getSparkAdapter();
+      const res = await sparkAdapter.awardBonus(
+        profile.id,
+        profile.family_id || 'static-family-id',
+        -item.cost,
+        `Tienda: Comprado ${item.name}`,
+        'static-parent-id'
+      );
+      if (!res.ok) {
+        alert('Error en la compra: ' + (res.error?.message ?? 'error'));
+        setBuyingId(null);
+        return;
+      }
     }
 
     // 2. Add item to unlocked list in profile

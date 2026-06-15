@@ -285,8 +285,8 @@ export function selectDialogue(ctx: DialogueContext): DialogueLine {
     stageBank['idle_presence'] ??
     ['Aquí estoy.'];
 
-  // Seed by current hour so same trigger in same hour returns same line
-  const seed = new Date().getHours();
+  // Dynamic seed so every tap yields a fresh response
+  const seed = Math.floor(Math.random() * 100);
   const text = pickLine(candidates, seed);
 
   // Replace companion name placeholder

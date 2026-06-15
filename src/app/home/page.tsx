@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SparkCelebrationOverlay } from '@/components/ui/SparkCelebrationOverlay';
 import { ChildAvatar } from '@/components/ui/ChildAvatar';
 import { CustomizationModal } from '@/components/companion/CustomizationModal';
+import { CompanionChatModal } from '@/components/companion/CompanionChatModal';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 import { getSuggestedWords } from '@/lib/emotional/EmotionModel';
@@ -158,10 +159,10 @@ function WorldAmbientVisuals({ worldId, phase }: WorldAmbientVisualsProps) {
         <div className="absolute inset-0 flex flex-col justify-end">
           {/* Phase backgrounds */}
           {phase === 'seed' && (
-            <div className="absolute inset-0 bg-gradient-to-b from-stone-100 to-slate-200 opacity-90" />
+            <div className="absolute inset-0 bg-gradient-to-b from-stone-200 via-slate-100 to-slate-300 opacity-90" />
           )}
           {phase === 'sprout' && (
-            <div className="absolute inset-0 bg-gradient-to-b from-sky-100 to-sky-250 opacity-95" />
+            <div className="absolute inset-0 bg-gradient-to-b from-sky-100 via-sky-50 to-blue-200 opacity-95" />
           )}
           {phase === 'bloom' && (
             <div className="absolute inset-0 bg-gradient-to-b from-cyan-400 via-sky-300 to-blue-500" />
@@ -169,51 +170,74 @@ function WorldAmbientVisuals({ worldId, phase }: WorldAmbientVisualsProps) {
 
           {/* Landscape SVG */}
           <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-            {/* Water body */}
-            <path d="M 0 65 Q 25 60 50 64 T 100 60 L 100 100 L 0 100 Z" fill="#0284c7" opacity={phase === 'bloom' ? 0.85 : 0.4} />
-            <path d="M 0 75 Q 35 70 70 73 T 100 70 L 100 100 L 0 100 Z" fill="#0369a1" opacity={phase === 'bloom' ? 0.9 : 0.6} />
+            <defs>
+              <linearGradient id="calmWaterfall" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.8" />
+                <stop offset="80%" stopColor="#0ea5e9" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="#e0f2fe" stopOpacity="0.9" />
+              </linearGradient>
+              <linearGradient id="calmRainbow" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="rgba(251,113,133,0.3)" />
+                <stop offset="50%" stopColor="rgba(253,224,71,0.3)" />
+                <stop offset="100%" stopColor="rgba(56,189,248,0.3)" />
+              </linearGradient>
+            </defs>
 
-            {/* Bloom: Lotus Flower and Lily Pads */}
+            {/* Water body */}
+            <path d="M 0 65 Q 25 55 50 63 T 100 58 L 100 100 L 0 100 Z" fill="#0284c7" opacity={phase === 'bloom' ? 0.75 : phase === 'sprout' ? 0.4 : 0.25} />
+            <path d="M 0 75 Q 35 68 70 74 T 100 68 L 100 100 L 0 100 Z" fill="#0369a1" opacity={phase === 'bloom' ? 0.85 : phase === 'sprout' ? 0.5 : 0.35} />
+            <path d="M 0 85 Q 20 80 50 87 T 100 82 L 100 100 L 0 100 Z" fill="#075985" opacity={phase === 'bloom' ? 0.95 : phase === 'sprout' ? 0.6 : 0.45} />
+
+            {/* Sprout details */}
+            {phase === 'sprout' && (
+              <>
+                <ellipse cx="15" cy="72" rx="8" ry="2" fill="#0d9488" opacity="0.6" />
+                <ellipse cx="85" cy="76" rx="9" ry="2.5" fill="#0d9488" opacity="0.6" />
+              </>
+            )}
+
+            {/* Bloom elements */}
             {phase === 'bloom' && (
               <>
-                {/* Lily Pads */}
-                <ellipse cx="20" cy="72" rx="10" ry="3" fill="#0d9488" opacity="0.8" />
-                <ellipse cx="80" cy="78" rx="12" ry="4" fill="#0d9488" opacity="0.8" />
-                <ellipse cx="50" cy="85" rx="18" ry="5" fill="#0f766e" />
+                {/* Rainbow */}
+                <path d="M -10 65 Q 50 -5 110 65" fill="none" stroke="url(#calmRainbow)" strokeWidth="8" />
 
-                {/* Glowing Lotus center-bottom */}
-                <g transform="translate(50, 77) scale(0.45)">
-                  {/* Leaves */}
-                  <path d="M-30,10 C-40,-5 -15,-10 0,5 C-15,-10 15,-10 30,10 Z" fill="#0f766e" />
-                  {/* Outer Petals */}
-                  <path d="M0,-25 C-25,-15 -20,10 0,20 C20,10 25,-15 0,-25 Z" fill="#f43f5e" />
-                  <path d="M-15,-15 C-35,0 -20,15 0,20 C-20,15 -35,0 -15,-15 Z" fill="#fda4af" />
-                  <path d="M15,-15 C35,0 20,15 0,20 C20,15 35,0 15,-15 Z" fill="#fda4af" />
-                  {/* Inner petals */}
-                  <path d="M0,-15 C-12,-5 -8,10 0,15 C8,10 12,-5 0,-15 Z" fill="#fff1f2" />
-                  <circle cx="0" cy="2" r="4" fill="#f59e0b" />
+                {/* Magical Waterfall on the far left */}
+                <rect x="2" y="0" width="8" height="68" fill="url(#calmWaterfall)" />
+                <ellipse cx="6" cy="67" rx="5" ry="2" fill="#e0f2fe" opacity="0.9" />
+
+                {/* Lily Pads and Lotus on the sides (framed, not centered) */}
+                <ellipse cx="22" cy="74" rx="12" ry="3.5" fill="#0f766e" />
+                <ellipse cx="80" cy="78" rx="14" ry="4" fill="#0f766e" />
+
+                {/* Glowing Lotus on the right */}
+                <g transform="translate(80, 75) scale(0.35)">
+                  <path d="M0,-25 C-25,-15 -20,10 0,20 C20,10 25,-15 0,-25 Z" fill="#fb7185" />
+                  <path d="M-15,-15 C-35,0 -20,15 0,20 C-20,15 -35,0 -15,-15 Z" fill="#fecdd3" />
+                  <path d="M15,-15 C35,0 20,15 0,20 C20,15 35,0 15,-15 Z" fill="#fecdd3" />
+                  <circle cx="0" cy="0" r="3" fill="#fbbf24" />
                 </g>
               </>
             )}
           </svg>
 
-          {/* Phase-specific items */}
+          {/* Phase-specific overlay elements */}
           {phase === 'seed' && (
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-2xl animate-pulse">💧</div>
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-xl animate-pulse">💧</div>
           )}
           {phase === 'sprout' && (
             <>
-              <div className="absolute bottom-8 left-12 text-xl animate-bounce">💧</div>
-              <div className="absolute bottom-12 right-16 text-lg animate-pulse">🌱</div>
+              <div className="absolute bottom-10 left-6 text-sm animate-bounce" style={{ animationDelay: '0.2s' }}>💧</div>
+              <div className="absolute bottom-12 right-12 text-sm animate-bounce" style={{ animationDelay: '0.8s' }}>🌱</div>
             </>
           )}
           {phase === 'bloom' && (
             <>
-              {/* Float bubbles */}
-              <div className="absolute w-2 h-2 rounded-full bg-white/70 bottom-16 left-10 animate-ambient-float-up" />
-              <div className="absolute w-3 h-3 rounded-full bg-white/50 bottom-24 right-12 animate-ambient-float-up delay-1000" />
-              <div className="absolute w-1.5 h-1.5 rounded-full bg-white/80 bottom-8 right-28 animate-ambient-float-up delay-500" />
-              <div className="absolute w-2.5 h-2.5 rounded-full bg-cyan-200/60 bottom-14 right-20 animate-ambient-float-up delay-1500" />
+              {/* Float bubbles rising */}
+              <div className="absolute w-2 h-2 rounded-full bg-white/60 bottom-14 left-4 animate-ambient-float-up" />
+              <div className="absolute w-3 h-3 rounded-full bg-white/40 bottom-28 right-8 animate-ambient-float-up" style={{ animationDelay: '1.2s' }} />
+              <div className="absolute w-1.5 h-1.5 rounded-full bg-white/70 bottom-8 right-24 animate-ambient-float-up" style={{ animationDelay: '0.5s' }} />
+              <div className="absolute w-2.5 h-2.5 rounded-full bg-cyan-200/50 bottom-16 right-20 animate-ambient-float-up" style={{ animationDelay: '1.9s' }} />
             </>
           )}
         </div>
@@ -226,63 +250,86 @@ function WorldAmbientVisuals({ worldId, phase }: WorldAmbientVisualsProps) {
         <div className="absolute inset-0 flex flex-col justify-end">
           {/* Phase backgrounds */}
           {phase === 'seed' && (
-            <div className="absolute inset-0 bg-gradient-to-b from-stone-100 to-slate-200 opacity-90" />
+            <div className="absolute inset-0 bg-gradient-to-b from-stone-200 via-stone-150 to-slate-300 opacity-90" />
           )}
           {phase === 'sprout' && (
-            <div className="absolute inset-0 bg-gradient-to-b from-green-50 to-green-150 opacity-95" />
+            <div className="absolute inset-0 bg-gradient-to-b from-green-50 via-emerald-50/50 to-green-200 opacity-95" />
           )}
           {phase === 'bloom' && (
-            <div className="absolute inset-0 bg-gradient-to-b from-emerald-200 via-green-100 to-teal-300" />
+            <div className="absolute inset-0 bg-gradient-to-b from-emerald-250 via-green-100 to-teal-300" />
           )}
 
           {/* Landscape SVG */}
           <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-            {/* Hills */}
-            <path d="M 0 65 Q 25 50 50 60 T 100 55 L 100 100 L 0 100 Z" fill="#4ade80" opacity={phase === 'bloom' ? 0.7 : 0.3} />
-            <path d="M 0 75 Q 35 65 70 75 T 100 70 L 100 100 L 0 100 Z" fill="#22c55e" opacity={phase === 'bloom' ? 0.85 : 0.5} />
-            <path d="M 0 85 Q 25 80 50 88 T 100 82 L 100 100 L 0 100 Z" fill="#15803d" opacity={phase === 'bloom' ? 0.95 : 0.7} />
+            <defs>
+              <linearGradient id="valleRainbow" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="rgba(248,113,113,0.25)" />
+                <stop offset="30%" stopColor="rgba(250,204,21,0.25)" />
+                <stop offset="60%" stopColor="rgba(74,222,128,0.25)" />
+                <stop offset="100%" stopColor="rgba(96,165,250,0.25)" />
+              </linearGradient>
+            </defs>
 
-            {/* Bloom: Rainbow & Flowers */}
+            {/* Hills */}
+            <path d="M 0 58 Q 25 45 50 55 T 100 48 L 100 100 L 0 100 Z" fill="#4ade80" opacity={phase === 'bloom' ? 0.75 : phase === 'sprout' ? 0.4 : 0.25} />
+            <path d="M 0 70 Q 35 60 70 72 T 100 65 L 100 100 L 0 100 Z" fill="#22c55e" opacity={phase === 'bloom' ? 0.85 : phase === 'sprout' ? 0.55 : 0.35} />
+            <path d="M 0 82 Q 20 78 50 86 T 100 80 L 100 100 L 0 100 Z" fill="#15803d" opacity={phase === 'bloom' ? 0.95 : phase === 'sprout' ? 0.7 : 0.5} />
+
+            {/* Bloom elements */}
             {phase === 'bloom' && (
               <>
                 {/* Rainbow */}
-                <path d="M -10 60 Q 50 -10 110 60" fill="none" stroke="#fca5a5" strokeWidth="6" opacity="0.3" />
-                <path d="M -10 60 Q 50 -10 110 60" fill="none" stroke="#fef08a" strokeWidth="4" opacity="0.3" />
-                <path d="M -10 60 Q 50 -10 110 60" fill="none" stroke="#93c5fd" strokeWidth="2" opacity="0.3" />
+                <path d="M -10 65 Q 50 -5 110 65" fill="none" stroke="url(#valleRainbow)" strokeWidth="6" />
 
-                {/* Flowers on hills */}
-                <circle cx="15" cy="78" r="1.5" fill="#f43f5e" />
-                <circle cx="13" cy="79" r="1.2" fill="#fca5a5" />
-                <circle cx="17" cy="79" r="1.2" fill="#fca5a5" />
-                
-                <circle cx="85" cy="85" r="2" fill="#eab308" />
-                <circle cx="82" cy="87" r="1.5" fill="#fef08a" />
-                <circle cx="88" cy="87" r="1.5" fill="#fef08a" />
+                {/* Big Beautiful Apple Tree on the right side */}
+                <g transform="translate(82, 66) scale(0.65)">
+                  <path d="M-5,30 L-2,0 L2,0 L5,30 Z" fill="#78350f" />
+                  <circle cx="0" cy="-14" r="16" fill="#166534" />
+                  <circle cx="-10" cy="-8" r="12" fill="#15803d" />
+                  <circle cx="10" cy="-8" r="12" fill="#15803d" />
+                  <circle cx="0" cy="-24" r="12" fill="#22c55e" />
+                  {/* Apples */}
+                  <circle cx="-5" cy="-8" r="2" fill="#ef4444" />
+                  <circle cx="5" cy="-12" r="2" fill="#ef4444" />
+                  <circle cx="2" cy="-3" r="2" fill="#ef4444" />
+                </g>
 
-                <circle cx="48" cy="92" r="2.5" fill="#a855f7" />
-                <circle cx="45" cy="94" r="1.8" fill="#e9d5ff" />
-                <circle cx="51" cy="94" r="1.8" fill="#e9d5ff" />
+                {/* Flowers on the left hill */}
+                <g transform="translate(18, 76) scale(0.35)">
+                  <circle cx="0" cy="0" r="4" fill="#eab308" />
+                  <circle cx="-6" cy="0" r="3" fill="#fef08a" />
+                  <circle cx="6" cy="0" r="3" fill="#fef08a" />
+                  <circle cx="0" cy="-6" r="3" fill="#fef08a" />
+                  <circle cx="0" cy="6" r="3" fill="#fef08a" />
+                </g>
+                <g transform="translate(26, 81) scale(0.35)">
+                  <circle cx="0" cy="0" r="4" fill="#db2777" />
+                  <circle cx="-6" cy="0" r="3" fill="#fbcfe8" />
+                  <circle cx="6" cy="0" r="3" fill="#fbcfe8" />
+                  <circle cx="0" cy="-6" r="3" fill="#fbcfe8" />
+                  <circle cx="0" cy="6" r="3" fill="#fbcfe8" />
+                </g>
               </>
             )}
           </svg>
 
           {/* Phase-specific items */}
           {phase === 'seed' && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-2xl animate-bounce">🌰</div>
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-xl animate-bounce">🌰</div>
           )}
           {phase === 'sprout' && (
             <>
-              <div className="absolute bottom-6 left-12 text-xl animate-pulse">🌱</div>
-              <div className="absolute bottom-8 right-16 text-lg animate-pulse">🌱</div>
+              <div className="absolute bottom-8 left-10 text-sm animate-pulse">🌱</div>
+              <div className="absolute bottom-10 right-14 text-sm animate-pulse" style={{ animationDelay: '0.4s' }}>🌱</div>
             </>
           )}
           {phase === 'bloom' && (
             <>
               {/* Falling leaves & petals */}
-              <div className="absolute top-2 left-6 text-sm animate-ambient-float-down">🍃</div>
-              <div className="absolute top-8 right-8 text-xs animate-ambient-float-down delay-1000">🍃</div>
-              <div className="absolute top-16 left-24 text-sm animate-ambient-float-down delay-500">🌸</div>
-              <div className="absolute top-4 right-24 text-xs animate-ambient-float-down delay-1500">🌸</div>
+              <div className="absolute top-2 left-8 text-xs animate-ambient-float-down">🍃</div>
+              <div className="absolute top-8 right-6 text-[10px] animate-ambient-float-down" style={{ animationDelay: '1.5s' }}>🍃</div>
+              <div className="absolute top-14 left-20 text-xs animate-ambient-float-down" style={{ animationDelay: '0.7s' }}>🌸</div>
+              <div className="absolute top-4 right-20 text-[10px] animate-ambient-float-down" style={{ animationDelay: '2.2s' }}>🌸</div>
             </>
           )}
         </div>
@@ -295,10 +342,10 @@ function WorldAmbientVisuals({ worldId, phase }: WorldAmbientVisualsProps) {
         <div className="absolute inset-0 flex flex-col justify-end">
           {/* Phase backgrounds */}
           {phase === 'seed' && (
-            <div className="absolute inset-0 bg-gradient-to-b from-stone-100 to-slate-200 opacity-90" />
+            <div className="absolute inset-0 bg-gradient-to-b from-stone-200 via-stone-150 to-slate-350 opacity-90" />
           )}
           {phase === 'sprout' && (
-            <div className="absolute inset-0 bg-gradient-to-b from-emerald-50 to-emerald-150 opacity-95" />
+            <div className="absolute inset-0 bg-gradient-to-b from-emerald-100 via-green-50 to-emerald-250 opacity-95" />
           )}
           {phase === 'bloom' && (
             <div className="absolute inset-0 bg-gradient-to-b from-emerald-950 via-teal-900 to-emerald-900" />
@@ -306,45 +353,49 @@ function WorldAmbientVisuals({ worldId, phase }: WorldAmbientVisualsProps) {
 
           {/* Landscape SVG */}
           <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-            {/* Moon in bloom */}
-            {phase === 'bloom' && (
-              <circle cx="80" cy="22" r="8" fill="#fef08a" filter="blur(1px)" opacity="0.85" />
-            )}
+            {/* Hills */}
+            <path d="M 0 62 Q 25 50 50 60 T 100 55 L 100 100 L 0 100 Z" fill="#047857" opacity={phase === 'bloom' ? 0.7 : phase === 'sprout' ? 0.4 : 0.2} />
+            <path d="M 0 74 Q 35 66 70 76 T 100 70 L 100 100 L 0 100 Z" fill="#065f46" opacity={phase === 'bloom' ? 0.85 : phase === 'sprout' ? 0.55 : 0.35} />
+            <path d="M 0 85 Q 20 80 50 88 T 100 82 L 100 100 L 0 100 Z" fill="#064e3b" opacity={phase === 'bloom' ? 0.95 : phase === 'sprout' ? 0.7 : 0.5} />
 
-            {/* Forest landscape */}
-            <path d="M 0 60 Q 20 45 45 58 T 100 50 L 100 100 L 0 100 Z" fill="#047857" opacity={phase === 'bloom' ? 0.6 : 0.3} />
-            <path d="M 0 70 Q 30 60 60 72 T 100 65 L 100 100 L 0 100 Z" fill="#065f46" opacity={phase === 'bloom' ? 0.8 : 0.5} />
-            <path d="M 0 82 Q 25 78 50 85 T 100 80 L 100 100 L 0 100 Z" fill="#064e3b" opacity={phase === 'bloom' ? 0.95 : 0.7} />
-
-            {/* Pine silhouettes in bloom */}
+            {/* Bloom elements */}
             {phase === 'bloom' && (
               <>
-                <polygon points="12,65 7,78 17,78" fill="#022c22" />
-                <polygon points="12,58 9,68 15,68" fill="#022c22" />
-                
-                <polygon points="85,72 80,85 90,85" fill="#022c22" />
-                <polygon points="85,65 82,75 88,75" fill="#022c22" />
+                {/* Crescent Moon on the top left */}
+                <path d="M 16 16 A 8 8 0 1 0 32 23 A 6 6 0 1 1 16 16 Z" fill="#fef08a" opacity="0.85" />
+
+                {/* Big pine trees framing both sides of the screen */}
+                <g transform="translate(12, 68) scale(0.65)">
+                  <rect x="-3" y="10" width="6" height="15" fill="#78350f" />
+                  <polygon points="0,-25 -15,-2 15,-2" fill="#022c22" />
+                  <polygon points="0,-12 -12,8 12,8" fill="#064e3b" />
+                </g>
+                <g transform="translate(88, 74) scale(0.55)">
+                  <rect x="-3" y="10" width="6" height="15" fill="#78350f" />
+                  <polygon points="0,-25 -15,-2 15,-2" fill="#022c22" />
+                  <polygon points="0,-12 -12,8 12,8" fill="#064e3b" />
+                </g>
               </>
             )}
           </svg>
 
           {/* Phase-specific items */}
           {phase === 'seed' && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-2xl animate-bounce">🌱</div>
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-xl animate-bounce">🌲</div>
           )}
           {phase === 'sprout' && (
             <>
-              <div className="absolute bottom-6 left-10 text-xl">🌲</div>
-              <div className="absolute bottom-8 right-12 text-lg">🌲</div>
+              <div className="absolute bottom-8 left-8 text-sm opacity-80">🌲</div>
+              <div className="absolute bottom-10 right-10 text-sm opacity-80" style={{ animationDelay: '0.3s' }}>🌲</div>
             </>
           )}
           {phase === 'bloom' && (
             <>
               {/* Glowing fireflies */}
-              <div className="absolute w-2 h-2 bg-yellow-300 rounded-full blur-[2px] bottom-16 left-12 animate-firefly" />
-              <div className="absolute w-1.5 h-1.5 bg-yellow-200 rounded-full blur-[1px] bottom-24 right-16 animate-firefly delay-500" />
-              <div className="absolute w-2 h-2 bg-yellow-300 rounded-full blur-[2px] bottom-32 left-32 animate-firefly delay-1000" />
-              <div className="absolute w-1.5 h-1.5 bg-green-200 rounded-full blur-[1px] bottom-10 right-28 animate-firefly delay-1500" />
+              <div className="absolute w-2 h-2 bg-yellow-300 rounded-full blur-[1.5px] bottom-16 left-6 animate-firefly" />
+              <div className="absolute w-1.5 h-1.5 bg-yellow-250 rounded-full blur-[1px] bottom-24 right-14 animate-firefly" style={{ animationDelay: '0.6s' }} />
+              <div className="absolute w-2 h-2 bg-yellow-300 rounded-full blur-[1.5px] bottom-32 left-24 animate-firefly" style={{ animationDelay: '1.2s' }} />
+              <div className="absolute w-1.5 h-1.5 bg-green-200 rounded-full blur-[1px] bottom-10 right-28 animate-firefly" style={{ animationDelay: '1.8s' }} />
             </>
           )}
         </div>
@@ -357,52 +408,57 @@ function WorldAmbientVisuals({ worldId, phase }: WorldAmbientVisualsProps) {
         <div className="absolute inset-0 flex flex-col justify-end">
           {/* Phase backgrounds */}
           {phase === 'seed' && (
-            <div className="absolute inset-0 bg-gradient-to-b from-stone-100 to-slate-200 opacity-90" />
+            <div className="absolute inset-0 bg-gradient-to-b from-stone-200 via-stone-150 to-slate-300 opacity-90" />
           )}
           {phase === 'sprout' && (
-            <div className="absolute inset-0 bg-gradient-to-b from-slate-100 to-slate-250 opacity-95" />
+            <div className="absolute inset-0 bg-gradient-to-b from-slate-100 via-slate-50 to-slate-300 opacity-95" />
           )}
           {phase === 'bloom' && (
-            <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-blue-950 to-indigo-900" />
+            <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-blue-950 to-indigo-950" />
           )}
 
           {/* Landscape SVG */}
           <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
             {/* Mountains */}
-            <path d="M 0 100 L 30 45 L 60 85 L 80 52 L 100 90 L 100 100 Z" fill="#475569" opacity={phase === 'bloom' ? 0.6 : 0.3} />
-            <path d="M 0 100 L 20 62 L 45 48 L 75 78 L 100 62 L 100 100 Z" fill="#334155" opacity={phase === 'bloom' ? 0.85 : 0.6} />
+            <path d="M 0 100 L 25 38 L 50 78 L 78 45 L 100 85 L 100 100 Z" fill="#475569" opacity={phase === 'bloom' ? 0.7 : phase === 'sprout' ? 0.45 : 0.25} />
+            <path d="M 0 100 L 18 55 L 42 42 L 72 72 L 100 54 L 100 100 Z" fill="#334155" opacity={phase === 'bloom' ? 0.85 : phase === 'sprout' ? 0.55 : 0.35} />
+            <path d="M 0 100 L 30 75 L 60 62 L 85 85 L 100 78 L 100 100 Z" fill="#1e293b" opacity={phase === 'bloom' ? 0.95 : phase === 'sprout' ? 0.7 : 0.45} />
 
-            {/* Snow Caps in bloom */}
+            {/* Bloom elements */}
             {phase === 'bloom' && (
               <>
-                <polygon points="30,45 25,54 35,54" fill="#f1f5f9" />
-                <polygon points="45,48 40,56 50,56" fill="#f1f5f9" />
-                <polygon points="80,52 76,59 84,59" fill="#f1f5f9" />
+                {/* Snow Caps */}
+                <polygon points="25,38 20,48 30,48" fill="#f8fafc" />
+                <polygon points="42,42 37,51 47,51" fill="#f8fafc" />
+                <polygon points="78,45 73,53 83,53" fill="#f8fafc" />
 
-                {/* Flag on highest peak */}
-                <line x1="30" y1="45" x2="30" y2="38" stroke="#ef4444" strokeWidth="1" />
-                <polygon points="30,38 30,41 35,39.5" fill="#ef4444" />
+                {/* Achievement Flag on left peak */}
+                <line x1="25" y1="38" x2="25" y2="28" stroke="#ef4444" strokeWidth="1.5" />
+                <polygon points="25,28 25,32 32,30" fill="#ef4444" />
+
+                {/* Rising sun in background */}
+                <circle cx="85" cy="40" r="10" fill="#f59e0b" opacity="0.3" filter="blur(1.5px)" />
               </>
             )}
           </svg>
 
           {/* Phase-specific items */}
           {phase === 'seed' && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-2xl animate-bounce">⛰️</div>
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-xl animate-bounce">⛰️</div>
           )}
           {phase === 'sprout' && (
             <>
-              <div className="absolute bottom-16 left-16 text-2xl opacity-75 animate-pulse">⛰️</div>
-              <div className="absolute bottom-20 right-20 text-xl opacity-75 animate-pulse">⛰️</div>
+              <div className="absolute bottom-12 left-10 text-sm opacity-75 animate-pulse">⛰️</div>
+              <div className="absolute bottom-16 right-12 text-sm opacity-75 animate-pulse" style={{ animationDelay: '0.5s' }}>⛰️</div>
             </>
           )}
           {phase === 'bloom' && (
             <>
               {/* Twinkling stars */}
-              <div className="absolute top-4 left-10 text-lg animate-pulse text-yellow-300">⭐</div>
-              <div className="absolute top-8 right-16 text-sm animate-pulse delay-500 text-yellow-250">⭐</div>
-              <div className="absolute top-16 left-28 text-xs animate-pulse delay-1000 text-white">⭐</div>
-              <div className="absolute top-10 right-32 text-md animate-pulse delay-200 text-yellow-300">✨</div>
+              <div className="absolute top-4 left-8 text-sm animate-pulse text-yellow-300">⭐</div>
+              <div className="absolute top-8 right-12 text-xs animate-pulse text-yellow-200" style={{ animationDelay: '0.6s' }}>⭐</div>
+              <div className="absolute top-14 left-24 text-[8px] animate-pulse text-white" style={{ animationDelay: '1.2s' }}>⭐</div>
+              <div className="absolute top-8 right-28 text-sm animate-pulse text-yellow-300" style={{ animationDelay: '0.3s' }}>✨</div>
             </>
           )}
         </div>
@@ -415,10 +471,10 @@ function WorldAmbientVisuals({ worldId, phase }: WorldAmbientVisualsProps) {
         <div className="absolute inset-0 flex flex-col justify-end">
           {/* Phase backgrounds */}
           {phase === 'seed' && (
-            <div className="absolute inset-0 bg-gradient-to-b from-stone-100 to-slate-200 opacity-90" />
+            <div className="absolute inset-0 bg-gradient-to-b from-stone-200 via-stone-150 to-slate-300 opacity-90" />
           )}
           {phase === 'sprout' && (
-            <div className="absolute inset-0 bg-gradient-to-b from-purple-50 to-purple-150 opacity-95" />
+            <div className="absolute inset-0 bg-gradient-to-b from-purple-100 via-purple-50 to-pink-200 opacity-95" />
           )}
           {phase === 'bloom' && (
             <div className="absolute inset-0 bg-gradient-to-b from-pink-300 via-purple-200 to-fuchsia-400" />
@@ -427,48 +483,50 @@ function WorldAmbientVisuals({ worldId, phase }: WorldAmbientVisualsProps) {
           {/* Landscape SVG */}
           <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
             {/* Hills */}
-            <path d="M 0 68 Q 15 50 40 65 T 100 55 L 100 100 L 0 100 Z" fill="#c084fc" opacity={phase === 'bloom' ? 0.65 : 0.3} />
-            <path d="M 0 78 Q 25 65 50 78 T 100 70 L 100 100 L 0 100 Z" fill="#a855f7" opacity={phase === 'bloom' ? 0.85 : 0.6} />
+            <path d="M 0 65 Q 20 52 45 62 T 100 58 L 100 100 L 0 100 Z" fill="#c084fc" opacity={phase === 'bloom' ? 0.7 : phase === 'sprout' ? 0.45 : 0.2} />
+            <path d="M 0 76 Q 30 68 60 76 T 100 70 L 100 100 L 0 100 Z" fill="#a855f7" opacity={phase === 'bloom' ? 0.85 : phase === 'sprout' ? 0.55 : 0.35} />
+            <path d="M 0 86 Q 20 80 50 88 T 100 82 L 100 100 L 0 100 Z" fill="#86198f" opacity={phase === 'bloom' ? 0.95 : phase === 'sprout' ? 0.65 : 0.5} />
 
-            {/* Castle in bloom */}
+            {/* Bloom elements */}
             {phase === 'bloom' && (
-              <g transform="translate(50, 68) scale(0.6)">
-                {/* Keep castle centered background */}
-                {/* Towers */}
-                <rect x="-30" y="-40" width="12" height="40" fill="#701a75" />
-                <polygon points="-30,-40 -24,-52 -18,-40" fill="#be185d" />
-                
-                <rect x="18" y="-40" width="12" height="40" fill="#701a75" />
-                <polygon points="18,-40 24,-52 30,-40" fill="#be185d" />
+              <>
+                {/* Dreamy fluffy cloud on the top left */}
+                <ellipse cx="20" cy="50" rx="14" ry="5" fill="white" opacity="0.5" />
+                <circle cx="14" cy="46" r="6" fill="white" opacity="0.5" />
+                <circle cx="24" cy="45" r="7" fill="white" opacity="0.5" />
 
-                {/* Central structure */}
-                <rect x="-20" y="-30" width="40" height="30" fill="#86198f" />
-                <rect x="-8" y="-42" width="16" height="15" fill="#701a75" />
-                <polygon points="-8,-42 0,-54 8,-42" fill="#be185d" />
-
-                {/* Door & Windows */}
-                <rect x="-6" y="-14" width="12" height="14" rx="4" fill="#581c87" />
-                <rect x="-4" y="-32" width="8" height="8" rx="2" fill="#fef08a" />
-              </g>
+                {/* Floating Castle on the far right */}
+                <g transform="translate(80, 68) scale(0.55)">
+                  <rect x="-15" y="-30" width="8" height="30" fill="#701a75" />
+                  <polygon points="-15,-30 -11,-40 -7,-30" fill="#be185d" />
+                  <rect x="7" y="-30" width="8" height="30" fill="#701a75" />
+                  <polygon points="7,-30 11,-40 15,-30" fill="#be185d" />
+                  <rect x="-10" y="-20" width="20" height="20" fill="#86198f" />
+                  <rect x="-4" y="-28" width="8" height="8" fill="#701a75" />
+                  <polygon points="-4,-28 0,-36 4,-28" fill="#be185d" />
+                  <rect x="-3" y="-10" width="6" height="10" rx="2" fill="#581c87" />
+                  <circle cx="0" cy="-22" r="1.5" fill="#fef08a" />
+                </g>
+              </>
             )}
           </svg>
 
           {/* Phase-specific items */}
           {phase === 'seed' && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-2xl animate-bounce">🧱</div>
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-xl animate-bounce">🏰</div>
           )}
           {phase === 'sprout' && (
             <>
-              <div className="absolute bottom-8 left-12 text-2xl">🏰</div>
-              <div className="absolute bottom-8 right-16 text-xl">🏰</div>
+              <div className="absolute bottom-8 left-8 text-sm opacity-85">🏰</div>
+              <div className="absolute bottom-10 right-12 text-sm opacity-85" style={{ animationDelay: '0.4s' }}>🏰</div>
             </>
           )}
           {phase === 'bloom' && (
             <>
               {/* Floating Hearts */}
-              <div className="absolute bottom-16 left-[25%] text-lg animate-ambient-float-up text-red-400 opacity-90">❤️</div>
-              <div className="absolute bottom-20 right-[25%] text-2xl animate-ambient-float-up delay-[1.5s] text-pink-400 opacity-90">💖</div>
-              <div className="absolute bottom-28 left-1/2 -translate-x-1/2 text-xl animate-ambient-float-up delay-[3s] text-rose-400 opacity-80">💝</div>
+              <div className="absolute bottom-16 left-[20%] text-sm animate-ambient-float-up text-red-400 opacity-90">❤️</div>
+              <div className="absolute bottom-20 right-[25%] text-lg animate-ambient-float-up text-pink-400 opacity-90" style={{ animationDelay: '1.5s' }}>💖</div>
+              <div className="absolute bottom-28 left-1/2 -translate-x-1/2 text-md animate-ambient-float-up text-rose-400 opacity-80" style={{ animationDelay: '3s' }}>💝</div>
             </>
           )}
         </div>
@@ -498,6 +556,7 @@ export default function HomePage() {
   const [showRewards, setShowRewards] = useState(false);
   const [showCustomization, setShowCustomization] = useState(false);
   const [showMemoriesModal, setShowMemoriesModal] = useState(false);
+  const [showChatModal, setShowChatModal] = useState(false);
   const [showWorldsModal, setShowWorldsModal] = useState(false);
 
   // Check-in State
@@ -744,20 +803,28 @@ export default function HomePage() {
                     <CompanionWidget
                       display={display}
                       dialogue={dialogue}
-                      size="xl"
+                      size="lg"
                       onTap={() => setDialogue(getDialogue('free_interaction' as any))}
                     />
                   </div>
                 )}
               </div>
 
-              {/* Memory Scroll Button */}
-              <button
-                onClick={() => setShowMemoriesModal(true)}
-                className="mt-6 text-xs font-semibold px-4 py-2.5 rounded-full bg-white/80 border border-stone-200 hover:bg-white text-stone-600 transition-colors shadow-soft flex items-center gap-1.5 cursor-pointer"
-              >
-                📖 Libro de Recuerdos e Insignias
-              </button>
+              {/* Actions row */}
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowMemoriesModal(true)}
+                  className="text-xs font-semibold px-4 py-2.5 rounded-full bg-white/80 border border-stone-205 hover:bg-white text-stone-600 transition-colors shadow-soft flex items-center gap-1.5 cursor-pointer"
+                >
+                  📖 Recuerdos e Insignias
+                </button>
+                <button
+                  onClick={() => setShowChatModal(true)}
+                  className="text-xs font-semibold px-4 py-2.5 rounded-full bg-bloom-50 hover:bg-bloom-100 border border-bloom-200 text-bloom-600 transition-all shadow-soft flex items-center gap-1.5 cursor-pointer hover:scale-[1.03]"
+                >
+                  💬 Hablar con {display?.name ?? 'Compañero'}
+                </button>
+              </div>
             </motion.div>
           )}
 
@@ -1572,6 +1639,27 @@ export default function HomePage() {
         sparkBalance={sparkBalance}
         onPurchaseSuccess={() => {}} // SparkProvider automatically syncs spark balances in realtime
       />
+      {/* COMPANION CHAT MODAL */}
+      {display && (
+        <CompanionChatModal
+          isOpen={showChatModal}
+          onClose={(lastReply) => {
+            setShowChatModal(false);
+            if (lastReply) {
+              setDialogue({
+                text: lastReply,
+                animationCue: 'idle',
+                durationMs: 4000
+              });
+            }
+          }}
+          display={display}
+          childName={profile?.display_name || 'amigo'}
+          selectedWorldName={selectedWorld.name}
+          activeWorldPhaseLabel={activeWorldPhase.label}
+          onInteract={() => interact('free_interaction')}
+        />
+      )}
     </div>
   );
 }
