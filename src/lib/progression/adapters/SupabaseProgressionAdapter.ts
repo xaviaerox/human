@@ -85,38 +85,6 @@ export class SupabaseProgressionAdapter implements IProgressionAdapter {
       return { ok: false, error: { code: 'award_failed', message: error?.message ?? 'Failed to award badge' } };
     }
 
-    // Award bonus progression scores for this badge (mirroring static behavior, let's insert a value score event)
-    const bonusDelta = tier === 'bronze' ? 5 : tier === 'silver' ? 10 : 20;
-    
-    // We insert into value_score_events and update child_value_scores
-    // Note: in Supabase these events are normally driven by DB triggers. However, since the badge is parent-awarded directly,
-    // we insert the event and upsert the score manually.
-    await this.client.from('value_score_events').insert({
-      child_id: childId,
-      dimension_id: dimensionId,
-      delta: bonusDelta,
-      source_type: 'parent_recognition',
-      source_id: data.id,
-      note: `Insignia de ${tier === 'bronze' ? 'Bronce' : tier === 'silver' ? 'Plata' : 'Oro'} otorgada por el padre`,
-    });
-
-    const { data: currentScore } = await this.client
-      .from('child_value_scores')
-      .select('score')
-      .eq('child_id', childId)
-      .eq('dimension_id', dimensionId)
-      .maybeSingle();
-
-    const currentVal = currentScore?.score ?? 0;
-    await this.client
-      .from('child_value_scores')
-      .upsert({
-        child_id: childId,
-        dimension_id: dimensionId,
-        score: currentVal + bonusDelta,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'child_id,dimension_id' });
-
     return { ok: true, data: data as ChildBadge };
   }
 }

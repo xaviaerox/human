@@ -16,9 +16,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SparkCelebrationOverlay } from '@/components/ui/SparkCelebrationOverlay';
 import { ChildAvatar } from '@/components/ui/ChildAvatar';
 import { CustomizationModal } from '@/components/companion/CustomizationModal';
+import { Button } from '@/components/ui/Button';
+import { cn } from '@/lib/utils';
+import { getSuggestedWords } from '@/lib/emotional/EmotionModel';
 
 import { useRouter } from 'next/navigation';
-import type { Reward, RewardRequest, ValueDimensionId, ChildBadge, CompanionMemory } from '@/types';
+import type { Reward, RewardRequest, ValueDimensionId, ChildBadge, CompanionMemory, DialogueLine } from '@/types';
 
 const rewardsAdapter = getRewardsAdapter();
 
@@ -86,6 +89,22 @@ const WORLD_THEMES: WorldTheme[] = [
   },
 ];
 
+const ENERGY_OPTIONS = [
+  { value: 1, emoji: '😴', label: 'Muy bajo' },
+  { value: 2, emoji: '😌', label: 'Bajo' },
+  { value: 3, emoji: '🙂', label: 'Normal' },
+  { value: 4, emoji: '😊', label: 'Alto' },
+  { value: 5, emoji: '⚡', label: 'Muy alto' },
+];
+
+const VALENCE_OPTIONS = [
+  { value: 1, emoji: '😢', label: 'Muy mal' },
+  { value: 2, emoji: '😕', label: 'Mal' },
+  { value: 3, emoji: '😐', label: 'Regular' },
+  { value: 4, emoji: '😊', label: 'Bien' },
+  { value: 5, emoji: '😄', label: 'Muy bien' },
+];
+
 function getCooldownStatus(reward: Reward, lastRedeemStr?: string): { isLocked: boolean; text?: string } {
   if (!reward.cooldown_hours || !lastRedeemStr) {
     return { isLocked: false };
@@ -128,22 +147,78 @@ export default function HomePage() {
   const { session, loading: authLoading, signOut } = useAuth();
   const profile = session?.profile ?? null;
   
-  const { display, getDialogue, setAppearanceContext, isVisible, memories } = useCompanion();
+  const { display, getDialogue, setAppearanceContext, isVisible, memories, interact } = useCompanion();
   const { scores, badges } = useProgression();
   const { balance: sparkBalance } = useSparks();
-  const { shouldPrompt } = useEmotional();
+  const { shouldPrompt, submitCheckin, recentCheckins, lastCheckin } = useEmotional();
 
   const [dialogue, setDialogue] = useState(() =>
     display ? getDialogue('greeting') : undefined
   );
   
-  // Navigation tabs: 'hogar' | 'mundos' | 'adventuras'
-  const [activeTab, setActiveTab] = useState<'hogar' | 'mundos' | 'adventuras'>('hogar');
+  // Navigation tabs: 'hogar' | 'routines' | 'goals' | 'checkin'
+  const [activeTab, setActiveTab] = useState<'hogar' | 'routines' | 'goals' | 'checkin'>('hogar');
   const [selectedWorld, setSelectedWorld] = useState<WorldTheme>(WORLD_THEMES[0]!);
   
   const [showRewards, setShowRewards] = useState(false);
   const [showCustomization, setShowCustomization] = useState(false);
   const [showMemoriesModal, setShowMemoriesModal] = useState(false);
+  const [showWorldsModal, setShowWorldsModal] = useState(false);
+
+  // Check-in State
+  const [checkinStep, setCheckinStep] = useState<'energy' | 'valence' | 'word' | 'note' | 'done'>('energy');
+  const [checkinEnergy, setCheckinEnergy] = useState<number | null>(null);
+  const [checkinValence, setCheckinValence] = useState<number | null>(null);
+  const [checkinWord, setCheckinWord] = useState('');
+  const [checkinCustomWord, setCheckinCustomWord] = useState('');
+  const [checkinNote, setCheckinNote] = useState('');
+  const [checkinDialogue, setCheckinDialogue] = useState<DialogueLine | undefined>(undefined);
+
+  const checkinSuggestedWords = useMemo(() => {
+    return checkinEnergy !== null && checkinValence !== null
+      ? getSuggestedWords({
+          energy_level: checkinEnergy as any,
+          valence: checkinValence as any,
+        })
+      : [];
+  }, [checkinEnergy, checkinValence]);
+
+  const lastCheckinTime = lastCheckin ? new Date(lastCheckin.occurred_at).getTime() : 0;
+  const isCooldown = Date.now() - lastCheckinTime < 8 * 60 * 60 * 1000;
+
+  // Handle Tab Change to Check-in
+  useEffect(() => {
+    if (activeTab === 'checkin') {
+      setCheckinStep('energy');
+      setCheckinEnergy(null);
+      setCheckinValence(null);
+      setCheckinWord('');
+      setCheckinCustomWord('');
+      setCheckinNote('');
+      if (display) {
+        setCheckinDialogue(getDialogue('checkin_prompt' as any));
+      }
+    }
+  }, [activeTab, display, getDialogue]);
+
+  async function handleCheckinSubmit() {
+    if (checkinEnergy === null || checkinValence === null || !profile?.id) return;
+
+    const emotion = {
+      energy_level: checkinEnergy,
+      valence: checkinValence,
+      emotion_word: checkinWord || checkinCustomWord || undefined,
+    };
+
+    await submitCheckin(emotion as any, 'free', undefined, checkinNote || undefined, 'child');
+    await interact('emotional_checkin', { energy: checkinEnergy, valence: checkinValence, word: emotion.emotion_word });
+
+    if (display) {
+      setCheckinDialogue(getDialogue('checkin_response', emotion as any));
+    }
+
+    setCheckinStep('done');
+  }
 
   const [currentCelebration, setCurrentCelebration] = useState<{ id: string; delta: number; note: string } | null>(null);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
@@ -307,11 +382,14 @@ export default function HomePage() {
                 </div>
               )}
 
-              {/* World indicator */}
-              <div className={`px-4 py-2 rounded-full border text-xs font-medium shadow-soft ${selectedWorld.accentBg} ${selectedWorld.textColor} flex items-center gap-2 mb-2 animate-fade-in`}>
+              {/* World indicator (button to change world) */}
+              <button
+                onClick={() => setShowWorldsModal(true)}
+                className={`px-4 py-2 rounded-full border text-xs font-semibold shadow-soft ${selectedWorld.accentBg} ${selectedWorld.textColor} flex items-center gap-2 mb-2 hover:scale-[1.03] active:scale-95 transition-all cursor-pointer`}
+              >
                 <span>{selectedWorld.emoji}</span>
-                <span>{selectedWorld.name} ({activeWorldPhase.label} {activeWorldPhase.icon})</span>
-              </div>
+                <span>Mundo: {selectedWorld.name} ({activeWorldPhase.label} {activeWorldPhase.icon}) ▾</span>
+              </button>
 
               {/* Ambient visual state description */}
               <p className="text-stone-400 text-center text-xs italic font-body max-w-xs mb-4">
@@ -342,70 +420,10 @@ export default function HomePage() {
             </motion.div>
           )}
 
-          {/* TAB 2: MUNDOS */}
-          {activeTab === 'mundos' && (
+          {/* TAB 2: RUTINAS */}
+          {activeTab === 'routines' && (
             <motion.div
-              key="mundos"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.3 }}
-              className="flex flex-col gap-4 py-4 w-full"
-            >
-              <div className="text-center mb-2">
-                <h2 className="text-xl font-display text-stone-850">Mundos Emocionales</h2>
-                <p className="text-xs text-stone-400 font-body mt-1">
-                  Tu evolución real hace crecer y florecer cada zona
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-3 max-h-[380px] overflow-y-auto pr-1">
-                {WORLD_THEMES.map(world => {
-                  const score = scores[world.dimension] ?? 0;
-                  const phase = getWorldPhase(score);
-                  const isSelected = selectedWorld.id === world.id;
-
-                  return (
-                    <button
-                      key={world.id}
-                      onClick={() => setSelectedWorld(world)}
-                      className={`
-                        w-full text-left p-4 rounded-3xl border transition-all duration-300 shadow-sm flex items-center justify-between gap-4 cursor-pointer
-                        ${isSelected
-                          ? 'bg-white border-stone-300 ring-2 ring-stone-200 scale-[1.01]'
-                          : 'bg-white/60 border-stone-150 hover:bg-white/90 hover:scale-[1.005]'
-                        }
-                      `}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-3xl">{world.emoji}</span>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-bold text-stone-700">{world.name}</span>
-                          <span className="text-xs text-stone-400 mt-0.5 max-w-[240px] leading-relaxed">
-                            {world.description}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col items-end flex-shrink-0">
-                        <span className="text-[10px] text-stone-400 uppercase tracking-widest leading-none">
-                          Estado
-                        </span>
-                        <span className="text-xs font-semibold text-stone-600 mt-1 flex items-center gap-1">
-                          {phase.label} {phase.icon}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
-
-          {/* TAB 3: AVENTURAS Y RUTINAS */}
-          {activeTab === 'adventuras' && (
-            <motion.div
-              key="adventuras"
+              key="routines"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
@@ -413,7 +431,33 @@ export default function HomePage() {
               className="flex flex-col gap-4 py-4 w-full"
             >
               <div className="text-center mb-1">
-                <h2 className="text-xl font-display text-stone-850">Aventuras y Rutinas</h2>
+                <h2 className="text-xl font-display text-stone-850">Mis Rutinas</h2>
+                <p className="text-xs text-stone-400 font-body mt-1">
+                  Pasos diarios para cultivar hábitos positivos
+                </p>
+              </div>
+
+              {/* Today's routines */}
+              <RoutinesToday
+                onComplete={() => {
+                  if (display) setDialogue(getDialogue('routine_complete'));
+                }}
+              />
+            </motion.div>
+          )}
+
+          {/* TAB 3: OBJETIVO (AVENTURAS) */}
+          {activeTab === 'goals' && (
+            <motion.div
+              key="goals"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.3 }}
+              className="flex flex-col gap-4 py-4 w-full"
+            >
+              <div className="text-center mb-1">
+                <h2 className="text-xl font-display text-stone-850">Aventuras</h2>
                 <p className="text-xs text-stone-400 font-body mt-1">
                   Pasos significativos acompañados de tu compañero
                 </p>
@@ -425,13 +469,247 @@ export default function HomePage() {
                   if (display) setDialogue(getDialogue('goal_step_complete'));
                 }}
               />
+            </motion.div>
+          )}
 
-              {/* Today's routines */}
-              <RoutinesToday
-                onComplete={() => {
-                  if (display) setDialogue(getDialogue('routine_complete'));
-                }}
-              />
+          {/* TAB 4: CÓMO ESTOY (CHECK-IN) */}
+          {activeTab === 'checkin' && (
+            <motion.div
+              key="checkin"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.3 }}
+              className="flex flex-col gap-4 py-4 w-full"
+            >
+              <div className="text-center mb-1">
+                <h2 className="text-xl font-display text-stone-850">¿Cómo estoy?</h2>
+                <p className="text-xs text-stone-400 font-body mt-1">
+                  Reflexiona sobre tus sentimientos y compártelo con tu compañero
+                </p>
+              </div>
+
+              {/* Cooldown Warning */}
+              {checkinStep !== 'done' && isCooldown && (
+                <div className="p-4 bg-amber-50 border border-amber-100 rounded-3xl flex items-start gap-2.5 text-xs text-amber-800 font-medium leading-relaxed animate-fade-in shadow-soft">
+                  <span className="text-sm">✨</span>
+                  <p>
+                    Puedes registrar cómo te sientes en cualquier momento, pero solo ganarás estrellas y afecto con tu compañero una vez cada 8 horas.
+                  </p>
+                </div>
+              )}
+
+              {/* Progress bar */}
+              {checkinStep !== 'done' && (
+                <div className="w-full h-1.5 bg-stone-200 rounded-full overflow-hidden mb-2">
+                  <div
+                    className="h-full bg-lavender-400 rounded-full transition-all duration-500"
+                    style={{ width: `${(['energy', 'valence', 'word', 'note', 'done'].indexOf(checkinStep) / 4) * 100}%` }}
+                  />
+                </div>
+              )}
+
+              {/* Companion Widget (inside check-in) */}
+              {display && checkinStep !== 'done' && (
+                <div className="flex justify-center my-4 animate-fade-in">
+                  <CompanionWidget
+                    display={display}
+                    dialogue={checkinStep === 'energy' ? checkinDialogue : undefined}
+                    size="md"
+                  />
+                </div>
+              )}
+
+              {/* Step 1: Energy */}
+              {checkinStep === 'energy' && (
+                <div className="flex flex-col gap-4 animate-slide-up">
+                  <p className="font-display text-lg text-stone-700 text-center">
+                    ¿Cuánta energía tienes ahora?
+                  </p>
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {ENERGY_OPTIONS.map(opt => (
+                      <button
+                        key={opt.value}
+                        onClick={() => {
+                          setCheckinEnergy(opt.value);
+                          setCheckinStep('valence');
+                        }}
+                        className={cn(
+                          'flex flex-col items-center gap-1 py-4 rounded-2xl border cursor-pointer',
+                          'bg-white border-stone-200 transition-all duration-200',
+                          'hover:border-lavender-300 hover:bg-lavender-50',
+                          'active:scale-95'
+                        )}
+                        aria-label={opt.label}
+                      >
+                        <span className="text-xl">{opt.emoji}</span>
+                        <span className="text-[9px] text-stone-400 font-body text-center">{opt.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2: Valence */}
+              {checkinStep === 'valence' && (
+                <div className="flex flex-col gap-4 animate-slide-up">
+                  <p className="font-display text-lg text-stone-700 text-center">
+                    ¿Cómo te sientes por dentro?
+                  </p>
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {VALENCE_OPTIONS.map(opt => (
+                      <button
+                        key={opt.value}
+                        onClick={() => {
+                          setCheckinValence(opt.value);
+                          setCheckinStep('word');
+                          if (display) setCheckinDialogue(getDialogue('checkin_prompt' as any));
+                        }}
+                        className={cn(
+                          'flex flex-col items-center gap-1 py-4 rounded-2xl border cursor-pointer',
+                          'bg-white border-stone-200 transition-all duration-200',
+                          'hover:border-lavender-300 hover:bg-lavender-50',
+                          'active:scale-95'
+                        )}
+                        aria-label={opt.label}
+                      >
+                        <span className="text-xl">{opt.emoji}</span>
+                        <span className="text-[9px] text-stone-400 font-body text-center">{opt.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Word */}
+              {checkinStep === 'word' && (
+                <div className="flex flex-col gap-4 animate-slide-up">
+                  <p className="font-display text-lg text-stone-700 text-center">
+                    ¿Hay una palabra que lo describa?
+                  </p>
+                  <div className="flex flex-wrap gap-2 justify-center max-h-[140px] overflow-y-auto py-1">
+                    {checkinSuggestedWords.map(w => (
+                      <button
+                        key={w}
+                        onClick={() => {
+                          setCheckinWord(w);
+                          setCheckinStep('note');
+                        }}
+                        className={cn(
+                          'px-3.5 py-1.5 rounded-full border text-xs font-semibold transition-all cursor-pointer',
+                          'bg-white border-stone-200 text-stone-700',
+                          'hover:bg-lavender-50 hover:border-lavender-300 hover:text-lavender-700'
+                        )}
+                      >
+                        {w}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-2 mt-2">
+                    <input
+                      value={checkinCustomWord}
+                      onChange={e => setCheckinCustomWord(e.target.value)}
+                      placeholder="O escribe tu propia palabra..."
+                      className="flex-1 px-4 py-2 rounded-2xl border border-stone-200 text-xs text-stone-750 bg-white focus:outline-none focus:ring-2 focus:ring-lavender-200"
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && checkinCustomWord.trim()) {
+                          setCheckinWord(checkinCustomWord.trim());
+                          setCheckinStep('note');
+                        }
+                      }}
+                    />
+                    {checkinCustomWord.trim() && (
+                      <Button variant="secondary" size="sm" onClick={() => {
+                        setCheckinWord(checkinCustomWord.trim());
+                        setCheckinStep('note');
+                      }}>
+                        OK
+                      </Button>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setCheckinWord('');
+                      setCheckinStep('note');
+                    }}
+                    className="text-xs text-stone-400 hover:text-stone-600 text-center cursor-pointer mt-1"
+                  >
+                    Saltar esta pregunta
+                  </button>
+                </div>
+              )}
+
+              {/* Step 4: Note */}
+              {checkinStep === 'note' && (
+                <div className="flex flex-col gap-4 animate-slide-up">
+                  <p className="font-display text-lg text-stone-700 text-center">
+                    ¿Quieres contar algo más?
+                  </p>
+                  <textarea
+                    value={checkinNote}
+                    onChange={e => setCheckinNote(e.target.value)}
+                    placeholder="Lo que quieras... o nada, también está bien."
+                    rows={3}
+                    className={cn(
+                      'w-full px-4 py-2.5 rounded-2xl border border-stone-200 bg-white',
+                      'text-stone-700 text-xs leading-relaxed resize-none',
+                      'focus:outline-none focus:ring-2 focus:ring-lavender-200',
+                      'placeholder:text-stone-300'
+                    )}
+                  />
+                  <Button size="lg" onClick={handleCheckinSubmit} className="w-full">
+                    Listo
+                  </Button>
+                  <button
+                    onClick={handleCheckinSubmit}
+                    className="text-xs text-stone-400 hover:text-stone-600 text-center cursor-pointer"
+                  >
+                    Sin nota, guardar así
+                  </button>
+                </div>
+              )}
+
+              {/* Step 5: Done */}
+              {checkinStep === 'done' && (
+                <div className="flex flex-col items-center gap-4 animate-bloom text-center py-4">
+                  {display && (
+                    <CompanionWidget
+                      display={display}
+                      dialogue={checkinDialogue}
+                      size="lg"
+                    />
+                  )}
+                  <div className="flex flex-col gap-1.5">
+                    <p className="font-display text-xl text-stone-800">
+                      Gracias por contármelo
+                    </p>
+                    <p className="text-stone-500 text-xs font-body max-w-xs mx-auto leading-relaxed">
+                      Conocerte mejor me ayuda a estar más cerca de ti y acompañarte en tu día.
+                    </p>
+                  </div>
+
+                  <Button variant="secondary" size="md" className="mt-2" onClick={() => setActiveTab('hogar')}>
+                    Volver a Inicio
+                  </Button>
+
+                  {/* Recent check-ins */}
+                  {recentCheckins.length > 1 && (
+                    <div className="flex gap-1.5 flex-wrap justify-center mt-3 max-w-xs">
+                      {recentCheckins.slice(1, 4).map(c => (
+                        <span
+                          key={c.id}
+                          className="px-2.5 py-0.5 bg-stone-50 rounded-full text-[10px] text-stone-500 border border-stone-150 font-body"
+                        >
+                          {c.emotion_word ?? `${c.valence}/5`}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
             </motion.div>
           )}
 
@@ -447,8 +725,9 @@ export default function HomePage() {
         <div className="flex justify-around max-w-md mx-auto">
           {[
             { tab: 'hogar', label: 'Inicio', icon: '⌂' },
-            { tab: 'mundos', label: 'Mundos', icon: '🗺️' },
-            { tab: 'adventuras', label: 'Aventuras', icon: '🎒' }
+            { tab: 'routines', label: 'Rutinas', icon: '◎' },
+            { tab: 'goals', label: 'Objetivo', icon: '◈' },
+            { tab: 'checkin', label: 'Cómo estoy', icon: '♡' }
           ].map(item => {
             const isActive = activeTab === item.tab;
             return (
@@ -856,6 +1135,91 @@ export default function HomePage() {
                   </div>
                 </>
               )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* WORLDS MODAL */}
+      <AnimatePresence>
+        {showWorldsModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowWorldsModal(false)}
+              className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm"
+            />
+
+            {/* Modal Card */}
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 15 }}
+              transition={{ type: 'spring', duration: 0.5 }}
+              className="relative bg-white rounded-3xl p-6 shadow-card border border-stone-100 max-w-md w-full flex flex-col gap-4 max-h-[85dvh] overflow-hidden"
+            >
+              <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                <h3 className="font-display text-xl text-stone-800 flex items-center gap-2">
+                  <span>🗺️</span> Mundos Emocionales
+                </h3>
+                <button
+                  onClick={() => setShowWorldsModal(false)}
+                  className="text-stone-400 hover:text-stone-600 text-lg leading-none cursor-pointer"
+                >
+                  ×
+                </button>
+              </div>
+
+              <p className="text-xs text-stone-500 font-body">
+                Tu evolución real hace crecer y florecer cada zona. Elige qué mundo quieres visitar hoy:
+              </p>
+
+              <div className="flex flex-col gap-3 overflow-y-auto pr-1">
+                {WORLD_THEMES.map(world => {
+                  const score = scores[world.dimension] ?? 0;
+                  const phase = getWorldPhase(score);
+                  const isSelected = selectedWorld.id === world.id;
+
+                  return (
+                    <button
+                      key={world.id}
+                      onClick={() => {
+                        setSelectedWorld(world);
+                        setShowWorldsModal(false);
+                      }}
+                      className={`
+                        w-full text-left p-4 rounded-3xl border transition-all duration-300 shadow-sm flex items-center justify-between gap-4 cursor-pointer
+                        ${isSelected
+                          ? 'bg-stone-50 border-stone-300 ring-2 ring-stone-200 scale-[1.01]'
+                          : 'bg-white border-stone-150 hover:bg-stone-50/55 hover:scale-[1.005]'
+                        }
+                      `}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl">{world.emoji}</span>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-stone-700">{world.name}</span>
+                          <span className="text-xs text-stone-400 mt-0.5 max-w-[200px] leading-relaxed">
+                            {world.description}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-end flex-shrink-0">
+                        <span className="text-[10px] text-stone-400 uppercase tracking-widest leading-none">
+                          Estado
+                        </span>
+                        <span className="text-xs font-semibold text-stone-600 mt-1 flex items-center gap-1">
+                          {phase.label} {phase.icon}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </motion.div>
           </div>
         )}
