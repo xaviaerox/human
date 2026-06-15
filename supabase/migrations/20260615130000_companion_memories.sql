@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS companion_memories (
 
 ALTER TABLE companion_memories ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "memories: family read" ON companion_memories;
 CREATE POLICY "memories: family read" ON companion_memories
   FOR SELECT TO authenticated
   USING (
@@ -26,12 +27,14 @@ CREATE POLICY "memories: family read" ON companion_memories
     )
   );
 
+DROP POLICY IF EXISTS "memories: child insert own" ON companion_memories;
 CREATE POLICY "memories: child insert own" ON companion_memories
   FOR INSERT TO authenticated
   WITH CHECK (
     child_id = auth.uid()
   );
 
+DROP POLICY IF EXISTS "memories: parent write" ON companion_memories;
 CREATE POLICY "memories: parent write" ON companion_memories
   FOR ALL TO authenticated
   USING (

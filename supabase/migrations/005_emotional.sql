@@ -25,10 +25,11 @@ CREATE TABLE IF NOT EXISTS emotional_checkins (
 ALTER TABLE emotional_checkins ENABLE ROW LEVEL SECURITY;
 
 -- Child can write their own check-ins
+DROP POLICY IF EXISTS "checkins: child insert own" ON emotional_checkins;
 CREATE POLICY "checkins: child insert own" ON emotional_checkins
   FOR INSERT WITH CHECK (child_id = auth.uid());
 
--- Family can read (parent sees all; child sees own only via view)
+DROP POLICY IF EXISTS "checkins: family read" ON emotional_checkins;
 CREATE POLICY "checkins: family read" ON emotional_checkins
   FOR SELECT USING (
     child_id IN (
@@ -75,6 +76,7 @@ CREATE TABLE IF NOT EXISTS checkin_schedules (
 
 ALTER TABLE checkin_schedules ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "schedule: family read" ON checkin_schedules;
 CREATE POLICY "schedule: family read" ON checkin_schedules
   FOR SELECT USING (
     child_id IN (
@@ -84,6 +86,7 @@ CREATE POLICY "schedule: family read" ON checkin_schedules
     )
   );
 
+DROP POLICY IF EXISTS "schedule: parent write" ON checkin_schedules;
 CREATE POLICY "schedule: parent write" ON checkin_schedules
   FOR ALL USING (
     child_id IN (

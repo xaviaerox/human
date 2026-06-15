@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS offline_queue (
 
 ALTER TABLE offline_queue ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "queue: own read/write" ON offline_queue;
 CREATE POLICY "queue: own read/write" ON offline_queue
   FOR ALL USING (user_id = auth.uid());
 

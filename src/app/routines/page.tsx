@@ -24,6 +24,7 @@ export default function RoutinesPage() {
   const { interact, getDialogue, setAppearanceContext } = useCompanion();
   const [routines, setRoutines] = useState<RoutineWithSteps[]>([]);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  const [completionsMap, setCompletionsMap] = useState<Record<string, number[]>>({});
   const [activeRoutine, setActiveRoutine] = useState<string | null>(null);
   const [stepsDone, setStepsDone] = useState<Set<number>>(new Set());
   const [showDelta, setShowDelta] = useState<string | null>(null);
@@ -51,18 +52,31 @@ export default function RoutinesPage() {
       ),
     ]).then(([r, c]) => {
       if (r.ok) setRoutines(r.data);
-      if (c.ok) setCompletedIds(new Set(c.data.map(x => x.routine_id)));
+      if (c.ok) {
+        setCompletedIds(new Set(c.data.map(x => x.routine_id)));
+        const map: Record<string, number[]> = {};
+        c.data.forEach(x => {
+          map[x.routine_id] = x.steps_completed || [];
+        });
+        setCompletionsMap(map);
+      }
       setLoading(false);
     });
   }, [family?.id, profile?.id]);
 
-  function openRoutine(id: string) {
+  function openRoutine(id: string, done: boolean) {
     setActiveRoutine(id);
-    setStepsDone(new Set());
+    if (done) {
+      setStepsDone(new Set(completionsMap[id] || []));
+    } else {
+      setStepsDone(new Set());
+    }
     setAppearanceContext('routine_active');
   }
 
   function toggleStep(pos: number) {
+    const active = activeRoutine ? routines.find(r => r.id === activeRoutine) : null;
+    if (active && completedIds.has(active.id)) return; // Disable toggling if completed
     setStepsDone(prev => {
       const next = new Set(prev);
       next.has(pos) ? next.delete(pos) : next.add(pos);
@@ -79,6 +93,10 @@ export default function RoutinesPage() {
     });
     if (result.ok) {
       setCompletedIds(prev => new Set([...prev, routine.id]));
+      setCompletionsMap(prev => ({
+        ...prev,
+        [routine.id]: [...stepsDone],
+      }));
       setActiveRoutine(null);
       setShowDelta(routine.id);
       await interact('routine_complete', { routine_id: routine.id });
@@ -96,10 +114,16 @@ export default function RoutinesPage() {
         next.delete(routine.id);
         return next;
       });
+      setCompletionsMap(prev => {
+        const next = { ...prev };
+        delete next[routine.id];
+        return next;
+      });
     }
   }
 
   const active = activeRoutine ? routines.find(r => r.id === activeRoutine) : null;
+  const isActiveCompleted = active ? completedIds.has(active.id) : false;
 
   if (authLoading || loading) return (
     <div className="flex items-center justify-center min-h-dvh">
@@ -140,7 +164,8 @@ export default function RoutinesPage() {
                   'flex items-center gap-4 p-4 rounded-3xl border transition-all duration-200 text-left w-full',
                   stepsDone.has(step.position)
                     ? 'bg-moss-50 border-moss-200'
-                    : 'bg-white border-stone-200 hover:border-stone-300'
+                    : 'bg-white border-stone-200 hover:border-stone-300',
+                  isActiveCompleted ? 'cursor-default' : 'cursor-pointer'
                 )}
                 aria-pressed={stepsDone.has(step.position)}
               >
@@ -170,14 +195,29 @@ export default function RoutinesPage() {
               </button>
             ))}
 
-            <Button
-              size="xl"
-              onClick={() => finishRoutine(active)}
-              disabled={active.steps.length > 0 && stepsDone.size < active.steps.length}
-              className="w-full mt-2"
-            >
-              Rutina completada ✦
-            </Button>
+            {isActiveCompleted ? (
+              <Button
+                variant="secondary"
+                size="xl"
+                onClick={async () => {
+                  await handleUncomplete(active);
+                  setActiveRoutine(null);
+                  setStepsDone(new Set());
+                }}
+                className="w-full mt-2 bg-transparent border-red-200 text-red-650 hover:bg-red-50 hover:border-red-350 transition-all cursor-pointer"
+              >
+                Desmarcar rutina ✕
+              </Button>
+            ) : (
+              <Button
+                size="xl"
+                onClick={() => finishRoutine(active)}
+                disabled={active.steps.length > 0 && stepsDone.size < active.steps.length}
+                className="w-full mt-2"
+              >
+                Completar rutina (+{active.spark_value} Sparks) ✦
+              </Button>
+            )}
           </div>
         )}
 
@@ -189,7 +229,7 @@ export default function RoutinesPage() {
               key={routine.id}
               variant={done ? 'warm' : 'default'}
               className="cursor-pointer hover:shadow-card transition-shadow"
-              onClick={() => !done && openRoutine(routine.id)}
+              onClick={() => openRoutine(routine.id, done)}
             >
               <div className="flex items-center gap-4">
                 <div className={cn(

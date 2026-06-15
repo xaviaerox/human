@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS goals (
 
 ALTER TABLE goals ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "goals: family read" ON goals;
 CREATE POLICY "goals: family read" ON goals
   FOR SELECT USING (
     family_id IN (
@@ -43,6 +44,7 @@ CREATE POLICY "goals: family read" ON goals
     )
   );
 
+DROP POLICY IF EXISTS "goals: parent write" ON goals;
 CREATE POLICY "goals: parent write" ON goals
   FOR ALL USING (
     family_id IN (
@@ -77,6 +79,7 @@ CREATE TABLE IF NOT EXISTS goal_microtasks (
 
 ALTER TABLE goal_microtasks ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "microtasks: follow goal visibility" ON goal_microtasks;
 CREATE POLICY "microtasks: follow goal visibility" ON goal_microtasks
   FOR SELECT USING (
     goal_id IN (
@@ -86,6 +89,7 @@ CREATE POLICY "microtasks: follow goal visibility" ON goal_microtasks
     )
   );
 
+DROP POLICY IF EXISTS "microtasks: child complete own" ON goal_microtasks;
 CREATE POLICY "microtasks: child complete own" ON goal_microtasks
   FOR UPDATE USING (
     goal_id IN (
@@ -93,6 +97,7 @@ CREATE POLICY "microtasks: child complete own" ON goal_microtasks
     )
   );
 
+DROP POLICY IF EXISTS "microtasks: parent write" ON goal_microtasks;
 CREATE POLICY "microtasks: parent write" ON goal_microtasks
   FOR ALL USING (
     goal_id IN (

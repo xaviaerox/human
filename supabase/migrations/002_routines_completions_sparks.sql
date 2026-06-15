@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS child_value_scores (
 
 ALTER TABLE child_value_scores ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "value_scores: family read" ON child_value_scores;
 CREATE POLICY "value_scores: family read" ON child_value_scores
   FOR SELECT USING (
     child_id IN (
@@ -64,6 +65,7 @@ CREATE TABLE IF NOT EXISTS value_score_events (
 
 ALTER TABLE value_score_events ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "value_events: family read" ON value_score_events;
 CREATE POLICY "value_events: family read" ON value_score_events
   FOR SELECT USING (
     child_id IN (
@@ -100,6 +102,7 @@ CREATE TABLE IF NOT EXISTS routines (
 
 ALTER TABLE routines ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "routines: family read" ON routines;
 CREATE POLICY "routines: family read" ON routines
   FOR SELECT USING (
     family_id IN (
@@ -107,6 +110,7 @@ CREATE POLICY "routines: family read" ON routines
     )
   );
 
+DROP POLICY IF EXISTS "routines: parent write" ON routines;
 CREATE POLICY "routines: parent write" ON routines
   FOR ALL USING (
     family_id IN (
@@ -134,6 +138,7 @@ CREATE TABLE IF NOT EXISTS routine_steps (
 
 ALTER TABLE routine_steps ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "steps: family read" ON routine_steps;
 CREATE POLICY "steps: family read" ON routine_steps
   FOR SELECT USING (
     routine_id IN (
@@ -141,6 +146,7 @@ CREATE POLICY "steps: family read" ON routine_steps
     )
   );
 
+DROP POLICY IF EXISTS "steps: parent write" ON routine_steps;
 CREATE POLICY "steps: parent write" ON routine_steps
   FOR ALL USING (
     routine_id IN (
@@ -166,6 +172,7 @@ CREATE TABLE IF NOT EXISTS routine_completions (
 
 ALTER TABLE routine_completions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "completions: family read" ON routine_completions;
 CREATE POLICY "completions: family read" ON routine_completions
   FOR SELECT USING (
     child_id IN (
@@ -175,6 +182,7 @@ CREATE POLICY "completions: family read" ON routine_completions
     )
   );
 
+DROP POLICY IF EXISTS "completions: child insert" ON routine_completions;
 CREATE POLICY "completions: child insert" ON routine_completions
   FOR INSERT WITH CHECK (
     child_id = auth.uid()
@@ -201,6 +209,7 @@ CREATE TABLE IF NOT EXISTS spark_ledger (
 
 ALTER TABLE spark_ledger ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "sparks: family read" ON spark_ledger;
 CREATE POLICY "sparks: family read" ON spark_ledger
   FOR SELECT USING (
     family_id IN (

@@ -73,12 +73,14 @@ $$ LANGUAGE sql SECURITY DEFINER;
 -- POLICIES ON FAMILIES
 -- ─────────────────────────────────────────
 -- Family members can read their own family
+DROP POLICY IF EXISTS "families: members read own" ON families;
 CREATE POLICY "families: members read own" ON families
   FOR SELECT USING (
     id = get_my_family_id()
   );
 
 -- Parents can update family settings
+DROP POLICY IF EXISTS "families: parent update" ON families;
 CREATE POLICY "families: parent update" ON families
   FOR UPDATE USING (
     id = get_my_family_id() AND is_parent()
@@ -88,16 +90,19 @@ CREATE POLICY "families: parent update" ON families
 -- POLICIES ON PROFILES
 -- ─────────────────────────────────────────
 -- Family members can read all profiles in their family
+DROP POLICY IF EXISTS "profiles: family read" ON profiles;
 CREATE POLICY "profiles: family read" ON profiles
   FOR SELECT USING (
     family_id = get_my_family_id()
   );
 
 -- Users can update their own profile
+DROP POLICY IF EXISTS "profiles: own update" ON profiles;
 CREATE POLICY "profiles: own update" ON profiles
   FOR UPDATE USING (id = auth.uid());
 
 -- Users can insert their own profile (called on signup)
+DROP POLICY IF EXISTS "profiles: own insert" ON profiles;
 CREATE POLICY "profiles: own insert" ON profiles
   FOR INSERT WITH CHECK (id = auth.uid());
 
@@ -105,18 +110,21 @@ CREATE POLICY "profiles: own insert" ON profiles
 -- POLICIES ON FAMILY INVITES
 -- ─────────────────────────────────────────
 -- Family members can read their family's invites
+DROP POLICY IF EXISTS "invites: family read" ON family_invites;
 CREATE POLICY "invites: family read" ON family_invites
   FOR SELECT USING (
     family_id = get_my_family_id()
   );
 
 -- Parents can create invites for their family
+DROP POLICY IF EXISTS "invites: parent insert" ON family_invites;
 CREATE POLICY "invites: parent insert" ON family_invites
   FOR INSERT WITH CHECK (
     family_id = get_my_family_id() AND is_parent()
   );
 
 -- Anyone can read a specific invite by code (for join flow)
+DROP POLICY IF EXISTS "invites: read by code" ON family_invites;
 CREATE POLICY "invites: read by code" ON family_invites
   FOR SELECT USING (TRUE); -- Filtered by invite_code in query
 

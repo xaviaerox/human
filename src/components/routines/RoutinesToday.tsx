@@ -21,6 +21,7 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
   const { interact } = useCompanion();
   const [routines, setRoutines] = useState<RoutineWithSteps[]>([]);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  const [completionsMap, setCompletionsMap] = useState<Record<string, number[]>>({});
   const [loading, setLoading] = useState(true);
   const [activeRoutineId, setActiveRoutineId] = useState<string | null>(null);
   const [stepsDone, setStepsDone] = useState<Set<number>>(new Set());
@@ -41,6 +42,11 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
     ).then(result => {
       if (result.ok) {
         setCompletedIds(new Set(result.data.map(c => c.routine_id)));
+        const map: Record<string, number[]> = {};
+        result.data.forEach(c => {
+          map[c.routine_id] = c.steps_completed || [];
+        });
+        setCompletionsMap(map);
       }
     });
   }, [family?.id, profile?.id]);
@@ -56,6 +62,10 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
 
     if (result.ok) {
       setCompletedIds(prev => new Set([...prev, routine.id]));
+      setCompletionsMap(prev => ({
+        ...prev,
+        [routine.id]: routine.steps.map(s => s.position)
+      }));
       await interact('routine_complete', { routine_id: routine.id });
       onComplete?.();
     }
@@ -75,6 +85,11 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
         next.delete(routine.id);
         return next;
       });
+      setCompletionsMap(prev => {
+        const next = { ...prev };
+        delete next[routine.id];
+        return next;
+      });
       onComplete?.();
     }
   }
@@ -92,6 +107,10 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
 
     if (result.ok) {
       setCompletedIds(prev => new Set([...prev, activeRoutine.id]));
+      setCompletionsMap(prev => ({
+        ...prev,
+        [activeRoutine.id]: [...stepsDone]
+      }));
       await interact('routine_complete', { routine_id: activeRoutine.id });
       onComplete?.();
       setActiveRoutineId(null);
@@ -130,6 +149,7 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
   if (activeRoutineId) {
     const activeRoutine = routines.find(r => r.id === activeRoutineId);
     if (activeRoutine) {
+      const isActiveCompleted = completedIds.has(activeRoutine.id);
       const totalSteps = activeRoutine.steps.length;
       const doneStepsCount = stepsDone.size;
       const progressPercent = totalSteps > 0 ? (doneStepsCount / totalSteps) * 100 : 0;
@@ -172,6 +192,7 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
                   <button
                     key={step.id}
                     onClick={() => {
+                      if (isActiveCompleted) return; // Disable toggling if completed
                       setStepsDone(prev => {
                         const next = new Set(prev);
                         if (next.has(step.position)) {
@@ -194,7 +215,7 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
                       stepDone ? 'bg-moss-400 border-moss-400 text-white' : 'border-stone-300'
                     )}>
                       {stepDone && (
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                       )}
@@ -215,16 +236,31 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
               })}
             </div>
 
-            {/* Complete button */}
-            <Button
-              variant="calm"
-              size="lg"
-              disabled={totalSteps > 0 && doneStepsCount < totalSteps}
-              onClick={handleFinishActive}
-              className="w-full mt-2"
-            >
-              Completar rutina (+{activeRoutine.spark_value} Sparks) ✦
-            </Button>
+            {/* Actions button */}
+            {isActiveCompleted ? (
+              <Button
+                variant="secondary"
+                size="lg"
+                onClick={async () => {
+                  await handleUncomplete(activeRoutine);
+                  setActiveRoutineId(null);
+                  setStepsDone(new Set());
+                }}
+                className="w-full mt-2 bg-transparent border-red-200 text-red-650 hover:bg-red-50 hover:border-red-350 transition-all cursor-pointer"
+              >
+                Desmarcar rutina ✕
+              </Button>
+            ) : (
+              <Button
+                variant="calm"
+                size="lg"
+                disabled={totalSteps > 0 && doneStepsCount < totalSteps}
+                onClick={handleFinishActive}
+                className="w-full mt-2"
+              >
+                Completar rutina (+{activeRoutine.spark_value} Sparks) ✦
+              </Button>
+            )}
           </div>
         </Card>
       );
@@ -243,15 +279,17 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
             <div
               key={routine.id}
               onClick={() => {
-                if (!done) {
-                  setActiveRoutineId(routine.id);
+                setActiveRoutineId(routine.id);
+                if (done) {
+                  setStepsDone(new Set(completionsMap[routine.id] || []));
+                } else {
                   setStepsDone(new Set());
                 }
               }}
               className={cn(
                 'flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-300',
                 done
-                  ? 'bg-moss-50 border border-moss-200'
+                  ? 'bg-moss-50 border border-moss-200 cursor-pointer hover:bg-moss-100/50'
                   : 'bg-stone-50 border border-stone-200 cursor-pointer hover:bg-stone-100/80 active:scale-[0.99]'
               )}
             >

@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS child_badges (
 
 ALTER TABLE child_badges ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "badges: family read" ON child_badges;
 CREATE POLICY "badges: family read" ON child_badges
   FOR SELECT TO authenticated
   USING (
@@ -23,6 +24,7 @@ CREATE POLICY "badges: family read" ON child_badges
     )
   );
 
+DROP POLICY IF EXISTS "badges: parent write" ON child_badges;
 CREATE POLICY "badges: parent write" ON child_badges
   FOR ALL TO authenticated
   USING (

@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS reward_requests (
 ALTER TABLE reward_requests ENABLE ROW LEVEL SECURITY;
 
 -- Select policy: members of the family can read reward requests
+DROP POLICY IF EXISTS "reward_requests: family read" ON reward_requests;
 CREATE POLICY "reward_requests: family read" ON reward_requests
   FOR SELECT TO authenticated
   USING (
@@ -25,6 +26,7 @@ CREATE POLICY "reward_requests: family read" ON reward_requests
   );
 
 -- Insert policy: children can insert requests for themselves
+DROP POLICY IF EXISTS "reward_requests: child insert" ON reward_requests;
 CREATE POLICY "reward_requests: child insert" ON reward_requests
   FOR INSERT TO authenticated
   WITH CHECK (
@@ -35,6 +37,7 @@ CREATE POLICY "reward_requests: child insert" ON reward_requests
   );
 
 -- All policy (write/delete): parents of the family can modify/delete reward requests
+DROP POLICY IF EXISTS "reward_requests: parent write" ON reward_requests;
 CREATE POLICY "reward_requests: parent write" ON reward_requests
   FOR ALL TO authenticated
   USING (

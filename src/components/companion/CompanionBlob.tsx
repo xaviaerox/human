@@ -312,14 +312,22 @@ export function CompanionBlob({
       </svg>
 
       {/* Accessory Overlay */}
-      {customAccessory && (
-        <div
-          className="absolute pointer-events-none select-none"
-          style={getAccessoryStyle(customAccessory, px)}
-        >
-          {customAccessory}
-        </div>
-      )}
+      {customAccessory && (() => {
+        const style = getAccessoryStyle(customAccessory, px);
+        return (
+          <div
+            className="absolute pointer-events-none select-none flex items-center justify-center"
+            style={{
+              ...style,
+              width: style.fontSize,
+              height: style.fontSize,
+              lineHeight: 1,
+            }}
+          >
+            {customAccessory}
+          </div>
+        );
+      })()}
     </div>
   );
 }

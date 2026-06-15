@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS companions (
 
 ALTER TABLE companions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "companions: family read" ON companions;
 CREATE POLICY "companions: family read" ON companions
   FOR SELECT USING (
     child_id IN (
@@ -33,6 +34,7 @@ CREATE POLICY "companions: family read" ON companions
     )
   );
 
+DROP POLICY IF EXISTS "companions: child update own" ON companions;
 CREATE POLICY "companions: child update own" ON companions
   FOR UPDATE USING (child_id = auth.uid());
 
@@ -54,6 +56,7 @@ CREATE TABLE IF NOT EXISTS companion_interactions (
 
 ALTER TABLE companion_interactions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "interactions: family read" ON companion_interactions;
 CREATE POLICY "interactions: family read" ON companion_interactions
   FOR SELECT USING (
     child_id IN (

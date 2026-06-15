@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS rewards (
 ALTER TABLE rewards ENABLE ROW LEVEL SECURITY;
 
 -- Select policy: members of the family can read rewards
+DROP POLICY IF EXISTS "rewards: family read" ON rewards;
 CREATE POLICY "rewards: family read" ON rewards
   FOR SELECT USING (
     family_id IN (
@@ -23,6 +24,7 @@ CREATE POLICY "rewards: family read" ON rewards
   );
 
 -- All policy (write/delete): parents of the family can modify rewards
+DROP POLICY IF EXISTS "rewards: parent write" ON rewards;
 CREATE POLICY "rewards: parent write" ON rewards
   FOR ALL USING (
     family_id IN (
