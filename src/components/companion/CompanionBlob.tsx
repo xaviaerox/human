@@ -21,30 +21,43 @@ function getAccessoryStyle(emoji: string, px: number) {
   let right = 'auto';
   let transform = 'translateX(-50%)';
 
-  if (emoji === '🕶️') {
+  const hasSunglasses = emoji.includes('🕶');
+  const hasCrown = emoji.includes('👑');
+  const hasTopHat = emoji.includes('🎩');
+  const hasGradCap = emoji.includes('🎓');
+  const hasRibbon = emoji.includes('🎀');
+  const hasHeadphones = emoji.includes('🎧');
+
+  if (hasSunglasses) {
     fontSize = px * 0.46; // Ensure it covers both eyes perfectly
-    top = '31%';
-  } else if (emoji === '👑') {
+    // Target Y: 45%. Center of box is at top + fontSize/2.
+    // top = 45% - 23% = 22%
+    top = '22%';
+  } else if (hasCrown) {
     fontSize = px * 0.48;
-    top = '-15%';
+    // Target bottom Y: 15% (rests on head top). top = 15% - 48% = -33%
+    top = '-33%';
     transform = 'translateX(-50%) rotate(-8deg)';
-  } else if (emoji === '🎩') {
+  } else if (hasTopHat) {
     fontSize = px * 0.52;
-    top = '-25%';
+    // Target bottom Y: 15%. top = 15% - 52% = -37%
+    top = '-37%';
     transform = 'translateX(-50%) rotate(-4deg)';
-  } else if (emoji === '🎓') {
+  } else if (hasGradCap) {
     fontSize = px * 0.52;
-    top = '-20%';
+    // Target bottom Y: 16%. top = 16% - 52% = -36%
+    top = '-36%';
     transform = 'translateX(-50%) rotate(-6deg)';
-  } else if (emoji === '🎀') {
+  } else if (hasRibbon) {
     fontSize = px * 0.38;
     top = '12%';
     left = 'auto';
     right = '12%';
     transform = 'rotate(15deg)';
-  } else if (emoji === '🎧') {
+  } else if (hasHeadphones) {
     fontSize = px * 0.65;
-    top = '22%';
+    // Target Y: 45%. Center of box is top + fontSize/2. top = 45% - 32.5% = 12.5%
+    top = '12.5%';
   } else {
     top = '-10%';
   }

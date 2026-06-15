@@ -22,6 +22,8 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
   const [routines, setRoutines] = useState<RoutineWithSteps[]>([]);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [activeRoutineId, setActiveRoutineId] = useState<string | null>(null);
+  const [stepsDone, setStepsDone] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     if (!family?.id || !profile?.id) return;
@@ -77,11 +79,30 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
     }
   }
 
+  async function handleFinishActive() {
+    if (!profile?.id || !activeRoutineId) return;
+    const activeRoutine = routines.find(r => r.id === activeRoutineId);
+    if (!activeRoutine) return;
+
+    const result = await routineAdapter.completeRoutine({
+      routine_id: activeRoutine.id,
+      child_id: profile.id,
+      steps_completed: [...stepsDone],
+    });
+
+    if (result.ok) {
+      setCompletedIds(prev => new Set([...prev, activeRoutine.id]));
+      await interact('routine_complete', { routine_id: activeRoutine.id });
+      onComplete?.();
+      setActiveRoutineId(null);
+      setStepsDone(new Set());
+    }
+  }
+
   if (loading) return null;
   if (routines.length === 0) return null;
 
   const todayRoutines = routines.filter(r => {
-    // Filter by day of the week to ensure we only show active routines for today
     const today = new Date();
     const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
 
@@ -93,12 +114,9 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
       if (!r.schedule_days.includes(dayOfWeek)) return false;
     }
     
-    // Do not filter by hour of day (morning, midday, evening) so children can complete
-    // routines that they missed during school/extracurricular activities.
     return true;
   });
 
-  // Sort routines chronologically: morning -> midday -> evening -> anytime
   const sortedRoutines = [...todayRoutines].sort((a, b) => {
     const order: Record<string, number> = { morning: 1, midday: 2, evening: 3, anytime: 4 };
     const valA = order[a.time_of_day ?? 'anytime'] ?? 4;
@@ -107,6 +125,111 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
   });
 
   if (sortedRoutines.length === 0) return null;
+
+  // Render checklist view if activeRoutineId is set
+  if (activeRoutineId) {
+    const activeRoutine = routines.find(r => r.id === activeRoutineId);
+    if (activeRoutine) {
+      const totalSteps = activeRoutine.steps.length;
+      const doneStepsCount = stepsDone.size;
+      const progressPercent = totalSteps > 0 ? (doneStepsCount / totalSteps) * 100 : 0;
+
+      return (
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-2 pb-2">
+            <button
+              onClick={() => {
+                setActiveRoutineId(null);
+                setStepsDone(new Set());
+              }}
+              className="text-stone-400 hover:text-stone-600 font-semibold text-lg p-1 cursor-pointer"
+              aria-label="Volver"
+            >
+              ←
+            </button>
+            <CardTitle className="text-stone-850">{activeRoutine.title}</CardTitle>
+          </CardHeader>
+          <div className="flex flex-col gap-3 px-6 pb-6">
+            {/* Progress bar */}
+            <div className="px-1 flex flex-col gap-1">
+              <div className="flex justify-between text-xs text-stone-400 font-medium">
+                <span>Progreso</span>
+                <span>{doneStepsCount} de {totalSteps} pasos</span>
+              </div>
+              <div className="w-full h-2 bg-stone-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-moss-400 rounded-full transition-all duration-300"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Steps checklist */}
+            <div className="flex flex-col gap-2 mt-2">
+              {activeRoutine.steps.map(step => {
+                const stepDone = stepsDone.has(step.position);
+                return (
+                  <button
+                    key={step.id}
+                    onClick={() => {
+                      setStepsDone(prev => {
+                        const next = new Set(prev);
+                        if (next.has(step.position)) {
+                          next.delete(step.position);
+                        } else {
+                          next.add(step.position);
+                        }
+                        return next;
+                      });
+                    }}
+                    className={cn(
+                      'flex items-center gap-3 p-3 rounded-2xl border transition-all duration-200 text-left w-full cursor-pointer',
+                      stepDone
+                        ? 'bg-moss-50 border-moss-200'
+                        : 'bg-white border-stone-200 hover:border-stone-300'
+                    )}
+                  >
+                    <div className={cn(
+                      'w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all',
+                      stepDone ? 'bg-moss-400 border-moss-400 text-white' : 'border-stone-300'
+                    )}>
+                      {stepDone && (
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={cn(
+                        'text-xs font-medium truncate',
+                        stepDone ? 'text-moss-700 line-through opacity-60' : 'text-stone-750'
+                      )}>
+                        {step.title}
+                      </p>
+                      {step.duration_minutes && (
+                        <p className="text-[10px] text-stone-400 mt-0.5">{step.duration_minutes} min</p>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Complete button */}
+            <Button
+              variant="calm"
+              size="lg"
+              disabled={totalSteps > 0 && doneStepsCount < totalSteps}
+              onClick={handleFinishActive}
+              className="w-full mt-2"
+            >
+              Completar rutina (+{activeRoutine.spark_value} Sparks) ✦
+            </Button>
+          </div>
+        </Card>
+      );
+    }
+  }
 
   return (
     <Card>
@@ -119,17 +242,26 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
           return (
             <div
               key={routine.id}
+              onClick={() => {
+                if (!done) {
+                  setActiveRoutineId(routine.id);
+                  setStepsDone(new Set());
+                }
+              }}
               className={cn(
                 'flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-300',
                 done
                   ? 'bg-moss-50 border border-moss-200'
-                  : 'bg-stone-50 border border-stone-200'
+                  : 'bg-stone-50 border border-stone-200 cursor-pointer hover:bg-stone-100/80 active:scale-[0.99]'
               )}
             >
               {/* Status indicator button */}
               <button
                 type="button"
-                onClick={() => done ? handleUncomplete(routine) : handleComplete(routine)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  done ? handleUncomplete(routine) : handleComplete(routine);
+                }}
                 className={cn(
                   'w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2',
                   done
@@ -159,11 +291,11 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
                 )}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                 {done ? (
                   <button
                     onClick={() => handleUncomplete(routine)}
-                    className="text-xs text-stone-400 hover:text-stone-600 transition-colors font-medium border border-stone-200 hover:border-stone-300 rounded-xl px-2.5 py-1"
+                    className="text-xs text-stone-400 hover:text-stone-600 transition-colors font-medium border border-stone-200 hover:border-stone-300 rounded-xl px-2.5 py-1 bg-white cursor-pointer"
                     aria-label={`Desmarcar ${routine.title}`}
                   >
                     Desmarcar
