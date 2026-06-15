@@ -81,14 +81,32 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
   if (routines.length === 0) return null;
 
   const todayRoutines = routines.filter(r => {
-    const hour = new Date().getHours();
-    if (r.time_of_day === 'morning') return hour < 12;
-    if (r.time_of_day === 'evening') return hour >= 17;
-    if (r.time_of_day === 'midday') return hour >= 11 && hour < 15;
-    return true; // anytime
+    // Filter by day of the week to ensure we only show active routines for today
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+
+    if (r.schedule_type === 'weekdays') {
+      if (dayOfWeek === 0 || dayOfWeek === 6) return false;
+    } else if (r.schedule_type === 'weekends') {
+      if (dayOfWeek >= 1 && dayOfWeek <= 5) return false;
+    } else if (r.schedule_type === 'custom' && r.schedule_days) {
+      if (!r.schedule_days.includes(dayOfWeek)) return false;
+    }
+    
+    // Do not filter by hour of day (morning, midday, evening) so children can complete
+    // routines that they missed during school/extracurricular activities.
+    return true;
   });
 
-  if (todayRoutines.length === 0) return null;
+  // Sort routines chronologically: morning -> midday -> evening -> anytime
+  const sortedRoutines = [...todayRoutines].sort((a, b) => {
+    const order: Record<string, number> = { morning: 1, midday: 2, evening: 3, anytime: 4 };
+    const valA = order[a.time_of_day ?? 'anytime'] ?? 4;
+    const valB = order[b.time_of_day ?? 'anytime'] ?? 4;
+    return valA - valB;
+  });
+
+  if (sortedRoutines.length === 0) return null;
 
   return (
     <Card>
@@ -96,7 +114,7 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
         <CardTitle>Rutinas de hoy</CardTitle>
       </CardHeader>
       <div className="flex flex-col gap-3">
-        {todayRoutines.map(routine => {
+        {sortedRoutines.map(routine => {
           const done = completedIds.has(routine.id);
           return (
             <div
