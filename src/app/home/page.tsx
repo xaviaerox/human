@@ -439,32 +439,38 @@ export default function HomePage() {
 
       </main>
 
-      {/* Floating Bottom Nav */}
-      <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md px-3 py-2 rounded-full border border-stone-200/80 shadow-card flex gap-1 z-30 max-w-sm w-[90%] justify-around">
-        {[
-          { tab: 'hogar', label: 'Hogar', icon: '🏠' },
-          { tab: 'mundos', label: 'Mundos', icon: '🗺️' },
-          { tab: 'adventuras', label: 'Aventuras', icon: '🎒' }
-        ].map(item => {
-          const isActive = activeTab === item.tab;
-          return (
-            <button
-              key={item.tab}
-              onClick={() => setActiveTab(item.tab as any)}
-              className={`
-                px-4 py-2 rounded-full text-xs font-bold transition-all duration-300 flex items-center gap-1.5 cursor-pointer
-                ${isActive
-                  ? 'bg-stone-850 text-white shadow-soft scale-105'
-                  : 'text-stone-500 hover:bg-stone-100 hover:text-stone-700'
-                }
-              `}
-            >
-              <span>{item.icon}</span>
-              <span className={isActive ? 'inline' : 'hidden md:inline'}>{item.label}</span>
-            </button>
-          );
-        })}
+      {/* Bottom Nav */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 bg-white border-t border-stone-100 px-4 py-2 z-30"
+        aria-label="Navegación"
+      >
+        <div className="flex justify-around max-w-md mx-auto">
+          {[
+            { tab: 'hogar', label: 'Inicio', icon: '⌂' },
+            { tab: 'mundos', label: 'Mundos', icon: '🗺️' },
+            { tab: 'adventuras', label: 'Aventuras', icon: '🎒' }
+          ].map(item => {
+            const isActive = activeTab === item.tab;
+            return (
+              <button
+                key={item.tab}
+                onClick={() => setActiveTab(item.tab as any)}
+                className={`
+                  flex flex-col items-center gap-0.5 px-3 py-2 rounded-2xl transition-all cursor-pointer
+                  ${isActive
+                    ? 'text-bloom-600 bg-bloom-50'
+                    : 'text-stone-400 hover:text-stone-600'
+                  }
+                `}
+              >
+                <span className="text-lg" aria-hidden="true">{item.icon}</span>
+                <span className="text-xs font-medium">{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </nav>
+
 
       {/* MEMORY & BADGES MODAL */}
       <AnimatePresence>
