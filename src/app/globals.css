@@ -211,3 +211,27 @@ h1, h2, h3, h4 {
 .animate-slide-up { animation: slide-up 0.4s ease-out both; }
 .animate-fade-in  { animation: fade-in 0.3s ease-out both; }
 .animate-bloom    { animation: bloom-in 0.5s ease-out both; }
+
+/* Ambient animation classes */
+@keyframes ambient-float-up {
+  0% { transform: translateY(10px) translateX(0) scale(0.8) rotate(0deg); opacity: 0; }
+  20% { opacity: 0.8; }
+  80% { opacity: 0.8; }
+  100% { transform: translateY(-220px) translateX(20px) scale(1.2) rotate(45deg); opacity: 0; }
+}
+
+@keyframes ambient-float-down {
+  0% { transform: translateY(-220px) translateX(0) scale(0.8) rotate(0deg); opacity: 0; }
+  20% { opacity: 0.7; }
+  80% { opacity: 0.7; }
+  100% { transform: translateY(10px) translateX(-20px) scale(1.2) rotate(-45deg); opacity: 0; }
+}
+
+@keyframes firefly-flicker {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.2; }
+  50% { transform: translate(-8px, -12px) scale(1.4); opacity: 0.95; }
+}
+
+.animate-ambient-float-up   { animation: ambient-float-up 8s ease-in-out infinite; }
+.animate-ambient-float-down { animation: ambient-float-down 10s ease-in-out infinite; }
+.animate-firefly            { animation: firefly-flicker 4s ease-in-out infinite; }

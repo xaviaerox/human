@@ -144,6 +144,38 @@ export function CompanionBlob({
           )}
         </defs>
 
+        {/* Radiant Stage: Starburst Background (render under the body) */}
+        {stage === 'radiant' && (
+          <g stroke={colors.secondary} strokeWidth="1.5" strokeLinecap="round" opacity="0.75" transform="translate(50,50)">
+            <line x1="0" y1="-50" x2="0" y2="-43" />
+            <line x1="0" y1="43" x2="0" y2="50" />
+            <line x1="-50" y1="0" x2="-43" y2="0" />
+            <line x1="43" y1="0" x2="50" y2="0" />
+            <line x1="-33" y1="-33" x2="-28" y2="-28" />
+            <line x1="28" y1="28" x2="33" y2="33" />
+            <line x1="33" y1="-33" x2="28" y2="-28" />
+            <line x1="-28" y1="28" x2="-33" y2="33" />
+          </g>
+        )}
+
+        {/* Glow Stage: Luminous Wings (render under the body) */}
+        {stage === 'glow' && (
+          <>
+            <path d="M 18 45 C 5 38 0 52 10 56 C 20 60 22 48 18 45 Z" fill={colors.glow} opacity="0.65" />
+            <path d="M 82 45 C 95 38 100 52 90 56 C 80 60 78 48 82 45 Z" fill={colors.glow} opacity="0.65" />
+          </>
+        )}
+
+        {/* Radiant Stage: Cute Animal/Fox Ears (render under or partially under/over the body) */}
+        {stage === 'radiant' && (
+          <>
+            <path d="M 24 22 L 10 2 L 34 16 Z" fill={colors.secondary} stroke={colors.secondary} strokeWidth="1.5" />
+            <path d="M 26 20 L 14 6 L 31 16 Z" fill={colors.glow} />
+            <path d="M 76 22 L 90 2 L 66 16 Z" fill={colors.secondary} stroke={colors.secondary} strokeWidth="1.5" />
+            <path d="M 74 20 L 86 6 L 69 16 Z" fill={colors.glow} />
+          </>
+        )}
+
         {/* Main blob */}
         <path
           d={BLOB_PATHS[stage]}
@@ -151,39 +183,76 @@ export function CompanionBlob({
           filter={stage === 'glow' || stage === 'radiant' ? `url(#${glowId})` : undefined}
         />
 
-        {/* Egg inner highlight */}
+        {/* EGG STAGE FEATURES */}
         {stage === 'egg' && (
-          <ellipse cx="38" cy="35" rx="8" ry="5" fill="white" opacity="0.25" />
+          <>
+            <ellipse cx="38" cy="35" rx="8" ry="5" fill="white" opacity="0.25" />
+            {/* Cracked pattern */}
+            <path d="M 35 68 L 42 60 L 50 66 L 58 58 L 65 68" stroke="#a39b8c" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            {/* Sleeping eyes */}
+            <path d="M 36 46 Q 41 49 46 46" stroke="#8c8273" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+            <path d="M 54 46 Q 59 49 64 46" stroke="#8c8273" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          </>
         )}
 
-        {/* Sprout: small leaf suggestion */}
+        {/* SPROUT STAGE FEATURES */}
         {stage === 'sprout' && (
           <>
             <ellipse cx="35" cy="30" rx="10" ry="6" fill="white" opacity="0.20" />
             <circle cx="62" cy="28" r="3" fill={colors.glow} opacity="0.5" />
+            {/* Sprout on head */}
+            <path d="M 50 12 Q 47 0 38 2 Q 47 8 50 12" fill="#789d4a" stroke="#5d7b36" strokeWidth="0.5" />
+            <path d="M 50 12 Q 53 0 62 2 Q 53 8 50 12" fill="#8cb857" stroke="#5d7b36" strokeWidth="0.5" />
+            {/* Simple cute dot eyes & mouth */}
+            <circle cx="39" cy="46" r="3" fill="#4d5c36" />
+            <circle cx="61" cy="46" r="3" fill="#4d5c36" />
+            <path d="M 48 51 Q 50 54 52 51" stroke="#4d5c36" strokeWidth="2" fill="none" strokeLinecap="round" />
           </>
         )}
 
-        {/* Bloom: warmth highlights */}
+        {/* BLOOM STAGE FEATURES */}
         {stage === 'bloom' && (
           <>
             <ellipse cx="34" cy="28" rx="12" ry="7" fill="white" opacity="0.22" />
             <circle cx="66" cy="26" r="4" fill={colors.glow} opacity="0.5" />
             <circle cx="70" cy="60" r="3" fill={colors.glow} opacity="0.3" />
+            {/* Flower blooming on head */}
+            <g transform="translate(50, 10)">
+              <circle cx="-5" cy="-5" r="4" fill="#fb7185" />
+              <circle cx="5" cy="-5" r="4" fill="#fb7185" />
+              <circle cx="5" cy="5" r="4" fill="#fb7185" />
+              <circle cx="-5" cy="5" r="4" fill="#fb7185" />
+              <circle cx="0" cy="0" r="3" fill="#f59e0b" />
+            </g>
+            {/* Cheerful happy eyes & mouth */}
+            <path d="M 35 46 Q 40 40 45 46" stroke="#9a3412" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+            <path d="M 55 46 Q 60 40 65 46" stroke="#9a3412" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+            <path d="M 47 52 Q 50 55 53 52" stroke="#9a3412" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+            {/* Rosy cheeks */}
+            <circle cx="31" cy="50" r="3.5" fill="#fca5a5" opacity="0.7" />
+            <circle cx="69" cy="50" r="3.5" fill="#fca5a5" opacity="0.7" />
           </>
         )}
 
-        {/* Glow: luminous particles */}
+        {/* GLOW STAGE FEATURES */}
         {stage === 'glow' && (
           <>
             <ellipse cx="33" cy="27" rx="13" ry="8" fill="white" opacity="0.25" />
             <circle cx="68" cy="24" r="4" fill="white" opacity="0.4" />
             <circle cx="72" cy="62" r="3" fill="white" opacity="0.3" />
             <circle cx="28" cy="65" r="2.5" fill="white" opacity="0.25" />
+            {/* Floating Halo above head */}
+            <ellipse cx="50" cy="-2" rx="15" ry="4" stroke="#c084fc" strokeWidth="2.5" fill="none" opacity="0.8" />
+            {/* Shiny expressive purple eyes & cute smile */}
+            <ellipse cx="38" cy="45" rx="4.5" ry="6.5" fill="#581c87" />
+            <circle cx="36.5" cy="42.5" r="1.5" fill="white" />
+            <ellipse cx="62" cy="45" rx="4.5" ry="6.5" fill="#581c87" />
+            <circle cx="60.5" cy="42.5" r="1.5" fill="white" />
+            <path d="M 46 52 Q 50 55 54 52" stroke="#581c87" strokeWidth="2.5" fill="none" strokeLinecap="round" />
           </>
         )}
 
-        {/* Radiant: full luminescence */}
+        {/* RADIANT STAGE FEATURES */}
         {stage === 'radiant' && (
           <>
             <ellipse cx="32" cy="26" rx="14" ry="9" fill="white" opacity="0.30" />
@@ -192,6 +261,17 @@ export function CompanionBlob({
             <circle cx="26" cy="66" r="3" fill="white" opacity="0.30" />
             <circle cx="50" cy="80" r="2.5" fill="white" opacity="0.25" />
             <circle cx="20" cy="45" r="2" fill="white" opacity="0.20" />
+            {/* Golden shiny eyes & broad smile */}
+            <ellipse cx="38" cy="45" rx="5" ry="7" fill="#78350f" />
+            <circle cx="36" cy="42" r="1.8" fill="white" />
+            <circle cx="40" cy="48" r="0.9" fill="white" />
+            <ellipse cx="62" cy="45" rx="5" ry="7" fill="#78350f" />
+            <circle cx="60" cy="42" r="1.8" fill="white" />
+            <circle cx="64" cy="48" r="0.9" fill="white" />
+            <path d="M 43 51 Q 50 58 57 51" stroke="#78350f" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+            {/* Rosy cheeks */}
+            <circle cx="30" cy="49" r="4" fill="#f87171" opacity="0.65" />
+            <circle cx="70" cy="49" r="4" fill="#f87171" opacity="0.65" />
           </>
         )}
       </svg>

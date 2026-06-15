@@ -41,7 +41,7 @@ const WORLD_THEMES: WorldTheme[] = [
     id: 'lago_calma',
     name: 'Lago de la Calma',
     dimension: 'regulation',
-    bgGradient: 'from-sky-50 to-sky-150 dark:from-sky-900/40 dark:to-sky-950/60',
+    bgGradient: 'from-sky-100 via-sky-50 to-blue-200 dark:from-sky-950 dark:via-sky-900 dark:to-indigo-950',
     textColor: 'text-sky-700 dark:text-sky-300',
     accentBg: 'bg-sky-100 border-sky-200 dark:bg-sky-900/50 dark:border-sky-850',
     emoji: '💧',
@@ -51,7 +51,7 @@ const WORLD_THEMES: WorldTheme[] = [
     id: 'valle_habitos',
     name: 'Valle de los Hábitos',
     dimension: 'connection', // Constancia
-    bgGradient: 'from-moss-50 to-moss-150 dark:from-moss-900/40 dark:to-moss-950/60',
+    bgGradient: 'from-emerald-100 via-green-50 to-teal-200 dark:from-emerald-950 dark:via-green-950 dark:to-teal-950',
     textColor: 'text-moss-700 dark:text-moss-300',
     accentBg: 'bg-moss-100 border-moss-200 dark:bg-moss-900/50 dark:border-moss-850',
     emoji: '🍃',
@@ -61,7 +61,7 @@ const WORLD_THEMES: WorldTheme[] = [
     id: 'bosque_autonomia',
     name: 'Bosque de la Autonomía',
     dimension: 'autonomy',
-    bgGradient: 'from-emerald-50 to-moss-100 dark:from-emerald-950/30 dark:to-moss-950/50',
+    bgGradient: 'from-green-100 via-emerald-50 to-emerald-300 dark:from-green-950 dark:via-emerald-950 dark:to-emerald-900',
     textColor: 'text-emerald-700 dark:text-emerald-300',
     accentBg: 'bg-emerald-100 border-emerald-200 dark:bg-emerald-900/50 dark:border-emerald-850',
     emoji: '🌲',
@@ -71,7 +71,7 @@ const WORLD_THEMES: WorldTheme[] = [
     id: 'montana_esfuerzo',
     name: 'Montañas del Esfuerzo',
     dimension: 'courage', // Valentía
-    bgGradient: 'from-amber-50 to-bloom-100 dark:from-amber-950/30 dark:to-bloom-950/50',
+    bgGradient: 'from-amber-100 via-orange-50 to-rose-200 dark:from-amber-950 dark:via-orange-950 dark:to-rose-950',
     textColor: 'text-bloom-700 dark:text-bloom-300',
     accentBg: 'bg-bloom-100 border-bloom-200 dark:bg-bloom-900/50 dark:border-bloom-850',
     emoji: '⛰️',
@@ -81,7 +81,7 @@ const WORLD_THEMES: WorldTheme[] = [
     id: 'reino_social',
     name: 'Reino de la Vida Social',
     dimension: 'empathy',
-    bgGradient: 'from-lavender-50 to-lavender-150 dark:from-lavender-900/40 dark:to-lavender-950/60',
+    bgGradient: 'from-purple-100 via-pink-50 to-fuchsia-200 dark:from-purple-950 dark:via-pink-950 dark:to-fuchsia-950',
     textColor: 'text-lavender-700 dark:text-lavender-300',
     accentBg: 'bg-lavender-100 border-lavender-200 dark:bg-lavender-900/50 dark:border-lavender-850',
     emoji: '🏰',
@@ -140,6 +140,165 @@ function getWorldPhase(score: number): { phase: 'seed' | 'sprout' | 'bloom'; lab
   if (score >= 100) return { phase: 'bloom', label: 'Esplendor', icon: '🌸' };
   if (score >= 31) return { phase: 'sprout', label: 'Brote', icon: '🌱' };
   return { phase: 'seed', label: 'Semilla', icon: '🌰' };
+}
+
+interface WorldAmbientVisualsProps {
+  worldId: string;
+  phase: 'seed' | 'sprout' | 'bloom';
+}
+
+function WorldAmbientVisuals({ worldId, phase }: WorldAmbientVisualsProps) {
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
+      {/* 1. LAGO DE LA CALMA */}
+      {worldId === 'lago_calma' && (
+        <div className="absolute inset-0 flex flex-col justify-end">
+          <svg className="w-full h-[40%] opacity-80" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <path d="M 0 100 Q 25 70 50 85 T 100 75 L 100 100 Z" fill="#bae6fd" opacity="0.5" />
+            <path d="M 0 100 Q 30 80 65 90 T 100 85 L 100 100 Z" fill="#7dd3fc" opacity="0.75" />
+          </svg>
+          {phase === 'seed' && (
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-2xl animate-pulse">💧</div>
+          )}
+          {phase === 'sprout' && (
+            <>
+              <div className="absolute bottom-8 left-12 text-xl animate-bounce">💧</div>
+              <div className="absolute bottom-12 right-16 text-lg animate-pulse">🌱</div>
+            </>
+          )}
+          {phase === 'bloom' && (
+            <>
+              <div className="absolute bottom-8 left-8 text-2xl animate-bounce">💧</div>
+              <div className="absolute bottom-12 left-20 text-xl">🌸</div>
+              <div className="absolute bottom-6 right-12 text-2xl animate-pulse">✨</div>
+              <div className="absolute bottom-10 right-24 text-xl">🌸</div>
+              <div className="absolute w-2.5 h-2.5 rounded-full bg-white opacity-60 bottom-16 left-10 animate-ambient-float-up" />
+              <div className="absolute w-3.5 h-3.5 rounded-full bg-white opacity-40 bottom-24 right-12 animate-ambient-float-up delay-1000" />
+              <div className="absolute w-1.5 h-1.5 rounded-full bg-white opacity-75 bottom-8 right-28 animate-ambient-float-up delay-500" />
+            </>
+          )}
+        </div>
+      )}
+
+      {/* 2. VALLE DE LOS HÁBITOS */}
+      {worldId === 'valle_habitos' && (
+        <div className="absolute inset-0 flex flex-col justify-end">
+          <svg className="w-full h-[35%] opacity-80" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <path d="M 0 100 Q 25 60 50 80 T 100 70 L 100 100 Z" fill="#bbf7d0" opacity="0.6" />
+            <path d="M 0 100 Q 35 70 70 90 T 100 85 L 100 100 Z" fill="#86efac" opacity="0.8" />
+          </svg>
+          {phase === 'seed' && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-2xl animate-bounce">🌰</div>
+          )}
+          {phase === 'sprout' && (
+            <>
+              <div className="absolute bottom-6 left-12 text-xl animate-pulse">🌱</div>
+              <div className="absolute bottom-8 right-16 text-lg animate-pulse">🌱</div>
+            </>
+          )}
+          {phase === 'bloom' && (
+            <>
+              <div className="absolute bottom-6 left-8 text-2xl">🌸</div>
+              <div className="absolute bottom-10 left-20 text-xl">🌷</div>
+              <div className="absolute bottom-5 right-12 text-2xl">🌺</div>
+              <div className="absolute bottom-9 right-24 text-xl">🌼</div>
+              <div className="absolute top-2 left-6 text-sm animate-ambient-float-down">🍃</div>
+              <div className="absolute top-8 right-8 text-xs animate-ambient-float-down delay-1000">🍃</div>
+              <div className="absolute top-16 left-24 text-sm animate-ambient-float-down delay-500">🌸</div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* 3. BOSQUE DE LA AUTONOMÍA */}
+      {worldId === 'bosque_autonomia' && (
+        <div className="absolute inset-0 flex flex-col justify-end">
+          <svg className="w-full h-[35%] opacity-80" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <path d="M 0 100 Q 20 50 45 75 T 100 65 L 100 100 Z" fill="#a7f3d0" opacity="0.6" />
+            <path d="M 0 100 Q 30 75 60 85 T 100 80 L 100 100 Z" fill="#34d399" opacity="0.8" />
+          </svg>
+          {phase === 'seed' && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-2xl animate-bounce">🌱</div>
+          )}
+          {phase === 'sprout' && (
+            <>
+              <div className="absolute bottom-6 left-10 text-xl">🌲</div>
+              <div className="absolute bottom-8 right-12 text-lg">🌲</div>
+            </>
+          )}
+          {phase === 'bloom' && (
+            <>
+              <div className="absolute bottom-6 left-6 text-2xl">🌲</div>
+              <div className="absolute bottom-10 left-16 text-3xl">🌲</div>
+              <div className="absolute bottom-5 right-8 text-2xl">🌳</div>
+              <div className="absolute bottom-9 right-20 text-3xl">🌲</div>
+              <div className="absolute w-2 h-2 bg-yellow-300 rounded-full blur-[2px] bottom-16 left-12 animate-firefly" />
+              <div className="absolute w-1.5 h-1.5 bg-yellow-200 rounded-full blur-[1px] bottom-24 right-16 animate-firefly delay-500" />
+              <div className="absolute w-2 h-2 bg-yellow-300 rounded-full blur-[2px] bottom-32 left-32 animate-firefly delay-1000" />
+            </>
+          )}
+        </div>
+      )}
+
+      {/* 4. MONTAÑAS DEL ESFUERZO */}
+      {worldId === 'montana_esfuerzo' && (
+        <div className="absolute inset-0 flex flex-col justify-end">
+          <svg className="w-full h-[45%] opacity-80" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <path d="M 0 100 L 30 40 L 60 80 L 80 50 L 100 90 L 100 100 Z" fill="#cbd5e1" opacity="0.6" />
+            <path d="M 0 100 L 20 60 L 45 45 L 75 75 L 100 60 L 100 100 Z" fill="#94a3b8" opacity="0.8" />
+          </svg>
+          {phase === 'seed' && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-2xl animate-bounce">⛰️</div>
+          )}
+          {phase === 'sprout' && (
+            <>
+              <div className="absolute bottom-16 left-16 text-2xl opacity-75 animate-pulse">⛰️</div>
+              <div className="absolute bottom-20 right-20 text-xl opacity-75 animate-pulse">⛰️</div>
+            </>
+          )}
+          {phase === 'bloom' && (
+            <>
+              <div className="absolute bottom-16 left-6 text-2xl">🏔️</div>
+              <div className="absolute bottom-24 right-10 text-3xl">🏔️</div>
+              <div className="absolute top-4 left-10 text-lg animate-pulse text-yellow-300">⭐</div>
+              <div className="absolute top-8 right-16 text-sm animate-pulse delay-500 text-yellow-200">⭐</div>
+              <div className="absolute top-16 left-28 text-xs animate-pulse delay-1000 text-white">⭐</div>
+              <div className="absolute top-10 right-32 text-md animate-pulse delay-200 text-yellow-300">✨</div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* 5. REINO DE LA VIDA SOCIAL */}
+      {worldId === 'reino_social' && (
+        <div className="absolute inset-0 flex flex-col justify-end">
+          <svg className="w-full h-[35%] opacity-85" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <path d="M 0 100 Q 15 70 40 85 T 100 75 L 100 100 Z" fill="#ddd6fe" opacity="0.6" />
+            <path d="M 0 100 Q 25 80 50 90 T 100 85 L 100 100 Z" fill="#c084fc" opacity="0.8" />
+          </svg>
+          {phase === 'seed' && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-2xl animate-bounce">🧱</div>
+          )}
+          {phase === 'sprout' && (
+            <>
+              <div className="absolute bottom-8 left-12 text-2xl">🏰</div>
+              <div className="absolute bottom-8 right-16 text-xl">🏰</div>
+            </>
+          )}
+          {phase === 'bloom' && (
+            <>
+              <div className="absolute bottom-6 left-6 text-2xl">🏰</div>
+              <div className="absolute bottom-10 right-8 text-3xl">🏰</div>
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-4xl">🏰</div>
+              <div className="absolute bottom-16 left-[25%] text-lg animate-ambient-float-up text-red-400 opacity-90">❤️</div>
+              <div className="absolute bottom-20 right-[25%] text-2xl animate-ambient-float-up delay-[1.5s] text-pink-400 opacity-90">💖</div>
+              <div className="absolute bottom-28 left-1/2 -translate-x-1/2 text-xl animate-ambient-float-up delay-[3s] text-rose-400 opacity-80">💝</div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function HomePage() {
@@ -398,17 +557,23 @@ export default function HomePage() {
                 {activeWorldPhase.phase === 'bloom' && '¡El entorno irradia flores y una luz vibrante debido a tu crecimiento!'}
               </p>
 
-              {/* Companion blob widget */}
-              {isVisible && display && (
-                <div className="my-6">
-                  <CompanionWidget
-                    display={display}
-                    dialogue={dialogue}
-                    size="xl"
-                    onTap={() => setDialogue(getDialogue('free_interaction' as any))}
-                  />
-                </div>
-              )}
+              {/* Viewport container representing the magical terrarium/world */}
+              <div className="relative w-full max-w-[280px] aspect-square flex items-center justify-center my-6 overflow-hidden rounded-[40px] border border-stone-250/20 bg-white/45 dark:bg-stone-900/10 backdrop-blur-md shadow-card transition-all duration-700">
+                {/* World Ambient Visuals (Background) */}
+                <WorldAmbientVisuals worldId={selectedWorld.id} phase={activeWorldPhase.phase} />
+
+                {/* Companion blob widget (Foreground) */}
+                {isVisible && display && (
+                  <div className="z-10 scale-[1.08]">
+                    <CompanionWidget
+                      display={display}
+                      dialogue={dialogue}
+                      size="xl"
+                      onTap={() => setDialogue(getDialogue('free_interaction' as any))}
+                    />
+                  </div>
+                )}
+              </div>
 
               {/* Memory Scroll Button */}
               <button
