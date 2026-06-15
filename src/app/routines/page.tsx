@@ -173,7 +173,7 @@ export default function RoutinesPage() {
             <Button
               size="xl"
               onClick={() => finishRoutine(active)}
-              disabled={active.steps.length > 0 && stepsDone.size === 0}
+              disabled={active.steps.length > 0 && stepsDone.size < active.steps.length}
               className="w-full mt-2"
             >
               Rutina completada ✦

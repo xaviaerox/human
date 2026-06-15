@@ -157,6 +157,18 @@ export class StaticRoutineAdapter implements IRoutineAdapter {
   async completeRoutine(params: CompleteRoutineParams): Promise<Result<RoutineCompletion>> {
     const date = params.completed_date ?? today();
 
+    const routine = this._routines.find(r => r.id === params.routine_id);
+    if (!routine) {
+      return { ok: false, error: { code: 'not_found', message: `Routine ${params.routine_id} not found` } };
+    }
+
+    const steps = routine.steps ?? [];
+    const submittedSteps = params.steps_completed ?? [];
+    const allCompleted = steps.every(step => submittedSteps.includes(step.position));
+    if (!allCompleted || submittedSteps.length !== steps.length) {
+      return { ok: false, error: { code: 'validation_failed', message: 'Cannot complete routine: all steps must be completed' } };
+    }
+
     // Idempotency: return existing if already complete
     const existing = this._completions.find(
       c => c.routine_id === params.routine_id &&
