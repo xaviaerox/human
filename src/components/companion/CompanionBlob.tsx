@@ -14,26 +14,48 @@ interface CompanionBlobProps {
   customAccessory?: string | null;
 }
 
-function getAccessoryPosition(emoji: string) {
+function getAccessoryStyle(emoji: string, px: number) {
+  let fontSize = px * 0.45;
+  let top = '0%';
+  let left = '50%';
+  let right = 'auto';
+  let transform = 'translateX(-50%)';
+
   if (emoji === '🕶️') {
-    return { top: '32%', left: '50%', transform: 'translateX(-50%)' };
+    fontSize = px * 0.46; // Ensure it covers both eyes perfectly
+    top = '31%';
+  } else if (emoji === '👑') {
+    fontSize = px * 0.48;
+    top = '-15%';
+    transform = 'translateX(-50%) rotate(-8deg)';
+  } else if (emoji === '🎩') {
+    fontSize = px * 0.52;
+    top = '-25%';
+    transform = 'translateX(-50%) rotate(-4deg)';
+  } else if (emoji === '🎓') {
+    fontSize = px * 0.52;
+    top = '-20%';
+    transform = 'translateX(-50%) rotate(-6deg)';
+  } else if (emoji === '🎀') {
+    fontSize = px * 0.38;
+    top = '12%';
+    left = 'auto';
+    right = '12%';
+    transform = 'rotate(15deg)';
+  } else if (emoji === '🎧') {
+    fontSize = px * 0.65;
+    top = '22%';
+  } else {
+    top = '-10%';
   }
-  if (emoji === '👑') {
-    return { top: '-12%', left: '50%', transform: 'translateX(-50%) rotate(-8deg)' };
-  }
-  if (emoji === '🎩') {
-    return { top: '-22%', left: '50%', transform: 'translateX(-50%) rotate(-4deg)' };
-  }
-  if (emoji === '🎓') {
-    return { top: '-18%', left: '48%', transform: 'translateX(-50%) rotate(-6deg)' };
-  }
-  if (emoji === '🎀') {
-    return { top: '10%', right: '10%', transform: 'rotate(15deg)' };
-  }
-  if (emoji === '🎧') {
-    return { top: '25%', left: '50%', transform: 'translateX(-50%) scale(1.15)' };
-  }
-  return { top: '-5%', left: '50%', transform: 'translateX(-50%)' };
+
+  return {
+    fontSize: `${fontSize}px`,
+    top,
+    left,
+    right,
+    transform,
+  };
 }
 
 const STAGE_COLORS: Record<CompanionStage, { fill: string; glow: string; secondary: string }> = {
@@ -280,10 +302,7 @@ export function CompanionBlob({
       {customAccessory && (
         <div
           className="absolute pointer-events-none select-none"
-          style={{
-            fontSize: size === 'xl' ? '2.5rem' : size === 'lg' ? '1.8rem' : size === 'md' ? '1.2rem' : '0.8rem',
-            ...getAccessoryPosition(customAccessory)
-          }}
+          style={getAccessoryStyle(customAccessory, px)}
         >
           {customAccessory}
         </div>
