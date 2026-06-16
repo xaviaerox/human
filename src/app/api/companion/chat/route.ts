@@ -47,28 +47,37 @@ export async function POST(req: NextRequest) {
 
     // Format recent memories
     let memoriesText = 'No hay recuerdos destacados todavía.';
-    if (recentMemories.length > 0) {
-      memoriesText = recentMemories
+    const memoriesList = recentMemories || [];
+    if (memoriesList.length > 0) {
+      memoriesText = memoriesList
         .map((m: any) => {
+          if (!m) return null;
+          const meta = m.metadata || {};
           if (m.type === 'parent_badge_award') {
-            return `- Insignia de ${m.metadata.badge_tier} en "${m.metadata.badge_name}" otorgada por sus padres.`;
+            return `- Insignia de ${meta.badge_tier || 'oro'} en "${meta.badge_name || 'Valores'}" otorgada por sus padres.`;
           }
           if (m.type === 'adventure_complete') {
-            return `- Aventura completada: "${m.metadata.adventure_title}".`;
+            return `- Aventura completada: "${meta.adventure_title || 'Objetivo'}".`;
           }
           if (m.type === 'difficult_checkin') {
-            return `- Check-in difícil reciente: se sintió "${m.metadata.emotion_word}" (valencia: ${m.metadata.valence}, energía: ${m.metadata.energy_level}).`;
+            return `- Check-in difícil reciente: se sintió "${meta.emotion_word || 'triste'}" (valencia: ${meta.valence || 1}, energía: ${meta.energy_level || 1}).`;
           }
           return `- Hito: ${m.type}`;
         })
+        .filter(Boolean)
         .join('\n');
     }
 
     // Format recent checkins
     let checkinsText = 'No hay check-ins recientes.';
-    if (recentCheckins.length > 0) {
-      checkinsText = recentCheckins
-        .map((c: any) => `- Se sintió "${c.emotion_word}" (valencia: ${c.valence}/5, energía: ${c.energy_level}/5)${c.note ? `, nota: "${c.note}"` : ''}`)
+    const checkinsList = recentCheckins || [];
+    if (checkinsList.length > 0) {
+      checkinsText = checkinsList
+        .map((c: any) => {
+          if (!c) return null;
+          return `- Se sintió "${c.emotion_word || 'neutral'}" (valencia: ${c.valence || 3}/5, energía: ${c.energy_level || 3}/5)${c.note ? `, nota: "${c.note}"` : ''}`;
+        })
+        .filter(Boolean)
         .join('\n');
     }
 

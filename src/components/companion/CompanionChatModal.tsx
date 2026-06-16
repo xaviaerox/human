@@ -92,17 +92,17 @@ export function CompanionChatModal({
             nextTask: nextTask ? { title: nextTask.title, spark_value: nextTask.spark_value } : null,
             progress: activeGoal.progress
           } : null,
-          recentMemories: recentMemories.slice(0, 3).map(m => ({
-            type: m.memory_type,
-            metadata: m.metadata,
-            created_at: m.created_at
+          recentMemories: (recentMemories || []).slice(0, 3).map(m => ({
+            type: m?.memory_type,
+            metadata: m?.metadata,
+            created_at: m?.created_at
           })),
-          recentCheckins: recentCheckins.slice(0, 2).map(c => ({
-            emotion_word: c.emotion_word,
-            valence: c.valence,
-            energy_level: c.energy_level,
-            note: c.note,
-            occurred_at: c.occurred_at
+          recentCheckins: (recentCheckins || []).slice(0, 2).map(c => ({
+            emotion_word: c?.emotion_word,
+            valence: c?.valence,
+            energy_level: c?.energy_level,
+            note: c?.note,
+            occurred_at: c?.occurred_at
           }))
         })
       });
