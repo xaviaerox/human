@@ -114,12 +114,12 @@ export function CompanionChatModal({
       } else {
         throw new Error('Chat API returned error status');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('[CompanionChatModal] fetch error:', err);
-      // Friendly fallback
+      // Friendly fallback with debug info
       setMessages(prev => [
         ...prev,
-        { role: 'assistant', content: `Estoy aquí para acompañarte, ${childName}. Crecemos juntos.` }
+        { role: 'assistant', content: `Estoy aquí para acompañarte, ${childName}. Crecemos juntos. (Error: ${err?.message || String(err)})` }
       ]);
     } finally {
       setLoading(false);
