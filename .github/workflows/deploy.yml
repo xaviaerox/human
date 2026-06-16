@@ -41,6 +41,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           # Anthropic Key (Optional fallback if API route is not used)
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NEXT_PUBLIC_GROQ_API_KEY: ${{ secrets.NEXT_PUBLIC_GROQ_API_KEY }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

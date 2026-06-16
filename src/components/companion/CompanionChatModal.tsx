@@ -267,16 +267,31 @@ Responde en español de forma natural y cariñosa. No uses lenguaje de adulto co
             reply = `Lamento mucho escuchar eso. Los sentimientos difíciles también son importantes y está bien sentirse así. Yo estoy aquí a tu lado para acompañarte.`;
           } else if (inputClean.includes('enfadado') || inputClean.includes('rabia') || inputClean.includes('molesto') || inputClean.includes('odio')) {
             reply = `Entiendo que sientas rabia ahora mismo. A veces las cosas son frustrantes. Tómate el tiempo que necesites, yo aquí me quedo contigo en calma.`;
-          } else if (inputClean.includes('hola') || inputClean.includes('buenos dias') || inputClean.includes('hola!')) {
+          } else if (inputClean.includes('hola') || inputClean.includes('buenos dias') || inputClean.includes('buenas tardes') || inputClean.includes('hola!')) {
             reply = `¡Hola! Me alegra mucho saludarte. Estaba esperando por ti para ver cómo va tu día.`;
-          } else if (inputClean.includes('jugar') || inputClean.includes('feliz') || inputClean.includes('alegre') || inputClean.includes('divertido')) {
+          } else if (inputClean.includes('jugar') || inputClean.includes('juego') || inputClean.includes('divertirse')) {
+            reply = `¡Me encanta jugar! Podemos explorar el ${selectedWorldName} o ver qué aventuras tenemos hoy en tu mapa de objetivos.`;
+          } else if (inputClean.includes('insignia') || inputClean.includes('insignias') || inputClean.includes('badge') || inputClean.includes('badges')) {
+            reply = `¡Las insignias son mágicas! Tus padres te las otorgan para celebrar cuando practicas valores hermosos como la empatía, la valentía o la creatividad. ¡Son como estrellitas de tu esfuerzo!`;
+          } else if (inputClean.includes('chispa') || inputClean.includes('chispas') || inputClean.includes('spark') || inputClean.includes('sparks') || inputClean.includes('estrella') || inputClean.includes('estrellas')) {
+            reply = `¡Las chispas de colores brillan un montón! Las consigues al completar los pasos de tus aventuras. ¡Son la energía mágica de nuestro reino!`;
+          } else if (inputClean.includes('que tal') || inputClean.includes('cómo estás') || inputClean.includes('como estas') || inputClean.includes('cómo te va') || inputClean.includes('como te va') || inputClean.includes('que haces')) {
+            reply = `¡Estoy genial! Disfrutando del aire fresco aquí en el ${selectedWorldName}. ¿Y tú qué tal estás hoy?`;
+          } else if (inputClean.includes('feliz') || inputClean.includes('alegre') || inputClean.includes('divertido') || inputClean.includes('bien') || inputClean.includes('genial')) {
             reply = `¡Qué alegría! Sentir esa energía y compartir risas es maravilloso. ¡Me hace muy feliz verte brillar!`;
-          } else if (inputClean.includes('cansado') || inputClean.includes('sueño') || inputClean.includes('dormir')) {
+          } else if (inputClean.includes('cansado') || inputClean.includes('sueño') || inputClean.includes('dormir') || inputClean.includes('flojera')) {
             reply = `Parece que ha sido un día largo. Descansar es muy importante para recuperar tu energía. Puedes recostarte y relajarte.`;
-          } else if (inputClean.includes('gracias') || inputClean.includes('te quiero') || inputClean.includes('amigo')) {
+          } else if (inputClean.includes('gracias') || inputClean.includes('te quiero') || inputClean.includes('amigo') || inputClean.includes('te amo')) {
             reply = `¡De nada! Me encanta ser tu compañero y aprender cosas hermosas juntos cada día.`;
           } else {
-            reply = `Qué bonito que me lo cuentes. Te escucho con mucha atención y me alegra mucho estar contigo aquí en el ${selectedWorldName}.`;
+            const generalReplies = [
+              `Qué bonito que me lo cuentes. Te escucho con mucha atención y me alegra mucho estar contigo aquí en el ${selectedWorldName}.`,
+              `¡Eso suena súper interesante! Cuéntame un poco más sobre eso, me encanta escucharte.`,
+              `¡Qué lindo! Aquí en el ${selectedWorldName} siempre hay tiempo para conversar y compartir lo que piensas.`,
+              `¡Qué gran idea! Me encanta cómo ves las cosas. ¿Qué más te gustaría que hiciéramos hoy?`,
+              `¡Me alegra mucho que compartas eso conmigo! Eres un gran explorador de este mundo mágico.`
+            ];
+            reply = generalReplies[Math.floor(Math.random() * generalReplies.length)];
           }
         }
       }
