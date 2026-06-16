@@ -102,7 +102,7 @@ function EditGoalClient() {
 
     try {
       const prompt = buildDecompositionPrompt({ goalTitle: title, goalWhy: why, childAge });
-      const res = await fetch('/api/decompose', {
+      const res = await fetch('/human/api/decompose', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt }),
