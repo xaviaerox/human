@@ -16,7 +16,13 @@ interface CompanionChatModalProps {
   isOpen: boolean;
   onClose: (lastReply?: string) => void;
   display: CompanionDisplayState;
+  childId?: string;
   childName?: string;
+  childScores?: any;
+  activeGoal?: any;
+  nextTask?: any;
+  recentMemories?: any[];
+  recentCheckins?: any[];
   selectedWorldName: string;
   activeWorldPhaseLabel: string;
   onInteract: () => void;
@@ -26,7 +32,13 @@ export function CompanionChatModal({
   isOpen,
   onClose,
   display,
+  childId,
   childName = 'amigo',
+  childScores,
+  activeGoal,
+  nextTask,
+  recentMemories = [],
+  recentCheckins = [],
   selectedWorldName,
   activeWorldPhaseLabel,
   onInteract
@@ -73,7 +85,25 @@ export function CompanionChatModal({
           childName,
           stage: display.stage,
           worldName: selectedWorldName,
-          worldPhase: activeWorldPhaseLabel
+          worldPhase: activeWorldPhaseLabel,
+          childScores,
+          activeGoal: activeGoal ? {
+            title: activeGoal.title,
+            nextTask: nextTask ? { title: nextTask.title, spark_value: nextTask.spark_value } : null,
+            progress: activeGoal.progress
+          } : null,
+          recentMemories: recentMemories.slice(0, 3).map(m => ({
+            type: m.memory_type,
+            metadata: m.metadata,
+            created_at: m.created_at
+          })),
+          recentCheckins: recentCheckins.slice(0, 2).map(c => ({
+            emotion_word: c.emotion_word,
+            valence: c.valence,
+            energy_level: c.energy_level,
+            note: c.note,
+            occurred_at: c.occurred_at
+          }))
         })
       });
 

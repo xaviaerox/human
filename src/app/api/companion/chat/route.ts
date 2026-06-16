@@ -9,22 +9,93 @@ export async function POST(req: NextRequest) {
       childName = 'Alex',
       stage = 'sprout',
       worldName = 'Lago de la Calma',
-      worldPhase = 'Brote'
+      worldPhase = 'Brote',
+      childScores,
+      activeGoal,
+      recentMemories = [],
+      recentCheckins = []
     } = await req.json();
 
     if (!message) {
       return NextResponse.json({ error: 'No message provided' }, { status: 400 });
     }
 
+    // Format value scores
+    let scoresText = '';
+    if (childScores) {
+      const scoreLabels: Record<string, string> = {
+        autonomy: 'Autonomía',
+        empathy: 'Empatía',
+        regulation: 'Regulación Emocional',
+        connection: 'Constancia',
+        courage: 'Valentía',
+        curiosity: 'Creatividad'
+      };
+      scoresText = Object.entries(childScores)
+        .map(([k, v]) => `- ${scoreLabels[k] || k}: ${v} pts`)
+        .join('\n');
+    }
+
+    // Format active goal
+    let goalText = 'Ningún objetivo activo actualmente.';
+    if (activeGoal) {
+      goalText = `Objetivo activo: "${activeGoal.title}" (${activeGoal.progress}% completado).`;
+      if (activeGoal.nextTask) {
+        goalText += ` Siguiente paso: "${activeGoal.nextTask.title}" (Recompensa: ${activeGoal.nextTask.spark_value} chispas).`;
+      }
+    }
+
+    // Format recent memories
+    let memoriesText = 'No hay recuerdos destacados todavía.';
+    if (recentMemories.length > 0) {
+      memoriesText = recentMemories
+        .map((m: any) => {
+          if (m.type === 'parent_badge_award') {
+            return `- Insignia de ${m.metadata.badge_tier} en "${m.metadata.badge_name}" otorgada por sus padres.`;
+          }
+          if (m.type === 'adventure_complete') {
+            return `- Aventura completada: "${m.metadata.adventure_title}".`;
+          }
+          if (m.type === 'difficult_checkin') {
+            return `- Check-in difícil reciente: se sintió "${m.metadata.emotion_word}" (valencia: ${m.metadata.valence}, energía: ${m.metadata.energy_level}).`;
+          }
+          return `- Hito: ${m.type}`;
+        })
+        .join('\n');
+    }
+
+    // Format recent checkins
+    let checkinsText = 'No hay check-ins recientes.';
+    if (recentCheckins.length > 0) {
+      checkinsText = recentCheckins
+        .map((c: any) => `- Se sintió "${c.emotion_word}" (valencia: ${c.valence}/5, energía: ${c.energy_level}/5)${c.note ? `, nota: "${c.note}"` : ''}`)
+        .join('\n');
+    }
+
     const systemPrompt = `Eres ${companionName}, el compañero mágico de crecimiento de un niño llamado ${childName}.
 Tu etapa de evolución actual es "${stage}". Tu personalidad es cálida, empática, paciente y curiosa.
 Estás en el reino "${worldName}" (que está en fase de "${worldPhase}").
-Tu objetivo es responder al niño con mensajes muy cortos (máximo 2 frases), amables y alentadores.
+
+Para ayudarte a conectar mejor con ${childName}, aquí tienes su contexto de crecimiento actual en MIRA:
+[Puntos de Valores de ${childName}]
+${scoresText || 'Ninguno aún.'}
+
+[Objetivo/Aventura Activa]
+${goalText}
+
+[Libro de Recuerdos Compartidos (Hitos)]
+${memoriesText}
+
+[Check-ins Emocionales Recientes]
+${checkinsText}
+
+Tu objetivo es responder a ${childName} de forma muy corta (máximo 2 frases), amables y alentadores.
 Sigue estas reglas fundamentales de MIRA:
-1. Sé empático y valida sus emociones. Si el niño te dice que está triste, enfadado o cansado, no descartes su emoción ni le pidas que se alegre; dile que estás ahí con él y que sus sentimientos son válidos.
-2. Evita juicios, regaños o tono autoritario.
-3. No utilices urgencia o presión ("¡rápido!", "¡debes hacer esto ya!").
-4. Mantén tus respuestas mágicas y relacionadas con tu entorno (flores, agua, naturaleza, estrellas).
+1. SÉ EMPÁTICO Y VALIDA SUS EMOCIONES. Si el niño te dice o ha indicado recientemente que está triste, cansado o frustrado, NUNCA descartes su emoción ni le pidas directamente que se alegre ("no estés triste" o "sonríe"). Valida su sentir: "Lamento que te sientas así", "Está bien estar cansado", "Aquí estoy contigo".
+2. UTILIZA SU CONTEXTO DE FORMA SUTIL Y MÁGICA. Si acaba de completar un paso de su objetivo, o ha ganado una insignia, o ha tenido un check-in difícil, puedes hacer una referencia sutil y cariñosa (por ejemplo: "¡Qué gran esfuerzo con tu aventura de bici!" o "Vi que te sentías un poco triste, recuerda que aquí en el ${worldName} siempre puedes descansar conmigo"). Pero no seas un robot que lee datos; sé un amigo mágico.
+3. Evita juicios, regaños o tono autoritario.
+4. No utilices urgencia o presión ("¡rápido!", "¡debes hacer esto ya!").
+5. Mantén tus respuestas mágicas y relacionadas con tu entorno (flores, agua, naturaleza, estrellas).
 Responde en español de forma natural y cariñosa. No uses lenguaje de adulto complejo, sé cercano.`;
 
     const groqKey = process.env.GROQ_API_KEY;

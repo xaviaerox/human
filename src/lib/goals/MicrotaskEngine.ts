@@ -40,36 +40,38 @@ export interface DecompositionPromptParams {
 
 export function buildDecompositionPrompt(params: DecompositionPromptParams): string {
   const ageContext = params.childAge
-    ? `The child is approximately ${params.childAge} years old.`
-    : 'Age is not specified.';
+    ? `El niño tiene aproximadamente ${params.childAge} años.`
+    : 'La edad del niño no está especificada.';
 
   const whyContext = params.goalWhy
-    ? `They want this because: "${params.goalWhy}".`
+    ? `Quiere lograr esto porque: "${params.goalWhy}".`
     : '';
 
-  return `You are a warm, calm assistant helping a child break down a personal goal into small, achievable steps.
+  return `Eres un asistente cálido, paciente y experto en psicología infantil y pedagogía. Estás ayudando a un padre o a un niño a descomponer un objetivo personal en pasos pequeños, realistas y alcanzables para el niño.
 
-Goal: "${params.goalTitle}"
-${params.goalDescription ? `Description: ${params.goalDescription}` : ''}
+Objetivo principal: "${params.goalTitle}"
+${params.goalDescription ? `Descripción: ${params.goalDescription}` : ''}
 ${whyContext}
 ${ageContext}
 
-Create 3–6 concrete microtasks to achieve this goal. Each microtask should be:
-- Specific and actionable (a child can know when it's done)
-- Appropriately sized (completable in one sitting)
-- Positively framed (no "don't" or "stop" language)
-- Non-threatening (if a step feels hard, frame it gently)
+Crea entre 3 y 6 microtareas concretas para lograr este objetivo. Cada microtarea debe cumplir con lo siguiente:
+- Ser específica y actionable (el niño sabe exactamente cuándo la ha terminado).
+- Tener un tamaño adecuado (se puede completar en una sola sesión de 15-30 minutos).
+- Estar redactada en primera persona desde la perspectiva del niño (ej. "Preparo mi mochila", "Doy tres pedaleadas", "Respiro hondo").
+- Estar formulada en positivo (evita palabras como "no", "dejar de", "parar").
+- Ser amigable, alentadora y libre de presiones.
+- Estar redactada completamente en ESPAÑOL.
 
-Respond ONLY with valid JSON. No markdown, no preamble.
+Responde ÚNICAMENTE con un objeto JSON válido, sin formato markdown, sin texto introductorio ni explicaciones.
 
 {
   "microtasks": [
     {
       "position": 1,
-      "title": "string (max 60 chars, child-friendly)",
-      "description": "string (optional, 1 sentence)",
+      "title": "string en español (máx 60 caracteres, lenguaje infantil y motivador)",
+      "description": "string en español (opcional, 1 frase de contexto o consejo)",
       "effort_level": "easy" | "medium" | "stretch",
-      "spark_value": number (1–5),
+      "spark_value": número (entre 1 y 5),
       "value_dimensions": ["autonomy" | "empathy" | "regulation" | "curiosity" | "courage" | "connection"]
     }
   ]
@@ -151,24 +153,24 @@ export function fallbackDecomposition(goalTitle: string): ParsedMicrotask[] {
   return [
     {
       position: 1,
-      title: `Think about what I need for "${goalTitle}"`,
+      title: `Pensar en qué necesito para "${goalTitle}"`,
       effort_level: 'easy',
       spark_value: 1,
       value_dimensions: ['curiosity'],
     },
     {
       position: 2,
-      title: 'Take the first small step',
+      title: 'Dar mi primer pequeño paso',
       effort_level: 'easy',
       spark_value: 2,
       value_dimensions: ['courage'],
     },
     {
       position: 3,
-      title: 'Keep going — I\'m getting there',
+      title: 'Seguir adelante paso a paso',
       effort_level: 'medium',
       spark_value: 3,
-      value_dimensions: ['autonomy'],
+      value_dimensions: ['connection'],
     },
   ];
 }

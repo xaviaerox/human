@@ -7,13 +7,13 @@ ALTER TABLE companions ADD COLUMN IF NOT EXISTS home_visual_state JSONB NOT NULL
 
 -- Upsert and update value dimensions to fit the 6 required emotional growth values
 -- Keep same IDs to avoid breaking existing relational keys, but update labels and descriptions.
-INSERT INTO value_dimensions (id, label, description) VALUES
-  ('autonomy', 'Autonomía', 'Habilidad de tomar decisiones por sí mismo y completar tareas cotidianas.'),
-  ('regulation', 'Regulación Emocional', 'Habilidad de reconocer y modular el estado emocional propio.'),
-  ('empathy', 'Empatía', 'Habilidad de percibir y responder a las emociones de los demás.'),
-  ('connection', 'Constancia', 'Esfuerzo sostenido y perseverancia en las rutinas y retos.'),
-  ('courage', 'Valentía', 'Enfrentar miedos y probar cosas nuevas.'),
-  ('curiosity', 'Creatividad', 'Resolver retos diarios de forma imaginativa.')
+INSERT INTO value_dimensions (id, label, description, icon_key, color_token) VALUES
+  ('autonomy', 'Autonomía', 'Habilidad de tomar decisiones por sí mismo y completar tareas cotidianas.', 'hand', '--color-autonomy'),
+  ('regulation', 'Regulación Emocional', 'Habilidad de reconocer y modular el estado emocional propio.', 'wave', '--color-regulation'),
+  ('empathy', 'Empatía', 'Habilidad de percibir y responder a las emociones de los demás.', 'heart', '--color-empathy'),
+  ('connection', 'Constancia', 'Esfuerzo sostenido y perseverancia en las rutinas y retos.', 'link', '--color-connection'),
+  ('courage', 'Valentía', 'Enfrentar miedos y probar cosas nuevas.', 'star', '--color-courage'),
+  ('curiosity', 'Creatividad', 'Resolver retos diarios de forma imaginativa.', 'sparkle', '--color-curiosity')
 ON CONFLICT (id) DO UPDATE SET
   label = EXCLUDED.label,
   description = EXCLUDED.description;

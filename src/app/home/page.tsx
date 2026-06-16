@@ -5,13 +5,15 @@ import { useAuth } from '@/lib/auth/AuthProvider';
 import { useCompanion } from '@/lib/companion/CompanionProvider';
 import { useProgression } from '@/lib/progression/ProgressionProvider';
 import { useSparks } from '@/lib/sparks/SparkProvider';
+import { supabase } from '@/lib/supabase';
 import { CompanionWidget } from '@/components/companion/CompanionWidget';
 import { RoutinesToday } from '@/components/routines/RoutinesToday';
 import { ActiveGoalStep } from '@/components/goals/ActiveGoalStep';
 import { SparkBadge } from '@/components/ui/SparkBadge';
 import { CheckinPromptCard } from '@/components/emotional/CheckinPromptCard';
 import { useEmotional } from '@/lib/emotional/EmotionalProvider';
-import { getRewardsAdapter } from '@/lib/adapters';
+import { getRewardsAdapter, getGoalsAdapter } from '@/lib/adapters';
+import { getNextMicrotask } from '@/lib/goals/MicrotaskEngine';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SparkCelebrationOverlay } from '@/components/ui/SparkCelebrationOverlay';
 import { ChildAvatar } from '@/components/ui/ChildAvatar';
@@ -25,6 +27,7 @@ import { useRouter } from 'next/navigation';
 import type { Reward, RewardRequest, ValueDimensionId, ChildBadge, CompanionMemory, DialogueLine } from '@/types';
 
 const rewardsAdapter = getRewardsAdapter();
+const goalsAdapter = getGoalsAdapter();
 
 interface WorldTheme {
   id: string;
@@ -872,6 +875,59 @@ export default function HomePage() {
   const [showMemoriesModal, setShowMemoriesModal] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
   const [showWorldsModal, setShowWorldsModal] = useState(false);
+
+  // Active goal context for companion chat
+  const [activeGoal, setActiveGoal] = useState<any>(null);
+  const [nextTask, setNextTask] = useState<any>(null);
+
+  useEffect(() => {
+    if (showChatModal && profile?.id) {
+      goalsAdapter.getGoals(profile.id).then(res => {
+        if (res.ok) {
+          const active = res.data.find(g => g.status === 'active');
+          if (active) {
+            setActiveGoal(active);
+            setNextTask(getNextMicrotask(active.microtasks));
+          } else {
+            setActiveGoal(null);
+            setNextTask(null);
+          }
+        }
+      });
+    }
+  }, [showChatModal, profile?.id]);
+
+  // Realtime subscription to celebrate new sparks
+  useEffect(() => {
+    if (!profile?.id || profile.role !== 'child') return;
+
+    const channel = supabase
+      .channel(`sparks_celebration:${profile.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'spark_ledger',
+          filter: `child_id=eq.${profile.id}`
+        },
+        (payload: any) => {
+          const entry = payload.new;
+          if (entry && entry.delta > 0) {
+            setCurrentCelebration({
+              id: entry.id,
+              delta: entry.delta,
+              note: entry.note || '¡Buen trabajo!'
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.id, profile?.role]);
 
   // Check-in State
   const [checkinStep, setCheckinStep] = useState<'energy' | 'valence' | 'word' | 'note' | 'done'>('energy');
@@ -1970,10 +2026,25 @@ export default function HomePage() {
             }
           }}
           display={display}
+          childId={profile?.id}
           childName={profile?.display_name || 'amigo'}
+          childScores={scores}
+          activeGoal={activeGoal}
+          nextTask={nextTask}
+          recentMemories={memories}
+          recentCheckins={recentCheckins}
           selectedWorldName={selectedWorld.name}
           activeWorldPhaseLabel={activeWorldPhase.label}
           onInteract={() => interact('free_interaction')}
+        />
+      )}
+
+      {/* SPARK CELEBRATION OVERLAY */}
+      {currentCelebration && (
+        <SparkCelebrationOverlay
+          delta={currentCelebration.delta}
+          note={currentCelebration.note}
+          onClose={() => setCurrentCelebration(null)}
         />
       )}
     </div>
