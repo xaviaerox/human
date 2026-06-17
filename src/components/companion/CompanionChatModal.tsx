@@ -107,7 +107,7 @@ export function CompanionChatModal({
       let fetchSuccess = false;
 
       try {
-        const res = await fetch('/human/api/companion/chat', {
+        const res = await fetch('/api/companion/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)

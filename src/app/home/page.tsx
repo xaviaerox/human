@@ -16,6 +16,7 @@ import { getRewardsAdapter, getGoalsAdapter } from '@/lib/adapters';
 import { getNextMicrotask } from '@/lib/goals/MicrotaskEngine';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SparkCelebrationOverlay } from '@/components/ui/SparkCelebrationOverlay';
+import { BadgeCelebrationOverlay } from '@/components/ui/BadgeCelebrationOverlay';
 import { ChildAvatar } from '@/components/ui/ChildAvatar';
 import { CustomizationModal } from '@/components/companion/CustomizationModal';
 import { CompanionChatModal } from '@/components/companion/CompanionChatModal';
@@ -858,7 +859,7 @@ export default function HomePage() {
   const profile = session?.profile ?? null;
   
   const { display, getDialogue, setAppearanceContext, isVisible, memories, interact } = useCompanion();
-  const { scores, badges } = useProgression();
+  const { scores, badges, refreshBadges, refreshScores } = useProgression();
   const { balance: sparkBalance } = useSparks();
   const { shouldPrompt, submitCheckin, recentCheckins, lastCheckin } = useEmotional();
 
@@ -958,7 +959,7 @@ export default function HomePage() {
         }))
       };
 
-      const res = await fetch('/human/api/companion/chat', {
+      const res = await fetch('/api/companion/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -982,7 +983,7 @@ export default function HomePage() {
     }
   }
 
-  // Realtime subscription to celebrate new sparks
+  // Realtime subscription to celebrate new sparks and badges
   useEffect(() => {
     if (!profile?.id || profile.role !== 'child') return;
 
@@ -1009,10 +1010,37 @@ export default function HomePage() {
       )
       .subscribe();
 
+    const badgeChannel = supabase
+      .channel(`badge_celebration:${profile.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'child_badges',
+          filter: `child_id=eq.${profile.id}`
+        },
+        (payload: any) => {
+          const entry = payload.new;
+          if (entry) {
+            refreshBadges();
+            refreshScores();
+            setCurrentBadgeCelebration({
+              id: entry.id,
+              dimensionId: entry.dimension_id,
+              tier: entry.badge_tier,
+              parentNote: entry.parent_note || ''
+            });
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(badgeChannel);
     };
-  }, [profile?.id, profile?.role]);
+  }, [profile?.id, profile?.role, refreshBadges, refreshScores]);
 
   // Check-in State
   const [checkinStep, setCheckinStep] = useState<'energy' | 'valence' | 'word' | 'note' | 'done'>('energy');
@@ -1070,6 +1098,12 @@ export default function HomePage() {
   }
 
   const [currentCelebration, setCurrentCelebration] = useState<{ id: string; delta: number; note: string } | null>(null);
+  const [currentBadgeCelebration, setCurrentBadgeCelebration] = useState<{
+    id: string;
+    dimensionId: string;
+    tier: 'bronze' | 'silver' | 'gold';
+    parentNote: string;
+  } | null>(null);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [lastRedemptions, setLastRedemptions] = useState<Record<string, string>>({});
@@ -2341,6 +2375,16 @@ export default function HomePage() {
           delta={currentCelebration.delta}
           note={currentCelebration.note}
           onClose={() => setCurrentCelebration(null)}
+        />
+      )}
+
+      {/* BADGE CELEBRATION OVERLAY */}
+      {currentBadgeCelebration && (
+        <BadgeCelebrationOverlay
+          dimensionId={currentBadgeCelebration.dimensionId}
+          tier={currentBadgeCelebration.tier}
+          parentNote={currentBadgeCelebration.parentNote}
+          onClose={() => setCurrentBadgeCelebration(null)}
         />
       )}
     </div>

@@ -49,6 +49,13 @@ const BANK: DialogueBank = {
     name_chosen: [
       '✦ ✦ ✦',
     ],
+    free_interaction: [
+      '... ✦',
+      '~ ~ ✦',
+      '*se balancea suavemente*',
+      '✦ *brilla un poquito*',
+      '~ *hace un ruidito dulce*',
+    ],
   },
 
   sprout: {
@@ -101,6 +108,13 @@ const BANK: DialogueBank = {
     name_chosen: [
       'Me gusta ese nombre.',
       'Se siente bien.',
+    ],
+    free_interaction: [
+      '¡Hola! Qué bueno verte por aquí en mi brote. 🍃',
+      '¿Sabías que me encanta ver el viento soplar? Me alegra saludarte. ✨',
+      'Aquí estoy, respirando el aire puro del reino. ¿Cómo va tu día? 🌸',
+      '¡Hola! Crecemos juntos, pasito a pasito, sin prisa. 🌱',
+      'Estaba pensando en lo bonita que es la naturaleza hoy. ¡Hola! ✦',
     ],
   },
 
@@ -156,6 +170,13 @@ const BANK: DialogueBank = {
       'Estoy muy orgulloso de ti.',
       'Eso fuiste tú, completamente tú.',
     ],
+    free_interaction: [
+      '¡Hola! Cada vez que me tocas siento una chispa de alegría. ✨',
+      'Estaba contemplando las flores de nuestro reino. ¡Qué alegría que vengas a saludar! 🌸',
+      '¡Hola! Recuerda que está bien tomarse un descanso cuando lo necesites. Aquí estoy. 🍃',
+      'Me alegra mucho saludarte. ¿Exploramos un poco de tu mapa hoy? 🗺️',
+      '¡Hola, amigo! Crecemos a nuestro propio ritmo, como las plantitas del Lago. 🌻',
+    ],
   },
 
   glow: {
@@ -206,6 +227,13 @@ const BANK: DialogueBank = {
       'Trabajaste por esto y ahora es real.',
       'Esto es lo que pasa cuando no te rindes.',
     ],
+    free_interaction: [
+      '¡Hola! Tu presencia hace que mi luz brille un poco más fuerte. 💖',
+      'Qué paz se siente aquí en el reino contigo. Me encanta cuando vienes a saludar. ✦',
+      '¡Hola! Estaba recordando algunos de tus hitos en el libro de recuerdos. ¡Eres genial! 🎖️',
+      'Hola, explorador. Recuerda que no hay prisa, cada pequeño paso cuenta un montón. 🌸',
+      '¡Hola! Estoy justo aquí a tu lado para acompañarte en lo que decidas hacer hoy. 🍃',
+    ],
   },
 
   radiant: {
@@ -246,6 +274,13 @@ const BANK: DialogueBank = {
     celebration: [
       'He estado aquí en todo momento, y este instante es real.',
       'Tú lo hiciste. Y yo he podido estar aquí para verlo.',
+    ],
+    free_interaction: [
+      '¡Hola! Eres una parte mágica de mi mundo y me hace muy feliz saludarte. ✨',
+      'Qué alegría verte. Estaba admirando el cielo estrellado de nuestro reino. ✦',
+      '¡Hola! Recuerda ser amable contigo mismo hoy. Estoy aquí contigo siempre. 💖',
+      'Hola, compañero de aventuras. Me encanta conversar contigo y crecer a tu lado. 🌱',
+      '¡Hola! Brillas con tu propia luz especial, y yo estoy aquí para celebrar cada paso. 🌸',
     ],
   },
 };
