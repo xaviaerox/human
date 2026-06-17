@@ -28,6 +28,8 @@ export default function GoalsPage() {
   const [goals, setGoals] = useState<GoalWithMicrotasks[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [approvingGoalId, setApprovingGoalId] = useState<string | null>(null);
+
   useEffect(() => {
     const id = selectedChildId || children[0]?.id;
     if (!id) { setLoading(false); return; }
@@ -38,8 +40,35 @@ export default function GoalsPage() {
     });
   }, [selectedChildId, children]);
 
+  async function handleGoalApproval(goalId: string, action: 'approve' | 'reject') {
+    setApprovingGoalId(goalId);
+    const id = selectedChildId || children[0]?.id;
+    if (!id) return;
+    if (action === 'approve') {
+      const res = await goalsAdapter.updateGoal(goalId, { status: 'active' });
+      if (res.ok) {
+        alert('¡Objetivo aprobado y activado con éxito!');
+        const refreshed = await goalsAdapter.getGoals(id);
+        if (refreshed.ok) setGoals(refreshed.data);
+      } else {
+        alert('Error al aprobar objetivo: ' + res.error.message);
+      }
+    } else {
+      const res = await goalsAdapter.updateGoal(goalId, { status: 'archived' });
+      if (res.ok) {
+        alert('Objetivo rechazado.');
+        const refreshed = await goalsAdapter.getGoals(id);
+        if (refreshed.ok) setGoals(refreshed.data);
+      } else {
+        alert('Error al rechazar objetivo: ' + res.error.message);
+      }
+    }
+    setApprovingGoalId(null);
+  }
+
   const active    = goals.filter(g => g.status === 'active');
   const completed = goals.filter(g => g.status === 'completed');
+  const proposed  = goals.filter(g => g.status === 'paused' && g.co_created);
 
   return (
     <div className="flex flex-col gap-6">
@@ -81,6 +110,23 @@ export default function GoalsPage() {
         </Card>
       )}
 
+      {proposed.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <h2 className="text-xs text-indigo-500 font-bold uppercase tracking-widest flex items-center gap-1">
+            <span>🗺️</span> Propuestas por el Niño
+          </h2>
+          {proposed.map(goal => (
+            <ProposedGoalCard
+              key={goal.id}
+              goal={goal}
+              onApprove={() => handleGoalApproval(goal.id, 'approve')}
+              onReject={() => handleGoalApproval(goal.id, 'reject')}
+              disabled={approvingGoalId !== null}
+            />
+          ))}
+        </div>
+      )}
+
       {active.length > 0 && (
         <div className="flex flex-col gap-3">
           <h2 className="text-xs text-stone-400 uppercase tracking-widest">En curso</h2>
@@ -95,6 +141,97 @@ export default function GoalsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function ProposedGoalCard({
+  goal,
+  onApprove,
+  onReject,
+  disabled
+}: {
+  goal: GoalWithMicrotasks;
+  onApprove: () => void;
+  onReject: () => void;
+  disabled: boolean;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const totalSteps = goal.microtasks.length;
+
+  return (
+    <Card variant="bordered" className="p-4 border-indigo-200 bg-indigo-50/10">
+      <div className="flex items-start gap-3">
+        <div
+          className="flex-1 min-w-0 cursor-pointer"
+          onClick={() => setExpanded(e => !e)}
+        >
+          <div className="flex items-center gap-2">
+            <p className="font-semibold text-stone-700 text-sm truncate">{goal.title}</p>
+            <span className="text-[10px] text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-full border border-indigo-200 font-medium">
+              propuesta del niño
+            </span>
+          </div>
+          {goal.why && (
+            <p className="text-xs text-stone-500 mt-1 italic">
+              <strong className="text-stone-600">¿Por qué?:</strong> &quot;{goal.why}&quot;
+            </p>
+          )}
+          {goal.description && (
+            <p className="text-xs text-stone-400 mt-0.5 truncate">{goal.description}</p>
+          )}
+          <div className="mt-2 text-[11px] text-stone-400">
+            Pasos propuestos: {totalSteps}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <SparkBadge count={goal.total_sparks} size="sm" />
+          <span
+            onClick={() => setExpanded(e => !e)}
+            className={cn(
+              'text-stone-400 transition-transform text-xs cursor-pointer px-1',
+              expanded && 'rotate-180'
+            )}
+            aria-hidden="true"
+          >▼</span>
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="mt-3 flex flex-col gap-2 border-t border-stone-100 pt-3 animate-slide-up">
+          {goal.microtasks.map((task, idx) => (
+            <div key={task.id || idx} className="flex items-center gap-2 text-xs text-stone-600">
+              <span className="w-4 h-4 rounded-full bg-indigo-50 text-indigo-600 font-bold text-[9px] flex items-center justify-center">
+                {idx + 1}
+              </span>
+              <span>{task.title}</span>
+              <span className="text-[10px] text-stone-400 ml-auto">{task.spark_value} Sparks</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-4 flex items-center gap-2 justify-end border-t border-stone-100/50 pt-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={disabled}
+          onClick={onReject}
+          className="text-stone-400 hover:text-red-500 font-bold text-xs"
+        >
+          Rechazar
+        </Button>
+        <Button
+          variant="primary"
+          size="sm"
+          disabled={disabled}
+          onClick={onApprove}
+          className="bg-indigo-600 hover:bg-indigo-700 font-bold text-white shadow-soft text-xs"
+        >
+          Aprobar y Activar
+        </Button>
+      </div>
+    </Card>
   );
 }
 

@@ -144,8 +144,8 @@ export function CompanionProvider({ adapter, children }: CompanionProviderProps)
     if (!companion) return { text: '~', durationMs: 2000 };
 
     // Give 45% chance of selecting a memory-based custom dialogue line
-    // when greeting or sitting idle with the companion
-    if ((trigger === 'greeting' || trigger === 'idle_presence') && memories.length > 0) {
+    // when greeting, sitting idle, or tapping the companion
+    if ((trigger === 'greeting' || trigger === 'idle_presence' || trigger === 'free_interaction') && memories.length > 0) {
       const shouldMentionMemory = Math.random() < 0.45;
       if (shouldMentionMemory) {
         const memoryLine = selectMemoryDialogue(memories, companion.stage, companion.name);

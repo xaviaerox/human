@@ -113,7 +113,8 @@ export type DialogueTrigger =
   | 'idle_presence'
   | 'difficult_emotion'
   | 'celebration'
-  | 'name_chosen';
+  | 'name_chosen'
+  | 'free_interaction';
 
 export interface DialogueContext {
   stage: CompanionStage;
@@ -442,6 +443,7 @@ export interface CompanionMemory {
     emotion_word?: string;
     adventure_title?: string;
     badge_name?: string;
+    parent_note?: string;
   };
   is_active: boolean;
   created_at: string;

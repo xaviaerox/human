@@ -877,25 +877,110 @@ export default function HomePage() {
   const [showWorldsModal, setShowWorldsModal] = useState(false);
 
   // Active goal context for companion chat
+  // Active goal context for companion chat
   const [activeGoal, setActiveGoal] = useState<any>(null);
   const [nextTask, setNextTask] = useState<any>(null);
 
-  useEffect(() => {
-    if (showChatModal && profile?.id) {
-      goalsAdapter.getGoals(profile.id).then(res => {
-        if (res.ok) {
-          const active = res.data.find(g => g.status === 'active');
-          if (active) {
-            setActiveGoal(active);
-            setNextTask(getNextMicrotask(active.microtasks));
-          } else {
-            setActiveGoal(null);
-            setNextTask(null);
+  // States for child goal proposal
+  const [isProposingGoal, setIsProposingGoal] = useState(false);
+  const [goalPropTitle, setGoalPropTitle] = useState('');
+  const [goalPropWhy, setGoalPropWhy] = useState('');
+  const [goalPropStep1, setGoalPropStep1] = useState('');
+  const [goalPropStep2, setGoalPropStep2] = useState('');
+  const [goalPropStep3, setGoalPropStep3] = useState('');
+  const [goalPropSubmitting, setGoalPropSubmitting] = useState(false);
+  const [goalPropError, setGoalPropError] = useState('');
+
+  // States for companion tapping
+  const [tapLoading, setTapLoading] = useState(false);
+
+  const fetchActiveGoal = useCallback(() => {
+    if (!profile?.id) return;
+    goalsAdapter.getGoals(profile.id).then(res => {
+      if (res.ok) {
+        const active = res.data.find(g => g.status === 'active');
+        if (active) {
+          // Check if active goal is stuck (no changes in last 48 hours)
+          const isStuck = Date.now() - new Date(active.updated_at).getTime() > 48 * 60 * 60 * 1000;
+          const task = getNextMicrotask(active.microtasks);
+          if (task) {
+            (task as any).isStuck = isStuck;
           }
+          setActiveGoal(active);
+          setNextTask(task);
+        } else {
+          setActiveGoal(null);
+          setNextTask(null);
         }
+      }
+    });
+  }, [profile?.id]);
+
+  useEffect(() => {
+    fetchActiveGoal();
+  }, [fetchActiveGoal]);
+
+  async function handleCompanionTap() {
+    if (tapLoading || !display) return;
+    
+    // Quick thinking message
+    const loadingTexts = ['*tarareando*', '*pensando*', '💭...', '*sonriendo*', '*mirándote*'];
+    const randomLoading = loadingTexts[Math.floor(Math.random() * loadingTexts.length)]!;
+    setDialogue({ text: randomLoading, durationMs: 4000 });
+    setTapLoading(true);
+
+    try {
+      const payload = {
+        message: '[TAP]',
+        history: [],
+        companionName: display.name,
+        childName: profile?.display_name || 'amigo',
+        stage: display.stage,
+        worldName: selectedWorld.name,
+        worldPhase: activeWorldPhase.label,
+        childScores: scores,
+        activeGoal: activeGoal ? {
+          title: activeGoal.title,
+          nextTask: nextTask ? { title: nextTask.title, spark_value: nextTask.spark_value, isStuck: nextTask.isStuck } : null,
+          progress: activeGoal.progress
+        } : null,
+        recentMemories: (memories || []).slice(0, 3).map(m => ({
+          type: m?.memory_type,
+          metadata: m?.metadata,
+          created_at: m?.created_at
+        })),
+        recentCheckins: (recentCheckins || []).slice(0, 1).map(c => ({
+          emotion_word: c?.emotion_word,
+          valence: c?.valence,
+          energy_level: c?.energy_level,
+          note: c?.note,
+          occurred_at: c?.occurred_at
+        }))
+      };
+
+      const res = await fetch('/human/api/companion/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
+
+      if (res.ok) {
+        const data = await res.json();
+        setDialogue({
+          text: data.text,
+          durationMs: Math.min(8000, 3000 + data.text.length * 45),
+          animationCue: 'breathe'
+        });
+      } else {
+        throw new Error('API failed');
+      }
+    } catch (e) {
+      const fallback = getDialogue('free_interaction' as any);
+      setDialogue(fallback);
+    } finally {
+      setTapLoading(false);
     }
-  }, [showChatModal, profile?.id]);
+  }
 
   // Realtime subscription to celebrate new sparks
   useEffect(() => {
@@ -1176,7 +1261,7 @@ export default function HomePage() {
                       display={display}
                       dialogue={dialogue}
                       size="lg"
-                      onTap={() => setDialogue(getDialogue('free_interaction' as any))}
+                      onTap={handleCompanionTap}
                     />
                   </div>
                 )}
@@ -1243,12 +1328,39 @@ export default function HomePage() {
                 </p>
               </div>
 
-              {/* Active adventure step */}
-              <ActiveGoalStep
-                onComplete={() => {
-                  if (display) setDialogue(getDialogue('goal_step_complete'));
-                }}
-              />
+              {activeGoal ? (
+                <ActiveGoalStep
+                  onComplete={() => {
+                    fetchActiveGoal();
+                    if (display) setDialogue(getDialogue('goal_step_complete'));
+                  }}
+                />
+              ) : (
+                <div className="bg-white rounded-3xl p-6 border border-stone-150 shadow-soft text-center flex flex-col gap-4 max-w-sm mx-auto w-full mt-2">
+                  <span className="text-3xl">🗺️</span>
+                  <div className="flex flex-col gap-1.5">
+                    <h3 className="font-display font-semibold text-stone-700 text-base">¿Tienes una aventura en mente?</h3>
+                    <p className="text-xs text-stone-450 font-body leading-relaxed">
+                      Propón una nueva aventura a tus papás para que la aprueben y podáis crear los capítulos juntos.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsProposingGoal(true);
+                      setGoalPropTitle('');
+                      setGoalPropWhy('');
+                      setGoalPropStep1('');
+                      setGoalPropStep2('');
+                      setGoalPropStep3('');
+                      setGoalPropError('');
+                    }}
+                    className="w-full text-xs font-bold py-2.5 rounded-2xl bg-bloom-50 text-bloom-600 border border-bloom-100 hover:bg-bloom-100 transition-colors shadow-soft flex items-center justify-center gap-1.5 cursor-pointer font-body"
+                  >
+                    <span>💡</span> Proponer una aventura
+                  </button>
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -1569,12 +1681,12 @@ export default function HomePage() {
                 <div className="flex flex-col gap-4 overflow-y-auto pr-1 flex-1">
                   
                   {/* Badges Gallery Section */}
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2.5">
                     <h4 className="text-xs font-semibold text-stone-400 uppercase tracking-wider">
                       Insignias de Valores ({badges.length})
                     </h4>
                     
-                    <div className="grid grid-cols-3 gap-2.5">
+                    <div className="flex flex-col gap-2">
                       {badges.map(badge => {
                         const dim = WORLD_THEMES.find(w => w.dimension === badge.dimension_id);
                         const tierColor =
@@ -1584,22 +1696,34 @@ export default function HomePage() {
                         return (
                           <div
                             key={badge.id}
-                            className={`p-2.5 rounded-2xl border flex flex-col items-center text-center shadow-soft group relative cursor-help ${tierColor}`}
-                            title={badge.parent_note || 'Otorgada por mamá/papá'}
+                            className={`p-3 rounded-2xl border flex items-center gap-3 shadow-soft ${tierColor}`}
                           >
-                            <span className="text-xl">{dim?.emoji || '🎖️'}</span>
-                            <span className="text-[10px] font-bold mt-1 leading-tight">
-                              {dim?.name.replace('Valle de los ', '').replace('Lago de la ', '').replace('Bosque de la ', '').replace('Montañas del ', '').replace('Reino de la ', '') || 'Badge'}
-                            </span>
-                            <span className="text-[9px] uppercase tracking-widest opacity-70 mt-0.5">
-                              {badge.badge_tier}
-                            </span>
+                            <span className="text-2xl">{dim?.emoji || '🎖️'}</span>
+                            <div className="flex-1 text-left">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold capitalize">
+                                  {dim?.name.replace('Valle de los ', '').replace('Lago de la ', '').replace('Bosque de la ', '').replace('Montañas del ', '').replace('Reino de la ', '') || 'Insignia'}
+                                </span>
+                                <span className="text-[9px] uppercase tracking-widest opacity-70">
+                                  {badge.badge_tier}
+                                </span>
+                              </div>
+                              {badge.parent_note ? (
+                                <p className="text-[11px] text-stone-600 font-medium italic mt-1 font-body leading-relaxed">
+                                  &quot;{badge.parent_note}&quot;
+                                </p>
+                              ) : (
+                                <p className="text-[10px] text-stone-400 italic mt-0.5">
+                                  Otorgada con cariño por tus papás
+                                </p>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
 
                       {badges.length === 0 && (
-                        <p className="col-span-3 text-stone-400 text-center py-4 text-xs italic">
+                        <p className="text-stone-400 text-center py-4 text-xs italic">
                           Aún no tienes insignias. ¡Esfuérzate para que tus padres te otorguen una!
                         </p>
                       )}
@@ -1617,16 +1741,25 @@ export default function HomePage() {
                         <div key={mem.id} className="relative text-xs">
                           {/* Circle indicator */}
                           <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-stone-300 border-2 border-white" />
-                          <span className="text-[10px] text-stone-400 leading-none">
+                          <span className="text-[10px] text-stone-400 leading-none font-body">
                             {new Date(mem.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
                           </span>
                           
-                          <p className="font-semibold text-stone-700 mt-0.5">
+                          <div className="font-semibold text-stone-700 mt-0.5">
                             {mem.memory_type === 'routine_streak_milestone' && `Completada rutina de ${mem.metadata.routine_title}`}
                             {mem.memory_type === 'difficult_checkin' && `Superaste un momento difícil`}
                             {mem.memory_type === 'adventure_complete' && `Completada aventura: ${mem.metadata.adventure_title}`}
-                            {mem.memory_type === 'parent_badge_award' && `Recibiste insignia de ${mem.metadata.badge_name}`}
-                          </p>
+                            {mem.memory_type === 'parent_badge_award' && (
+                              <>
+                                <span>Recibiste insignia de {mem.metadata.badge_name}</span>
+                                {mem.metadata.parent_note && (
+                                  <p className="text-stone-500 font-medium italic mt-1 font-body text-[10px] pl-1.5 border-l-2 border-amber-200">
+                                    &quot;{mem.metadata.parent_note}&quot;
+                                  </p>
+                                )}
+                              </>
+                            )}
+                          </div>
 
                           {mem.memory_type === 'difficult_checkin' && mem.metadata.emotion_word && (
                             <p className="text-stone-400 text-[10px] mt-0.5">
@@ -1915,6 +2048,169 @@ export default function HomePage() {
                   </div>
                 </>
               )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+ 
+      {/* PROPOSE GOAL MODAL */}
+      <AnimatePresence>
+        {isProposingGoal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsProposingGoal(false)}
+              className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm"
+            />
+
+            {/* Card */}
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 15 }}
+              transition={{ type: 'spring', duration: 0.5 }}
+              className="relative bg-white rounded-3xl p-6 shadow-card border border-stone-100 max-w-sm w-full flex flex-col gap-4 max-h-[85vh] overflow-y-auto"
+            >
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!session?.family?.id || !profile?.id) return;
+                  if (!goalPropTitle.trim()) {
+                    setGoalPropError('Por favor, escribe un título para la aventura.');
+                    return;
+                  }
+                  setGoalPropSubmitting(true);
+                  setGoalPropError('');
+
+                  const microtasks = [];
+                  if (goalPropStep1.trim()) microtasks.push({ position: 1, title: goalPropStep1.trim(), effort_level: 'easy' as any, spark_value: 3, value_dimensions: [] });
+                  if (goalPropStep2.trim()) microtasks.push({ position: 2, title: goalPropStep2.trim(), effort_level: 'medium' as any, spark_value: 5, value_dimensions: [] });
+                  if (goalPropStep3.trim()) microtasks.push({ position: 3, title: goalPropStep3.trim(), effort_level: 'stretch' as any, spark_value: 8, value_dimensions: [] });
+
+                  const res = await goalsAdapter.createGoal({
+                    family_id: session.family.id,
+                    child_id: profile.id,
+                    title: goalPropTitle.trim(),
+                    why: goalPropWhy.trim() || undefined,
+                    co_created: true,
+                    status: 'paused', // suggestions are created in paused status
+                    created_by: profile.id,
+                    microtasks: microtasks.length > 0 ? microtasks : undefined
+                  });
+
+                  setGoalPropSubmitting(false);
+
+                  if (res.ok) {
+                    alert('¡Propuesta de aventura enviada con éxito! Dile a tus papás que la aprueben.');
+                    setIsProposingGoal(false);
+                    fetchActiveGoal();
+                  } else {
+                    setGoalPropError('Error al proponer la aventura: ' + res.error.message);
+                  }
+                }}
+                className="flex flex-col gap-4"
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="font-display text-xl text-stone-850 flex items-center gap-2">
+                    <span>💡</span> Proponer Aventura
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setIsProposingGoal(false)}
+                    className="text-stone-400 hover:text-stone-600 text-lg leading-none cursor-pointer"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <p className="text-xs text-stone-500 font-body">
+                  Escribe qué aventura te gustaría realizar y los pasos para lograrla.
+                </p>
+
+                {goalPropError && (
+                  <div className="text-xs text-red-500 bg-red-50 p-2.5 rounded-xl border border-red-100 font-body">
+                    {goalPropError}
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-3 font-body">
+                  <label className="flex flex-col gap-1 text-left">
+                    <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider font-body">
+                      Nombre de la aventura *
+                    </span>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ej. Aprender a ir en bici sin rueditas"
+                      value={goalPropTitle}
+                      onChange={e => setGoalPropTitle(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-bloom-300 text-xs font-body text-stone-750"
+                    />
+                  </label>
+
+                  <label className="flex flex-col gap-1 text-left">
+                    <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider font-body">
+                      ¿Por qué quieres lograr esto?
+                    </span>
+                    <textarea
+                      placeholder="Ej. Para ir al parque pedaleando con mis amigos"
+                      value={goalPropWhy}
+                      onChange={e => setGoalPropWhy(e.target.value)}
+                      rows={2}
+                      className="w-full px-3.5 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-bloom-300 text-xs font-body resize-none text-stone-750"
+                    />
+                  </label>
+
+                  <div className="flex flex-col gap-1.5 text-left">
+                    <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider font-body">
+                      Pasos sugeridos (Capítulos)
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="Paso 1: Practicar equilibrio sentado (Fácil)"
+                      value={goalPropStep1}
+                      onChange={e => setGoalPropStep1(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-bloom-300 text-xs font-body text-stone-750"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Paso 2: Pedalear con ayuda de un adulto (Medio)"
+                      value={goalPropStep2}
+                      onChange={e => setGoalPropStep2(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-bloom-300 text-xs font-body text-stone-750"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Paso 3: Pedalear solo en línea recta (Desafío)"
+                      value={goalPropStep3}
+                      onChange={e => setGoalPropStep3(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-bloom-300 text-xs font-body text-stone-750"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2.5 mt-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setIsProposingGoal(false)}
+                    className="flex-1 text-xs font-bold"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    loading={goalPropSubmitting}
+                    className="flex-1 text-xs font-bold bg-bloom-500 hover:bg-bloom-600 text-white shadow-soft"
+                  >
+                    Enviar Propuesta
+                  </Button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}

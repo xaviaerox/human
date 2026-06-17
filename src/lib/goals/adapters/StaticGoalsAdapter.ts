@@ -93,7 +93,7 @@ export class StaticGoalsAdapter implements IGoalsAdapter {
       title: params.title,
       description: params.description,
       why: params.why,
-      status: 'active',
+      status: params.status ?? 'active',
       target_date: params.target_date,
       value_dimensions: params.value_dimensions,
       total_sparks: microtasks.reduce((s, m) => s + m.spark_value, 0),

@@ -53,6 +53,7 @@ export class SupabaseGoalsAdapter implements IGoalsAdapter {
         title:       goalData.title,
         description: goalData.description,
         why:         goalData.why,
+        status:      goalData.status ?? 'active',
         target_date: goalData.target_date,
         value_dimensions: goalData.value_dimensions,
         visibility:  goalData.visibility ?? 'child_and_parent',

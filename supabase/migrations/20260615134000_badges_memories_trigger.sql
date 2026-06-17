@@ -24,7 +24,8 @@ BEGIN
       jsonb_build_object(
         'badge_name', COALESCE(v_val_label, NEW.dimension_id),
         'badge_id', NEW.id,
-        'badge_tier', NEW.badge_tier
+        'badge_tier', NEW.badge_tier,
+        'parent_note', NEW.parent_note
       )
     );
   END IF;

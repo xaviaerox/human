@@ -11,6 +11,7 @@ export interface CreateGoalParams {
   title: string;
   description?: string;
   why?: string;
+  status?: Goal['status'];
   target_date?: string;
   value_dimensions?: Goal['value_dimensions'];
   visibility?: Goal['visibility'];

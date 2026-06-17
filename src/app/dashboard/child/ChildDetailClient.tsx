@@ -311,9 +311,36 @@ export default function ChildDetailClient() {
     }
   }
 
+  const [approvingGoalId, setApprovingGoalId] = useState<string | null>(null);
+
+  async function handleGoalApproval(goalId: string, action: 'approve' | 'reject') {
+    setApprovingGoalId(goalId);
+    if (action === 'approve') {
+      const res = await goalsAdapter.updateGoal(goalId, { status: 'active' });
+      if (res.ok) {
+        alert('¡Objetivo aprobado y activado con éxito!');
+        const refreshed = await goalsAdapter.getGoals(childId);
+        if (refreshed.ok) setGoals(refreshed.data);
+      } else {
+        alert('Error al aprobar objetivo: ' + res.error.message);
+      }
+    } else {
+      const res = await goalsAdapter.updateGoal(goalId, { status: 'archived' });
+      if (res.ok) {
+        alert('Objetivo rechazado.');
+        const refreshed = await goalsAdapter.getGoals(childId);
+        if (refreshed.ok) setGoals(refreshed.data);
+      } else {
+        alert('Error al rechazar objetivo: ' + res.error.message);
+      }
+    }
+    setApprovingGoalId(null);
+  }
+
   const trend    = summaries.length >= 2 ? analyseEmotionTrend(summaries) : null;
   const trendCfg = trend ? TREND_CONFIG[trend.direction] : TREND_CONFIG.insufficient_data;
   const activeGoals = goals.filter(g => g.status === 'active');
+  const proposedGoals = goals.filter(g => g.status === 'paused' && g.co_created);
 
   if (!child) return null;
 
@@ -377,6 +404,73 @@ export default function ChildDetailClient() {
                     </div>
                   );
                 })}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* PROPOSED GOALS SECTION */}
+          {proposedGoals.length > 0 && (
+            <Card variant="warm" className="border-indigo-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-indigo-700">
+                  <span>🗺️</span> Propuestas de Aventuras (Objetivos)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-3">
+                {proposedGoals.map(goal => (
+                  <div key={goal.id} className="flex flex-col p-4 bg-white rounded-2xl border border-indigo-100 gap-3 text-xs shadow-soft">
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-stone-700 text-sm">{goal.title}</span>
+                        <SparkBadge count={goal.total_sparks} size="sm" />
+                      </div>
+                      {goal.why && (
+                        <p className="text-stone-500 font-body">
+                          <strong className="text-stone-600">¿Por qué?:</strong> {goal.why}
+                        </p>
+                      )}
+                      {goal.description && (
+                        <p className="text-stone-400 font-body">
+                          {goal.description}
+                        </p>
+                      )}
+                      {goal.microtasks && goal.microtasks.length > 0 && (
+                        <div className="mt-2 pl-2 border-l-2 border-indigo-200 flex flex-col gap-1">
+                          <span className="font-semibold text-stone-500 text-[10px] uppercase">Pasos sugeridos:</span>
+                          {goal.microtasks.map((task, idx) => (
+                            <div key={task.id || idx} className="flex items-center gap-1.5 text-stone-600">
+                              <span className="w-4 h-4 rounded-full bg-indigo-50 text-indigo-600 font-bold text-[9px] flex items-center justify-center">
+                                {idx + 1}
+                              </span>
+                              <span>{task.title}</span>
+                              <span className="text-[10px] text-stone-400">({task.spark_value} Sparks)</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 justify-end mt-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={approvingGoalId !== null}
+                        onClick={() => handleGoalApproval(goal.id, 'reject')}
+                        className="text-stone-400 hover:text-red-500 font-bold"
+                      >
+                        Rechazar
+                      </Button>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        disabled={approvingGoalId !== null}
+                        onClick={() => handleGoalApproval(goal.id, 'approve')}
+                        className="bg-indigo-600 hover:bg-indigo-700 font-bold text-white shadow-soft"
+                      >
+                        Aprobar y Activar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </CardContent>
             </Card>
           )}

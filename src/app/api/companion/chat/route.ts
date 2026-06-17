@@ -42,6 +42,9 @@ export async function POST(req: NextRequest) {
       goalText = `Objetivo activo: "${activeGoal.title}" (${activeGoal.progress}% completado).`;
       if (activeGoal.nextTask) {
         goalText += ` Siguiente paso: "${activeGoal.nextTask.title}" (Recompensa: ${activeGoal.nextTask.spark_value} chispas).`;
+        if (activeGoal.nextTask.isStuck) {
+          goalText += ` Nota: El niño lleva más de 48 horas sin completar este paso (está atascado). Dale apoyo emocional específico y dile que está bien ir despacio.`;
+        }
       }
     }
 
@@ -54,7 +57,7 @@ export async function POST(req: NextRequest) {
           if (!m) return null;
           const meta = m.metadata || {};
           if (m.type === 'parent_badge_award') {
-            return `- Insignia de ${meta.badge_tier || 'oro'} en "${meta.badge_name || 'Valores'}" otorgada por sus padres.`;
+            return `- Insignia de ${meta.badge_tier || 'oro'} en "${meta.badge_name || 'Valores'}" otorgada por sus padres. Nota del padre: "${meta.parent_note || ''}"`;
           }
           if (m.type === 'adventure_complete') {
             return `- Aventura completada: "${meta.adventure_title || 'Objetivo'}".`;
@@ -81,6 +84,8 @@ export async function POST(req: NextRequest) {
         .join('\n');
     }
 
+    const isTap = message.trim() === '[TAP]';
+
     const systemPrompt = `Eres ${companionName}, el compañero mágico de crecimiento de un niño llamado ${childName}.
 Tu etapa de evolución actual es "${stage}". Tu personalidad es cálida, empática, paciente y curiosa.
 Estás en el reino "${worldName}" (que está en fase de "${worldPhase}").
@@ -98,7 +103,9 @@ ${memoriesText}
 [Check-ins Emocionales Recientes]
 ${checkinsText}
 
-Tu objetivo es responder a ${childName} de forma muy corta (máximo 2 frases), amables y alentadores.
+${isTap ? `El niño ha tocado tu avatar en la pantalla de inicio para saludarte o interactuar.
+Tu objetivo es responder con una frase mágica muy corta, cariñosa y llena de apoyo (máximo 12 palabras).
+Si tiene un objetivo activo y lleva tiempo sin avanzar (isStuck = true en nextTask), o si su último check-in emocional fue difícil (triste/cansado/etc.), ofrécele un empujón dulce de aliento adaptado a su situación actual. P. ej.: "¡Hola! Estoy aquí contigo. Sin prisa para tu aventura hoy" o "Vi que estabas un poco cansado, recuerda que puedes descansar conmigo en el ${worldName}".` : `Tu objetivo es responder a ${childName} de forma muy corta (máximo 2 frases), amables y alentadores.`}
 Sigue estas reglas fundamentales de MIRA:
 1. SÉ EMPÁTICO Y VALIDA SUS EMOCIONES. Si el niño te dice o ha indicado recientemente que está triste, cansado o frustrado, NUNCA descartes su emoción ni le pidas directamente que se alegre ("no estés triste" o "sonríe"). Valida su sentir: "Lamento que te sientas así", "Está bien estar cansado", "Aquí estoy contigo".
 2. UTILIZA SU CONTEXTO DE FORMA SUTIL Y MÁGICA. Si acaba de completar un paso de su objetivo, o ha ganado una insignia, o ha tenido un check-in difícil, puedes hacer una referencia sutil y cariñosa (por ejemplo: "¡Qué gran esfuerzo con tu aventura de bici!" o "Vi que te sentías un poco triste, recuerda que aquí en el ${worldName} siempre puedes descansar conmigo"). Pero no seas un robot que lee datos; sé un amigo mágico.
@@ -231,7 +238,29 @@ Responde en español de forma natural y cariñosa. No uses lenguaje de adulto co
     const inputClean = message.toLowerCase();
     let reply = 'Aquí estoy contigo, acompañándote. Crecemos juntos paso a paso.';
 
-    if (inputClean.includes('triste') || inputClean.includes('llorar') || inputClean.includes('mal') || inputClean.includes('asustado') || inputClean.includes('miedo')) {
+    if (isTap) {
+      if (activeGoal && activeGoal.nextTask && activeGoal.nextTask.isStuck) {
+        const stuckReplies = [
+          `Hola. Si el paso de "${activeGoal.nextTask.title}" se siente cuesta arriba, recuerda que podemos ir despacio. 🌸`,
+          `¡Hola! Estoy aquí contigo. No hay prisa para completar "${activeGoal.nextTask.title}", cada pequeño paso cuenta. ✨`,
+          `Hola, amigo. ¿Quieres que respiremos juntos antes de seguir con tu aventura? Aquí estoy contigo. 🍃`
+        ];
+        reply = stuckReplies[Math.floor(Math.random() * stuckReplies.length)];
+      } else if (recentCheckins && recentCheckins.length > 0 && recentCheckins[0].valence <= 2) {
+        reply = `Hola. Vi que te sentías un poco ${recentCheckins[0].emotion_word || 'triste'}. Recuerda que aquí en el ${worldName} siempre puedes descansar conmigo. 💖`;
+      } else if (recentMemories && recentMemories.length > 0 && recentMemories[0].type === 'parent_badge_award') {
+        const bName = recentMemories[0].metadata?.badge_name || 'valores';
+        reply = `¡Hola! Qué bonito ver la insignia de "${bName}" que te dieron tus papás. ¡Brillas mucho! 🎖️`;
+      } else {
+        const tapReplies = [
+          `¡Hola! Me alegra mucho saludarte. ¿Cómo va tu día en el ${worldName}? ✨`,
+          `¡Hola! Estaba contemplando las estrellas del ${worldName}. ¡Qué bueno que viniste! ✦`,
+          `¡Hola! Aquí estoy a tu lado, listo para acompañarte en lo que necesites hoy. 🌸`,
+          `¡Hola! Crecemos juntos paso a paso, a tu propio ritmo. 🍃`
+        ];
+        reply = tapReplies[Math.floor(Math.random() * tapReplies.length)];
+      }
+    } else if (inputClean.includes('triste') || inputClean.includes('llorar') || inputClean.includes('mal') || inputClean.includes('asustado') || inputClean.includes('miedo')) {
       reply = `Lamento mucho escuchar eso. Los sentimientos difíciles también son importantes y está bien sentirse así. Yo estoy aquí a tu lado para acompañarte.`;
     } else if (inputClean.includes('enfadado') || inputClean.includes('rabia') || inputClean.includes('molesto') || inputClean.includes('odio')) {
       reply = `Entiendo que sientas rabia ahora mismo. A veces las cosas son frustrantes. Tómate el tiempo que necesites, yo aquí me quedo contigo en calma.`;
