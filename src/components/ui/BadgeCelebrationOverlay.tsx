@@ -34,33 +34,33 @@ const TIER_COLORS = {
   gold: {
     from: 'from-yellow-400 to-amber-300',
     text: 'text-yellow-600 dark:text-yellow-400',
-    label: 'Medalla de Oro 🥇',
+    label: 'Medalla de Oro',
     shadow: 'shadow-yellow-400/30',
     bg: 'bg-yellow-50 dark:bg-yellow-950/20'
   },
   silver: {
     from: 'from-slate-300 to-slate-200',
     text: 'text-slate-600 dark:text-slate-400',
-    label: 'Medalla de Plata 🥈',
+    label: 'Medalla de Plata',
     shadow: 'shadow-slate-300/30',
     bg: 'bg-slate-50 dark:bg-slate-950/20'
   },
   bronze: {
     from: 'from-amber-650 to-amber-500',
     text: 'text-amber-700 dark:text-amber-500',
-    label: 'Medalla de Bronce 🥉',
+    label: 'Medalla de Bronce',
     shadow: 'shadow-amber-600/30',
     bg: 'bg-amber-50 dark:bg-amber-950/20'
   }
 };
 
 const DIMENSION_EMOJIS: Record<string, string> = {
-  autonomy: '🌲',
-  empathy: '💖',
-  regulation: '🧘',
-  connection: '🍃',
-  courage: '⛰️',
-  curiosity: '🎨',
+  autonomy: '↟',
+  empathy: '♡',
+  regulation: '☯',
+  connection: '♾',
+  courage: '▲',
+  curiosity: '✦',
 };
 
 const StarSvg = ({ color, size }: { color: string; size: number }) => (
@@ -285,7 +285,7 @@ export function BadgeCelebrationOverlay({ dimensionId, tier, parentNote, onClose
             onClick={onClose}
             className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-850 text-white font-extrabold text-base transition-all cursor-pointer shadow-md shadow-indigo-600/10 hover:shadow-lg hover:shadow-indigo-600/25"
           >
-            ¡Súper! Ver en mi colección 🎖️
+            ¡Súper! Ver en mi colección ✧
           </motion.button>
         </motion.div>
       </div>

@@ -49,7 +49,7 @@ const WORLD_THEMES: WorldTheme[] = [
     bgGradient: 'from-sky-100 via-sky-50 to-blue-200 dark:from-sky-950 dark:via-sky-900 dark:to-indigo-950',
     textColor: 'text-sky-700 dark:text-sky-300',
     accentBg: 'bg-sky-100 border-sky-200 dark:bg-sky-900/50 dark:border-sky-850',
-    emoji: '💧',
+    emoji: '☯',
     description: 'Aprende a regular tus emociones y respirar hondo.',
   },
   {
@@ -59,7 +59,7 @@ const WORLD_THEMES: WorldTheme[] = [
     bgGradient: 'from-emerald-100 via-green-50 to-teal-200 dark:from-emerald-950 dark:via-green-950 dark:to-teal-950',
     textColor: 'text-moss-700 dark:text-moss-300',
     accentBg: 'bg-moss-100 border-moss-200 dark:bg-moss-900/50 dark:border-moss-850',
-    emoji: '🍃',
+    emoji: '♾',
     description: 'La constancia en tus rutinas hace que este valle florezca.',
   },
   {
@@ -69,7 +69,7 @@ const WORLD_THEMES: WorldTheme[] = [
     bgGradient: 'from-green-100 via-emerald-50 to-emerald-300 dark:from-green-950 dark:via-emerald-950 dark:to-emerald-900',
     textColor: 'text-emerald-700 dark:text-emerald-300',
     accentBg: 'bg-emerald-100 border-emerald-200 dark:bg-emerald-900/50 dark:border-emerald-850',
-    emoji: '🌲',
+    emoji: '↟',
     description: 'Haz las cosas por ti mismo y ayuda a crecer a los árboles.',
   },
   {
@@ -79,7 +79,7 @@ const WORLD_THEMES: WorldTheme[] = [
     bgGradient: 'from-amber-100 via-orange-50 to-rose-200 dark:from-amber-950 dark:via-orange-950 dark:to-rose-950',
     textColor: 'text-bloom-700 dark:text-bloom-300',
     accentBg: 'bg-bloom-100 border-bloom-200 dark:bg-bloom-900/50 dark:border-bloom-850',
-    emoji: '⛰️',
+    emoji: '▲',
     description: 'Supera tus miedos y sube las cumbres del esfuerzo.',
   },
   {
@@ -89,7 +89,7 @@ const WORLD_THEMES: WorldTheme[] = [
     bgGradient: 'from-purple-100 via-pink-50 to-fuchsia-200 dark:from-purple-950 dark:via-pink-950 dark:to-fuchsia-950',
     textColor: 'text-lavender-700 dark:text-lavender-300',
     accentBg: 'bg-lavender-100 border-lavender-200 dark:bg-lavender-900/50 dark:border-lavender-850',
-    emoji: '🏰',
+    emoji: '♡',
     description: 'Comparte con otros, empatiza y haz amigos.',
   },
 ];
@@ -142,9 +142,9 @@ function getCooldownStatus(reward: Reward, lastRedeemStr?: string): { isLocked: 
 }
 
 function getWorldPhase(score: number): { phase: 'seed' | 'sprout' | 'bloom'; label: string; icon: string } {
-  if (score >= 100) return { phase: 'bloom', label: 'Esplendor', icon: '🌸' };
-  if (score >= 31) return { phase: 'sprout', label: 'Brote', icon: '🌱' };
-  return { phase: 'seed', label: 'Semilla', icon: '🌰' };
+  if (score >= 100) return { phase: 'bloom', label: 'Esplendor', icon: '✿' };
+  if (score >= 31) return { phase: 'sprout', label: 'Brote', icon: '✣' };
+  return { phase: 'seed', label: 'Semilla', icon: '○' };
 }
 
 interface WorldAmbientVisualsProps {
@@ -1112,7 +1112,7 @@ export default function HomePage() {
   // State for proposing a new reward
   const [isRequesting, setIsRequesting] = useState(false);
   const [requestTitle, setRequestTitle] = useState('');
-  const [requestEmoji, setRequestEmoji] = useState('🎁');
+  const [requestEmoji, setRequestEmoji] = useState('☆');
   const [requestError, setRequestError] = useState('');
   const [requestSubmitting, setRequestSubmitting] = useState(false);
 
@@ -1157,7 +1157,7 @@ export default function HomePage() {
 
     const res = await rewardsAdapter.createRewardRequest(session?.family?.id || '', profile.id, {
       title: rewardTitle,
-      emoji: '🎁' // can use emoji from rewards catalog
+      emoji: '☆' // can use emoji from rewards catalog
     });
 
     setRedeemingId(null);
@@ -1391,7 +1391,7 @@ export default function HomePage() {
                     }}
                     className="w-full text-xs font-bold py-2.5 rounded-2xl bg-bloom-50 text-bloom-600 border border-bloom-100 hover:bg-bloom-100 transition-colors shadow-soft flex items-center justify-center gap-1.5 cursor-pointer font-body"
                   >
-                    <span>💡</span> Proponer una aventura
+                    <span>◈</span> Proponer una aventura
                   </button>
                 </div>
               )}
@@ -1877,7 +1877,7 @@ export default function HomePage() {
                 >
                   <div className="flex items-center justify-between">
                     <h3 className="font-display text-xl text-stone-800 flex items-center gap-2">
-                      <span>💡</span> Pedir Premio
+                      <span>☆</span> Pedir Premio
                     </h3>
                     <button
                       type="button"
@@ -1910,14 +1910,14 @@ export default function HomePage() {
 
                     <div className="flex flex-col gap-1.5 font-body">
                       <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
-                        Elige un emoji
+                        Elige un icono
                       </span>
                       <div className="flex gap-2">
                         <span className="w-12 h-12 flex items-center justify-center text-2xl bg-stone-100 border border-stone-200 rounded-2xl">
                           {requestEmoji}
                         </span>
                         <div className="flex-1 flex flex-wrap gap-1 items-center bg-stone-50 p-2 rounded-2xl border border-stone-100 max-h-[80px] overflow-y-auto">
-                          {['🍕', '🎮', '🛝', '🍿', '🧸', '🍦', '🚴', '🎁', '🎬', '📚', '🍩', '🎈', '🎠'].map(item => (
+                          {['☆', '✧', '✦', '♡', '☼', '☾', '⚡', '☕', '⚙', '✈', '☘', '⚓', '♫', '✎', '✉'].map(item => (
                             <button
                               key={item}
                               type="button"
@@ -2067,12 +2067,12 @@ export default function HomePage() {
                     onClick={() => {
                       setIsRequesting(true);
                       setRequestTitle('');
-                      setRequestEmoji('🎁');
+                      setRequestEmoji('☆');
                       setRequestError('');
                     }}
                     className="w-full text-xs font-bold py-2.5 rounded-2xl bg-bloom-50 text-bloom-600 border border-bloom-100 hover:bg-bloom-100 transition-colors shadow-soft mt-1.5 flex items-center justify-center gap-1.5 cursor-pointer font-body"
                   >
-                    <span>💡</span> Proponer un premio
+                    <span>☆</span> Proponer un premio
                   </button>
 
                   <div className="text-center mt-2 border-t border-stone-100 pt-2">
@@ -2150,7 +2150,7 @@ export default function HomePage() {
               >
                 <div className="flex items-center justify-between">
                   <h3 className="font-display text-xl text-stone-850 flex items-center gap-2">
-                    <span>💡</span> Proponer Aventura
+                    <span>◈</span> Proponer Aventura
                   </h3>
                   <button
                     type="button"

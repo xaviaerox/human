@@ -113,7 +113,7 @@ export default function GoalsPage() {
       {proposed.length > 0 && (
         <div className="flex flex-col gap-3">
           <h2 className="text-xs text-indigo-500 font-bold uppercase tracking-widest flex items-center gap-1">
-            <span>🗺️</span> Propuestas por el Niño
+            <span>◈</span> Propuestas por el Niño
           </h2>
           {proposed.map(goal => (
             <ProposedGoalCard
@@ -271,7 +271,7 @@ function GoalCard({ goal }: { goal: GoalWithMicrotasks }) {
               className="text-xs text-stone-300 hover:text-bloom-500 transition-colors"
               aria-label={`Editar ${goal.title}`}
             >
-              ✏️
+              ✎
             </button>
           </Link>
           <span

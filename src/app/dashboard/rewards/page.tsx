@@ -12,10 +12,10 @@ import type { Reward, RewardRequest } from '@/types';
 const rewardsAdapter = getRewardsAdapter();
 
 const SUGGESTED_REWARDS = [
-  { title: 'Elegir la cena', cost: 5, emoji: '🍕', cooldown_hours: 0 },
-  { title: '30 min de pantalla extra', cost: 10, emoji: '🎮', cooldown_hours: 0 },
-  { title: 'Tarde de parque', cost: 15, emoji: '🛝', cooldown_hours: 0 },
-  { title: 'Elegir película familiar', cost: 20, emoji: '🍿', cooldown_hours: 0 },
+  { title: 'Elegir la cena', cost: 5, emoji: '☕', cooldown_hours: 0 },
+  { title: '30 min de pantalla extra', cost: 10, emoji: '⚡', cooldown_hours: 0 },
+  { title: 'Tarde de parque', cost: 15, emoji: '☘', cooldown_hours: 0 },
+  { title: 'Elegir película familiar', cost: 20, emoji: '♫', cooldown_hours: 0 },
 ];
 
 export default function RewardsDashboardPage() {
@@ -97,7 +97,7 @@ export default function RewardsDashboardPage() {
         <div className="flex flex-col gap-3 bg-amber-50/40 border border-amber-100 rounded-3xl p-5 shadow-soft">
           <div className="flex items-center justify-between">
             <h3 className="font-display text-sm font-semibold text-amber-800 flex items-center gap-1.5">
-              <span>💡</span> Propuestas de los niños ({requests.length})
+              <span>✧</span> Propuestas de los niños ({requests.length})
             </h3>
             <span className="text-[10px] bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
               Nuevas
@@ -155,7 +155,7 @@ export default function RewardsDashboardPage() {
               onClick={handleLoadSuggestions}
               loading={seeding}
             >
-              Cargar sugerencias 🎁
+              Cargar sugerencias ✧
             </Button>
           </div>
         </Card>
@@ -179,7 +179,7 @@ export default function RewardsDashboardPage() {
                     className="p-1 text-stone-400 hover:text-bloom-600 transition-colors cursor-pointer text-sm"
                     aria-label={`Editar ${reward.title}`}
                   >
-                    ✏️
+                    ✎
                   </button>
                 </Link>
                 <button

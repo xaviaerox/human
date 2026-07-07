@@ -363,7 +363,7 @@ export default function ChildDetailClient() {
             <Card variant="warm" className="border-amber-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-amber-700">
-                  <span>💡</span> Propuestas de Premios Pendientes
+                  <span>✧</span> Propuestas de Premios Pendientes
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col gap-3">

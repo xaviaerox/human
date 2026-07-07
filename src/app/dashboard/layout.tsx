@@ -10,7 +10,7 @@ const NAV = [
   { href: '/dashboard',          label: 'Inicio',      icon: '⌂' },
   { href: '/dashboard/routines', label: 'Rutinas',     icon: '◎' },
   { href: '/dashboard/goals',    label: 'Objetivos',   icon: '◈' },
-  { href: '/dashboard/rewards',  label: 'Premios',     icon: '🎁' },
+  { href: '/dashboard/rewards',  label: 'Premios',     icon: '☆' },
   { href: '/dashboard/family',   label: 'Familia',     icon: '♡' },
 ];
 

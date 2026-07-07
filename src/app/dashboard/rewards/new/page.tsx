@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 
 const rewardsAdapter = getRewardsAdapter();
 
-const SUGGESTED_EMOJIS = ['🍕', '🎮', '🛝', '🍿', '🧸', '📖', '🍦', '🚴', '🎈', '🎁', '🍩', '🏊', '⚽'];
+const SUGGESTED_EMOJIS = ['☆', '✧', '✦', '♡', '☼', '☾', '⚡', '☕', '⚙', '✈', '☘', '⚓', '♫', '✎', '✉'];
 
 function NewRewardForm() {
   const router = useRouter();
@@ -19,7 +19,7 @@ function NewRewardForm() {
   const { family } = useFamily();
 
   const paramTitle = searchParams.get('title') || '';
-  const paramEmoji = searchParams.get('emoji') || '🎁';
+  const paramEmoji = searchParams.get('emoji') || '☆';
   const paramRequestId = searchParams.get('request_id') || '';
 
   const [title, setTitle] = useState(paramTitle);
@@ -50,7 +50,7 @@ function NewRewardForm() {
     const res = await rewardsAdapter.createReward(family.id, {
       title: title.trim(),
       cost,
-      emoji: emoji.trim() || '🎁',
+      emoji: emoji.trim() || '☆',
       cooldown_hours,
     });
 
@@ -114,7 +114,7 @@ function NewRewardForm() {
 
         <div className="flex flex-col gap-2">
           <label className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
-            Emoji representativo
+            Icono representativo
           </label>
           <div className="flex gap-2">
             <input
@@ -123,7 +123,7 @@ function NewRewardForm() {
               onChange={e => setEmoji(e.target.value)}
               maxLength={4}
               className="w-12 text-center text-xl p-2 rounded-2xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-bloom-200"
-              placeholder="🎁"
+              placeholder="☆"
             />
             <div className="flex-1 flex flex-wrap gap-1 items-center bg-stone-50 p-2 rounded-2xl border border-stone-100">
               {SUGGESTED_EMOJIS.map(item => (

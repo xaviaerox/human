@@ -137,7 +137,7 @@ function RoutineRow({
               className="text-xs text-stone-300 hover:text-bloom-500 transition-colors"
               aria-label={`Editar ${routine.title}`}
             >
-              ✏️
+              ✎
             </button>
           </Link>
           <button
