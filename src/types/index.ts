@@ -257,6 +257,7 @@ export interface Goal {
   total_sparks: number;
   visibility: 'child_and_parent' | 'parent_only';
   co_created: boolean;
+  one_per_day: boolean;
   created_by: string;
   created_at: string;
   updated_at: string;

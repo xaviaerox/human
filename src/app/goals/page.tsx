@@ -27,6 +27,13 @@ export default function GoalsPage() {
   const [completing, setCompleting] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const hasCompletedToday = selectedGoal?.one_per_day && selectedGoal.microtasks.some(t => {
+    if (t.status !== 'complete' || !t.completed_at) return false;
+    const compDate = new Date(t.completed_at).toLocaleDateString();
+    const todayDate = new Date().toLocaleDateString();
+    return compDate === todayDate;
+  });
+
   useEffect(() => {
     if (!authLoading && !session) {
       router.replace('/login');
@@ -59,6 +66,8 @@ export default function GoalsPage() {
         if (updated) setSelectedGoal(updated);
       }
       await interact('goal_step_complete', { goal_id: selectedGoal?.id, microtask_id: task.id });
+    } else {
+      alert(result.error.message || 'No se pudo completar el hito.');
     }
     setCompleting(null);
   }
@@ -139,6 +148,12 @@ export default function GoalsPage() {
               </div>
             </Card>
 
+            {hasCompletedToday && (
+              <div className="bg-amber-50 border border-amber-200 rounded-3xl p-4 text-center text-sm text-amber-800 font-medium">
+                🌟 ¡Gran trabajo hoy! Ya completaste tu hito de hoy para este objetivo. ¡Sigue mañana!
+              </div>
+            )}
+
             {/* Microtasks */}
             <div className="flex flex-col gap-3">
               {selectedGoal.microtasks.map(task => {
@@ -191,7 +206,7 @@ export default function GoalsPage() {
                       <SparkBadge count={task.spark_value} size="sm" />
                     </div>
 
-                    {isNext && (
+                    {isNext && !hasCompletedToday && (
                       <Button
                         size="md"
                         onClick={() => handleCompleteTask(task)}

@@ -40,6 +40,9 @@ function EditGoalClient() {
   const [why, setWhy]                 = useState('');
   const [childId, setChildId]         = useState('');
   const [coCreated, setCoCreated]     = useState(false);
+  const [numTasks, setNumTasks]       = useState(21);
+  const [sparkValue, setSparkValue]   = useState(1);
+  const [onePerDay, setOnePerDay]     = useState(true);
   const [microtasks, setMicrotasks]   = useState<Omit<GoalMicrotask, 'id' | 'goal_id'>[]>([]);
   const [decomposing, setDecomposing] = useState(false);
   const [saving, setSaving]           = useState(false);
@@ -65,6 +68,9 @@ function EditGoalClient() {
         setWhy(goal.why ?? '');
         setChildId(goal.child_id);
         setCoCreated(goal.co_created ?? false);
+        setOnePerDay(goal.one_per_day ?? true);
+        setNumTasks(goal.microtasks.length);
+        setSparkValue(goal.microtasks[0]?.spark_value ?? 1);
         setMicrotasks(goal.microtasks.map(t => ({
           position: t.position,
           title: t.title,
@@ -74,6 +80,8 @@ function EditGoalClient() {
           value_dimensions: t.value_dimensions,
           status: t.status,
           ai_generated: t.ai_generated,
+          completed_at: t.completed_at,
+          completed_by: t.completed_by,
         })));
       } else {
         setError('No se pudo cargar el objetivo.');
@@ -95,13 +103,43 @@ function EditGoalClient() {
     }));
   }
 
+  function updateNumTasks(newNum: number) {
+    setNumTasks(newNum);
+    setMicrotasks(prev => {
+      if (newNum > prev.length) {
+        const diff = newNum - prev.length;
+        const newTasks = [...prev];
+        for (let i = 0; i < diff; i++) {
+          newTasks.push({
+            position: newTasks.length + 1,
+            title: `Día ${newTasks.length + 1}: ${title}`,
+            effort_level: 'medium',
+            spark_value: sparkValue,
+            value_dimensions: [],
+            status: 'pending',
+            ai_generated: false,
+          });
+        }
+        return newTasks;
+      } else if (newNum < prev.length) {
+        return prev.slice(0, newNum);
+      }
+      return prev;
+    });
+  }
+
+  function updateSparkValueAll(newVal: number) {
+    setSparkValue(newVal);
+    setMicrotasks(prev => prev.map(t => ({ ...t, spark_value: newVal })));
+  }
+
   async function handleDecompose() {
     if (!title.trim()) return;
     setDecomposing(true);
     setStep('decompose');
 
     try {
-      const prompt = buildDecompositionPrompt({ goalTitle: title, goalWhy: why, childAge });
+      const prompt = buildDecompositionPrompt({ goalTitle: title, goalWhy: why, childAge, numTasks, sparkValue });
       let textResponse = '';
       let fetchSuccess = false;
 
@@ -169,13 +207,13 @@ function EditGoalClient() {
 
       if (textResponse) {
         const result = parseDecompositionResponse(textResponse, 'claude-sonnet-4-20250514');
-        setMicrotasks(mapParsedToDrafts(result?.microtasks ?? fallbackDecomposition(title)));
+        setMicrotasks(mapParsedToDrafts(result?.microtasks ?? fallbackDecomposition(title, numTasks, sparkValue)));
       } else {
-        setMicrotasks(mapParsedToDrafts(fallbackDecomposition(title)));
+        setMicrotasks(mapParsedToDrafts(fallbackDecomposition(title, numTasks, sparkValue)));
       }
     } catch (err) {
       console.error('[edit/page] Decomposition error:', err);
-      setMicrotasks(mapParsedToDrafts(fallbackDecomposition(title)));
+      setMicrotasks(mapParsedToDrafts(fallbackDecomposition(title, numTasks, sparkValue)));
     }
 
     setDecomposing(false);
@@ -184,6 +222,10 @@ function EditGoalClient() {
 
   function updateTaskTitle(idx: number, value: string) {
     setMicrotasks(prev => prev.map((t, i) => i === idx ? { ...t, title: value } : t));
+  }
+
+  function updateTaskSparkValue(idx: number, val: number) {
+    setMicrotasks(prev => prev.map((t, i) => i === idx ? { ...t, spark_value: val } : t));
   }
 
   function removeTask(idx: number) {
@@ -202,6 +244,7 @@ function EditGoalClient() {
         title:      title.trim(),
         why:        why.trim() || undefined,
         co_created: coCreated,
+        one_per_day: onePerDay,
       },
       microtasks as Omit<GoalMicrotask, 'id' | 'goal_id'>[]
     );
@@ -271,7 +314,47 @@ function EditGoalClient() {
                     hint="Conectar con la motivación interna ayuda mucho"
                   />
 
-                  <label className="flex items-center gap-3 cursor-pointer">
+                  <div className="border-t border-stone-100 pt-4 mt-2 flex flex-col gap-4">
+                    <div className="flex gap-4">
+                      <div className="flex-1 flex flex-col gap-1.5">
+                        <label className="text-sm font-medium text-stone-700">Número de hitos (pasos)</label>
+                        <select
+                          value={numTasks}
+                          onChange={e => updateNumTasks(parseInt(e.target.value) || 21)}
+                          className="w-full px-4 py-2.5 rounded-2xl border border-stone-200 bg-white text-stone-700 focus:outline-none focus:ring-2 focus:ring-bloom-300 text-sm"
+                        >
+                          {[3, 5, 7, 10, 14, 21, 30].map(v => (
+                            <option key={v} value={v}>{v} hitos</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex-1 flex flex-col gap-1.5">
+                        <label className="text-sm font-medium text-stone-700">Recompensa por hito</label>
+                        <select
+                          value={sparkValue}
+                          onChange={e => updateSparkValueAll(parseInt(e.target.value) || 1)}
+                          className="w-full px-4 py-2.5 rounded-2xl border border-stone-200 bg-white text-stone-700 focus:outline-none focus:ring-2 focus:ring-bloom-300 text-sm"
+                        >
+                          {[1, 2, 3, 4, 5, 10].map(v => (
+                            <option key={v} value={v}>✨ {v} {v === 1 ? 'Spark' : 'Sparks'}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={onePerDay}
+                        onChange={e => setOnePerDay(e.target.checked)}
+                        className="w-4 h-4 rounded accent-bloom-500"
+                      />
+                      <span className="text-sm text-stone-600 font-medium">Limitar a completar un solo hito al día</span>
+                    </label>
+                  </div>
+
+                  <label className="flex items-center gap-3 cursor-pointer mt-1">
                     <input
                       type="checkbox"
                       checked={coCreated}
@@ -332,7 +415,7 @@ function EditGoalClient() {
                           onChange={e => updateTaskTitle(idx, e.target.value)}
                           className="w-full text-sm text-stone-700 bg-transparent focus:outline-none font-medium"
                         />
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-2 mt-1 w-full justify-between">
                           {task.effort_level && (
                             <span className={cn(
                               'text-xs px-2 py-0.5 rounded-full border font-medium',
@@ -341,7 +424,21 @@ function EditGoalClient() {
                               {EFFORT_LABELS[task.effort_level]}
                             </span>
                           )}
-                          <SparkBadge count={task.spark_value} size="sm" className="ml-auto" />
+                          
+                          <div className="ml-auto flex items-center gap-1.5">
+                            <span className="text-[11px] text-stone-500 font-medium">Recompensa:</span>
+                            <select
+                              value={task.spark_value}
+                              onChange={e => updateTaskSparkValue(idx, parseInt(e.target.value) || 1)}
+                              className="text-xs bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5 font-bold focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
+                            >
+                              {[1, 2, 3, 4, 5, 10].map(v => (
+                                <option key={v} value={v}>
+                                  ✨ {v} {v === 1 ? 'Spark' : 'Sparks'}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
                       </div>
                       <button
@@ -356,7 +453,7 @@ function EditGoalClient() {
                       position: prev.length + 1,
                       title: '',
                       effort_level: 'medium',
-                      spark_value: 2,
+                      spark_value: sparkValue,
                       value_dimensions: [],
                       status: 'pending',
                       ai_generated: false,

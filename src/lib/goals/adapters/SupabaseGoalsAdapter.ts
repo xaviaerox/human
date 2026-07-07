@@ -58,6 +58,7 @@ export class SupabaseGoalsAdapter implements IGoalsAdapter {
         value_dimensions: goalData.value_dimensions,
         visibility:  goalData.visibility ?? 'child_and_parent',
         co_created:  goalData.co_created ?? false,
+        one_per_day: goalData.one_per_day ?? true,
         created_by:  goalData.created_by,
       })
       .select()
@@ -94,7 +95,7 @@ export class SupabaseGoalsAdapter implements IGoalsAdapter {
 
   async updateGoal(
     goalId: string,
-    updates: Partial<Pick<Goal, 'title' | 'description' | 'why' | 'status' | 'target_date' | 'visibility' | 'co_created' | 'child_id'>>,
+    updates: Partial<Pick<Goal, 'title' | 'description' | 'why' | 'status' | 'target_date' | 'visibility' | 'co_created' | 'child_id' | 'one_per_day'>>,
     microtasks?: Omit<GoalMicrotask, 'id' | 'goal_id'>[]
   ): Promise<Result<GoalWithMicrotasks>> {
     const { data: goal, error } = await this.client
@@ -133,6 +134,8 @@ export class SupabaseGoalsAdapter implements IGoalsAdapter {
             value_dimensions: t.value_dimensions,
             status:       t.status ?? 'pending',
             ai_generated: t.ai_generated ?? false,
+            completed_at: t.completed_at || null,
+            completed_by: t.completed_by || null,
           })))
           .select();
 

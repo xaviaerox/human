@@ -38,6 +38,13 @@ export function ActiveGoalStep({ onComplete }: ActiveGoalStepProps) {
   const [completing, setCompleting] = useState(false);
   const [justDone, setJustDone] = useState(false);
 
+  const hasCompletedToday = goal?.one_per_day && goal.microtasks.some(t => {
+    if (t.status !== 'complete' || !t.completed_at) return false;
+    const compDate = new Date(t.completed_at).toLocaleDateString();
+    const todayDate = new Date().toLocaleDateString();
+    return compDate === todayDate;
+  });
+
   useEffect(() => {
     if (!profile?.id) return;
     goalsAdapter.getGoals(profile.id).then(result => {
@@ -74,6 +81,7 @@ export function ActiveGoalStep({ onComplete }: ActiveGoalStepProps) {
         setCompleting(false);
       }, 1500);
     } else {
+      alert(result.error.message || 'No se pudo completar el hito.');
       setCompleting(false);
     }
   }
@@ -131,7 +139,7 @@ export function ActiveGoalStep({ onComplete }: ActiveGoalStepProps) {
           </div>
         </div>
 
-        {!justDone && (
+        {!justDone && !hasCompletedToday && (
           <Button
             variant="primary"
             size="md"
@@ -141,6 +149,12 @@ export function ActiveGoalStep({ onComplete }: ActiveGoalStepProps) {
           >
             ¡He completado este capítulo! ✓
           </Button>
+        )}
+
+        {hasCompletedToday && !justDone && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-center text-xs text-amber-800 font-medium">
+            🌟 ¡Gran trabajo hoy! Ya completaste tu hito de hoy. ¡Sigue mañana!
+          </div>
         )}
 
         {justDone && (

@@ -19,6 +19,7 @@ const STATIC_GOALS: GoalWithMicrotasks[] = [
     total_sparks: 10,
     visibility: 'child_and_parent',
     co_created: true,
+    one_per_day: true,
     created_by: 'static-parent-1',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -99,6 +100,7 @@ export class StaticGoalsAdapter implements IGoalsAdapter {
       total_sparks: microtasks.reduce((s, m) => s + m.spark_value, 0),
       visibility: params.visibility ?? 'child_and_parent',
       co_created: params.co_created ?? false,
+      one_per_day: params.one_per_day ?? true,
       created_by: params.created_by,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -112,7 +114,7 @@ export class StaticGoalsAdapter implements IGoalsAdapter {
 
   async updateGoal(
     goalId: string,
-    updates: Partial<Pick<Goal, 'title' | 'description' | 'why' | 'status' | 'target_date' | 'visibility' | 'co_created' | 'child_id'>>,
+    updates: Partial<Pick<Goal, 'title' | 'description' | 'why' | 'status' | 'target_date' | 'visibility' | 'co_created' | 'child_id' | 'one_per_day'>>,
     microtasks?: Omit<GoalMicrotask, 'id' | 'goal_id'>[]
   ): Promise<Result<GoalWithMicrotasks>> {
     const idx = this._goals.findIndex(g => g.id === goalId);

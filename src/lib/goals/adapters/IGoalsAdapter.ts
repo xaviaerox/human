@@ -16,6 +16,7 @@ export interface CreateGoalParams {
   value_dimensions?: Goal['value_dimensions'];
   visibility?: Goal['visibility'];
   co_created?: boolean;
+  one_per_day?: boolean;
   created_by: string;
   microtasks?: ParsedMicrotask[];
 }
@@ -33,7 +34,7 @@ export interface IGoalsAdapter {
   /** Update goal metadata */
   updateGoal(
     goalId: string,
-    updates: Partial<Pick<Goal, 'title' | 'description' | 'why' | 'status' | 'target_date' | 'visibility' | 'co_created' | 'child_id'>>,
+    updates: Partial<Pick<Goal, 'title' | 'description' | 'why' | 'status' | 'target_date' | 'visibility' | 'co_created' | 'child_id' | 'one_per_day'>>,
     microtasks?: Omit<GoalMicrotask, 'id' | 'goal_id'>[]
   ): Promise<Result<GoalWithMicrotasks>>;
 

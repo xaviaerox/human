@@ -36,6 +36,8 @@ export interface DecompositionPromptParams {
   goalWhy?: string;
   childAge?: number;      // derived from birth_year
   existingTraits?: string[];  // companion personality traits as context
+  numTasks?: number;
+  sparkValue?: number;
 }
 
 export function buildDecompositionPrompt(params: DecompositionPromptParams): string {
@@ -47,6 +49,9 @@ export function buildDecompositionPrompt(params: DecompositionPromptParams): str
     ? `Quiere lograr esto porque: "${params.goalWhy}".`
     : '';
 
+  const count = params.numTasks || 21;
+  const reward = params.sparkValue || 1;
+
   return `Eres un asistente cálido, paciente y experto en psicología infantil y pedagogía. Estás ayudando a un padre o a un niño a descomponer un objetivo personal en pasos pequeños, realistas y alcanzables para el niño.
 
 Objetivo principal: "${params.goalTitle}"
@@ -54,7 +59,7 @@ ${params.goalDescription ? `Descripción: ${params.goalDescription}` : ''}
 ${whyContext}
 ${ageContext}
 
-Crea entre 3 y 6 microtareas concretas para lograr este objetivo. Cada microtarea debe cumplir con lo siguiente:
+Crea exactamente ${count} microtareas concretas y secuenciales para lograr este objetivo (organizándolo como un reto paso a paso). Cada microtarea debe cumplir con lo siguiente:
 - Ser específica y actionable (el niño sabe exactamente cuándo la ha terminado).
 - Tener un tamaño adecuado (se puede completar en una sola sesión de 15-30 minutos).
 - Estar redactada en primera persona desde la perspectiva del niño (ej. "Preparo mi mochila", "Doy tres pedaleadas", "Respiro hondo").
@@ -71,7 +76,7 @@ Responde ÚNICAMENTE con un objeto JSON válido, sin formato markdown, sin texto
       "title": "string en español (máx 60 caracteres, lenguaje infantil y motivador)",
       "description": "string en español (opcional, 1 frase de contexto o consejo)",
       "effort_level": "easy" | "medium" | "stretch",
-      "spark_value": número (entre 1 y 5),
+      "spark_value": ${reward},
       "value_dimensions": ["autonomy" | "empathy" | "regulation" | "curiosity" | "courage" | "connection"]
     }
   ]
@@ -149,30 +154,18 @@ function validateDimensions(dims: unknown): Goal['value_dimensions'] {
 // Fallback decomposition (no AI)
 // Used when AI is unavailable or call fails
 // ─────────────────────────────────────────
-export function fallbackDecomposition(goalTitle: string): ParsedMicrotask[] {
-  return [
-    {
-      position: 1,
-      title: `Pensar en qué necesito para "${goalTitle}"`,
-      effort_level: 'easy',
-      spark_value: 1,
-      value_dimensions: ['curiosity'],
-    },
-    {
-      position: 2,
-      title: 'Dar mi primer pequeño paso',
-      effort_level: 'easy',
-      spark_value: 2,
-      value_dimensions: ['courage'],
-    },
-    {
-      position: 3,
-      title: 'Seguir adelante paso a paso',
+export function fallbackDecomposition(goalTitle: string, numTasks = 21, sparkValue = 1): ParsedMicrotask[] {
+  const tasks: ParsedMicrotask[] = [];
+  for (let i = 1; i <= numTasks; i++) {
+    tasks.push({
+      position: i,
+      title: `Día ${i}: ${goalTitle}`,
       effort_level: 'medium',
-      spark_value: 3,
-      value_dimensions: ['connection'],
-    },
-  ];
+      spark_value: sparkValue,
+      value_dimensions: [],
+    });
+  }
+  return tasks;
 }
 
 // ─────────────────────────────────────────

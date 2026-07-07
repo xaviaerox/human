@@ -2120,9 +2120,9 @@ export default function HomePage() {
                   setGoalPropError('');
 
                   const microtasks = [];
-                  if (goalPropStep1.trim()) microtasks.push({ position: 1, title: goalPropStep1.trim(), effort_level: 'easy' as any, spark_value: 3, value_dimensions: [] });
-                  if (goalPropStep2.trim()) microtasks.push({ position: 2, title: goalPropStep2.trim(), effort_level: 'medium' as any, spark_value: 5, value_dimensions: [] });
-                  if (goalPropStep3.trim()) microtasks.push({ position: 3, title: goalPropStep3.trim(), effort_level: 'stretch' as any, spark_value: 8, value_dimensions: [] });
+                  if (goalPropStep1.trim()) microtasks.push({ position: 1, title: goalPropStep1.trim(), effort_level: 'easy' as any, spark_value: 1, value_dimensions: [] });
+                  if (goalPropStep2.trim()) microtasks.push({ position: 2, title: goalPropStep2.trim(), effort_level: 'medium' as any, spark_value: 1, value_dimensions: [] });
+                  if (goalPropStep3.trim()) microtasks.push({ position: 3, title: goalPropStep3.trim(), effort_level: 'stretch' as any, spark_value: 1, value_dimensions: [] });
 
                   const res = await goalsAdapter.createGoal({
                     family_id: session.family.id,
@@ -2132,6 +2132,7 @@ export default function HomePage() {
                     co_created: true,
                     status: 'paused', // suggestions are created in paused status
                     created_by: profile.id,
+                    one_per_day: true, // limit daily by default
                     microtasks: microtasks.length > 0 ? microtasks : undefined
                   });
 
