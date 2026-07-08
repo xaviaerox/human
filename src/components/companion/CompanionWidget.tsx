@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { CompanionBlob } from './CompanionBlob';
 import type { CompanionDisplayState, DialogueLine } from '@/types';
 import { useCompanion } from '@/lib/companion/CompanionProvider';
+import { motion } from 'framer-motion';
 
 interface CompanionWidgetProps {
   display: CompanionDisplayState;
@@ -12,6 +13,8 @@ interface CompanionWidgetProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
   onTap?: () => void;
+  worldId?: string | null;
+  silentMode?: boolean;
 }
 
 export function CompanionWidget({
@@ -20,9 +23,12 @@ export function CompanionWidget({
   size = 'lg',
   className,
   onTap,
+  worldId,
+  silentMode = false,
 }: CompanionWidgetProps) {
   const [visibleText, setVisibleText] = useState('');
   const [showBubble, setShowBubble] = useState(false);
+  const [isWakingUp, setIsWakingUp] = useState(!silentMode);
 
   let companionContext = null;
   try {
@@ -33,6 +39,17 @@ export function CompanionWidget({
   const companion = companionContext?.companion;
   const customTheme = companion?.equipped_color_theme || null;
   const customAccessory = companion?.equipped_accessory || null;
+
+  useEffect(() => {
+    if (silentMode) {
+      setIsWakingUp(false);
+      return;
+    }
+    const wakeTimer = setTimeout(() => {
+      setIsWakingUp(false);
+    }, 1500);
+    return () => clearTimeout(wakeTimer);
+  }, [silentMode]);
 
   useEffect(() => {
     if (!dialogue?.text) return;
@@ -112,9 +129,28 @@ export function CompanionWidget({
           />
         </div>
 
-        {/* Companion blob — tappable */}
-        <button
+        {/* Companion blob — tappable with Framer Motion waking up effect */}
+        <motion.button
           onClick={onTap}
+          initial={silentMode ? {} : { scale: 0.5, y: 15, opacity: 0 }}
+          animate={
+            silentMode
+              ? { scale: 1, y: 0, opacity: 1 }
+              : isWakingUp
+              ? {
+                  scale: [0.5, 1.1, 0.95, 1],
+                  y: [15, -10, 2, 0],
+                  opacity: [0, 1, 1, 1],
+                  filter: [
+                    'brightness(1.5) blur(4px)',
+                    'brightness(1.2) blur(0px)',
+                    'brightness(1) blur(0px)',
+                    'brightness(1) blur(0px)',
+                  ],
+                }
+              : { scale: 1, y: 0, opacity: 1, filter: 'brightness(1) blur(0px)' }
+          }
+          transition={{ duration: 1.2, ease: 'easeOut' }}
           className={cn(
             'relative focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 rounded-full block',
             onTap && 'cursor-pointer',
@@ -130,6 +166,8 @@ export function CompanionWidget({
             animationCue={dialogue?.animationCue}
             customTheme={customTheme}
             customAccessory={customAccessory}
+            worldId={worldId}
+            silentMode={silentMode}
           />
 
           {/* New stage indicator — subtle glow ring */}
@@ -144,7 +182,7 @@ export function CompanionWidget({
               aria-hidden="true"
             />
           )}
-        </button>
+        </motion.button>
       </div>
 
       {/* Companion name — shown below */}

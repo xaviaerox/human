@@ -12,7 +12,7 @@ import { ActiveGoalStep } from '@/components/goals/ActiveGoalStep';
 import { SparkBadge } from '@/components/ui/SparkBadge';
 import { CheckinPromptCard } from '@/components/emotional/CheckinPromptCard';
 import { useEmotional } from '@/lib/emotional/EmotionalProvider';
-import { getRewardsAdapter, getGoalsAdapter } from '@/lib/adapters';
+import { getRewardsAdapter, getGoalsAdapter, getRoutineAdapter } from '@/lib/adapters';
 import { getNextMicrotask } from '@/lib/goals/MicrotaskEngine';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SparkCelebrationOverlay } from '@/components/ui/SparkCelebrationOverlay';
@@ -147,70 +147,85 @@ function getWorldPhase(score: number): { phase: 'seed' | 'sprout' | 'bloom'; lab
   return { phase: 'seed', label: 'Semilla', icon: '○' };
 }
 
+function getWorldProgress(score: number): { percent: number; nextLabel: string } {
+  if (score >= 100) {
+    return { percent: 100, nextLabel: 'Esplendor máximo' };
+  }
+  if (score >= 31) {
+    const percent = Math.round(((score - 31) / 69) * 100);
+    return { percent, nextLabel: 'para Esplendor' };
+  }
+  const percent = Math.round((score / 30) * 100);
+  return { percent, nextLabel: 'para Brote' };
+}
+
 interface WorldAmbientVisualsProps {
   worldId: string;
   phase: 'seed' | 'sprout' | 'bloom';
+  silentMode?: boolean;
 }
 
-function WorldAmbientVisuals({ worldId, phase }: WorldAmbientVisualsProps) {
+function WorldAmbientVisuals({ worldId, phase, silentMode = false }: WorldAmbientVisualsProps) {
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden select-none flex flex-col justify-end">
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes spin-windmill {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        @keyframes waterfall-flow {
-          0% { stroke-dashoffset: 0; }
-          100% { stroke-dashoffset: -20; }
-        }
-        @keyframes float-cloud {
-          0%, 100% { transform: translateX(0px) translateY(0px); }
-          50% { transform: translateX(8px) translateY(-2px); }
-        }
-        @keyframes float-balloon {
-          0%, 100% { transform: translateY(0px) translateX(0px); }
-          50% { transform: translateY(-8px) translateX(2px); }
-        }
-        @keyframes glow-seed {
-          0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(251, 191, 36, 0.6)); opacity: 0.85; }
-          50% { transform: scale(1.08); filter: drop-shadow(0 0 12px rgba(251, 191, 36, 1)); opacity: 1; }
-        }
-        @keyframes flag-flap {
-          0%, 100% { transform: skewY(0deg) scaleX(1); }
-          50% { transform: skewY(-4deg) scaleX(0.95); }
-        }
-        @keyframes eagle-soar {
-          0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
-          50% { transform: translate(-12px, -6px) scale(0.95) rotate(-3deg); }
-        }
-        .anim-windmill {
-          animation: spin-windmill 12s linear infinite;
-          transform-origin: 18px 50px;
-        }
-        .anim-waterfall {
-          stroke-dasharray: 4, 4;
-          animation: waterfall-flow 1.2s linear infinite;
-        }
-        .anim-cloud {
-          animation: float-cloud 7s ease-in-out infinite;
-        }
-        .anim-balloon {
-          animation: float-balloon 5s ease-in-out infinite;
-          transform-origin: 82px 55px;
-        }
-        .anim-seed-pulse {
-          animation: glow-seed 2s ease-in-out infinite;
-        }
-        .anim-flag {
-          animation: flag-flap 1.5s ease-in-out infinite;
-          transform-origin: 22px 22px;
-        }
-        .anim-eagle {
-          animation: eagle-soar 8s ease-in-out infinite;
-          transform-origin: 78px 30px;
-        }
-      `}} />
+      {!silentMode && (
+        <style dangerouslySetInnerHTML={{ __html: `
+          @keyframes spin-windmill {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          @keyframes waterfall-flow {
+            0% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: -20; }
+          }
+          @keyframes float-cloud {
+            0%, 100% { transform: translateX(0px) translateY(0px); }
+            50% { transform: translateX(8px) translateY(-2px); }
+          }
+          @keyframes float-balloon {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(-8px) translateX(2px); }
+          }
+          @keyframes glow-seed {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(251, 191, 36, 0.6)); opacity: 0.85; }
+            50% { transform: scale(1.08); filter: drop-shadow(0 0 12px rgba(251, 191, 36, 1)); opacity: 1; }
+          }
+          @keyframes flag-flap {
+            0%, 100% { transform: skewY(0deg) scaleX(1); }
+            50% { transform: skewY(-4deg) scaleX(0.95); }
+          }
+          @keyframes eagle-soar {
+            0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+            50% { transform: translate(-12px, -6px) scale(0.95) rotate(-3deg); }
+          }
+          .anim-windmill {
+            animation: spin-windmill 12s linear infinite;
+            transform-origin: 18px 50px;
+          }
+          .anim-waterfall {
+            stroke-dasharray: 4, 4;
+            animation: waterfall-flow 1.2s linear infinite;
+          }
+          .anim-cloud {
+            animation: float-cloud 7s ease-in-out infinite;
+          }
+          .anim-balloon {
+            animation: float-balloon 5s ease-in-out infinite;
+            transform-origin: 82px 55px;
+          }
+          .anim-seed-pulse {
+            animation: glow-seed 2s ease-in-out infinite;
+          }
+          .anim-flag {
+            animation: flag-flap 1.5s ease-in-out infinite;
+            transform-origin: 22px 22px;
+          }
+          .anim-eagle {
+            animation: eagle-soar 8s ease-in-out infinite;
+            transform-origin: 78px 30px;
+          }
+        `}} />
+      )}
 
       {/* ──────────────────────────────────────────────────────── */}
       {/* 1. LAGO DE LA CALMA */}
@@ -341,13 +356,13 @@ function WorldAmbientVisuals({ worldId, phase }: WorldAmbientVisualsProps) {
           </svg>
 
           {/* Floating effects */}
-          {phase === 'seed' && (
+          {!silentMode && phase === 'seed' && (
             <div className="absolute bottom-6 left-[80%] -translate-x-1/2 text-xs text-yellow-300/60 animate-pulse">✨</div>
           )}
-          {phase === 'sprout' && (
+          {!silentMode && phase === 'sprout' && (
             <div className="absolute bottom-12 left-[80%] -translate-x-1/2 text-[10px] animate-bounce text-cyan-300">💧</div>
           )}
-          {phase === 'bloom' && (
+          {!silentMode && phase === 'bloom' && (
             <>
               <div className="absolute w-2.5 h-2.5 rounded-full bg-white/50 bottom-14 left-[76%] animate-ambient-float-up" />
               <div className="absolute w-2 h-2 rounded-full bg-white/60 bottom-24 left-[84%] animate-ambient-float-up" style={{ animationDelay: '1.5s' }} />
@@ -486,10 +501,10 @@ function WorldAmbientVisuals({ worldId, phase }: WorldAmbientVisualsProps) {
           </svg>
 
           {/* Falling Leaves & Petals - only in Sprout and Bloom */}
-          {phase === 'sprout' && (
+          {!silentMode && phase === 'sprout' && (
             <div className="absolute top-6 right-[20%] text-xs opacity-60 animate-ambient-float-down">🍃</div>
           )}
-          {phase === 'bloom' && (
+          {!silentMode && phase === 'bloom' && (
             <>
               <div className="absolute top-2 left-6 text-xs animate-ambient-float-down">🌸</div>
               <div className="absolute top-8 right-6 text-[10px] animate-ambient-float-down" style={{ animationDelay: '2s' }}>🌸</div>
@@ -611,10 +626,10 @@ function WorldAmbientVisuals({ worldId, phase }: WorldAmbientVisualsProps) {
           </svg>
 
           {/* Twinkling Fireflies - Sprout (few) and Bloom (many) */}
-          {phase === 'sprout' && (
+          {!silentMode && phase === 'sprout' && (
             <div className="absolute w-1.5 h-1.5 bg-yellow-200 rounded-full blur-[1px] bottom-16 left-[15%] animate-firefly" />
           )}
-          {phase === 'bloom' && (
+          {!silentMode && phase === 'bloom' && (
             <>
               <div className="absolute w-2 h-2 bg-yellow-300 rounded-full blur-[1.5px] bottom-20 left-[12%] animate-firefly" />
               <div className="absolute w-1.5 h-1.5 bg-yellow-250 rounded-full blur-[1px] bottom-28 right-[14%] animate-firefly" style={{ animationDelay: '1s' }} />
@@ -716,13 +731,13 @@ function WorldAmbientVisuals({ worldId, phase }: WorldAmbientVisualsProps) {
           </svg>
 
           {/* Particle Effects */}
-          {phase === 'seed' && (
+          {!silentMode && phase === 'seed' && (
             <div className="absolute top-8 left-[20%] text-[8px] opacity-40 animate-pulse text-white">❄️</div>
           )}
-          {phase === 'sprout' && (
+          {!silentMode && phase === 'sprout' && (
             <div className="absolute top-10 left-[22%] text-[9px] opacity-60 animate-bounce text-sky-100">❄️</div>
           )}
-          {phase === 'bloom' && (
+          {!silentMode && phase === 'bloom' && (
             <>
               {/* Twinkling stars */}
               <div className="absolute top-4 left-6 text-xs animate-pulse text-yellow-300">⭐</div>
@@ -837,10 +852,10 @@ function WorldAmbientVisuals({ worldId, phase }: WorldAmbientVisualsProps) {
           </svg>
 
           {/* Floating Hearts */}
-          {phase === 'sprout' && (
+          {!silentMode && phase === 'sprout' && (
             <div className="absolute bottom-16 right-[20%] text-xs animate-ambient-float-up text-pink-300 opacity-60">❤️</div>
           )}
-          {phase === 'bloom' && (
+          {!silentMode && phase === 'bloom' && (
             <>
               <div className="absolute bottom-16 left-[15%] text-xs animate-ambient-float-up text-red-400 opacity-90">❤️</div>
               <div className="absolute bottom-24 right-[16%] text-sm animate-ambient-float-up text-pink-400 opacity-95" style={{ animationDelay: '2.5s' }}>💖</div>
@@ -877,6 +892,12 @@ export default function HomePage() {
   const [showChatModal, setShowChatModal] = useState(false);
   const [showWorldsModal, setShowWorldsModal] = useState(false);
 
+  // Silence vs Adventure mode
+  const [silentMode, setSilentMode] = useState(false);
+
+  // Routines status for 'Todo Listo' state
+  const [allRoutinesDone, setAllRoutinesDone] = useState(false);
+
   // Active goal context for companion chat
   // Active goal context for companion chat
   const [activeGoal, setActiveGoal] = useState<any>(null);
@@ -894,6 +915,65 @@ export default function HomePage() {
 
   // States for companion tapping
   const [tapLoading, setTapLoading] = useState(false);
+
+  // Load silent mode preferences
+  useEffect(() => {
+    const stored = localStorage.getItem('mira_silent_mode');
+    if (stored === 'true') {
+      setSilentMode(true);
+    } else if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setSilentMode(true);
+    }
+  }, []);
+
+  const toggleSilentMode = () => {
+    const newValue = !silentMode;
+    setSilentMode(newValue);
+    localStorage.setItem('mira_silent_mode', String(newValue));
+  };
+
+  // Check if routines are completed
+  const checkRoutinesStatus = useCallback(() => {
+    if (!profile?.id || !session?.family?.id) return;
+    const routineAdapter = getRoutineAdapter();
+    routineAdapter.getRoutines(session.family.id, profile.id).then(resR => {
+      if (!resR.ok) return;
+      const routines = resR.data;
+      routineAdapter.getCompletions(
+        profile.id,
+        new Date().toISOString().split('T')[0]!,
+        new Date().toISOString().split('T')[0]!
+      ).then(resC => {
+        if (!resC.ok) return;
+        const completedIds = new Set(resC.data.map(c => c.routine_id));
+        const pending = routines.filter(r => !completedIds.has(r.id));
+        setAllRoutinesDone(pending.length === 0);
+      });
+    });
+  }, [profile?.id, session?.family?.id]);
+
+  useEffect(() => {
+    checkRoutinesStatus();
+  }, [checkRoutinesStatus, activeTab]);
+
+  // World first-visit greeting dialogue trigger
+  useEffect(() => {
+    if (!profile?.id || !display) return;
+    const key = `mira_world_seen_${profile.id}_${selectedWorld.id}`;
+    const alreadySeen = localStorage.getItem(key);
+    if (!alreadySeen) {
+      const worldWelcomes: Record<string, string> = {
+        lago_calma: `¡Bienvenido al Lago de la Calma! ☯ Aquí podemos respirar hondo y buscar nuestra paz interior juntos.`,
+        valle_habitos: `¡Te presento el Valle de los Hábitos! ♾ Tu constancia diaria hará que los árboles den deliciosas manzanas.`,
+        bosque_autonomia: `¡Exploremos el Bosque de la Autonomía! ↟ Al hacer cosas por ti mismo, encenderás las linternas y hongos mágicos.`,
+        montana_esfuerzo: `¡Llegamos a las Montañas del Esfuerzo! ▲ Cada hito que superes te ayudará a escalar las cumbres más altas.`,
+        reino_social: `¡Este es el Reino de la Vida Social! ♡ Comparte amor y empatía para construir puentes de arcoíris.`,
+      };
+      const welcomeText = worldWelcomes[selectedWorld.id] || `¡Bienvenido a este nuevo rincón de nuestro mundo!`;
+      setDialogue({ text: welcomeText, durationMs: 6000 });
+      localStorage.setItem(key, 'true');
+    }
+  }, [selectedWorld.id, profile?.id, display]);
 
   const fetchActiveGoal = useCallback(() => {
     if (!profile?.id) return;
@@ -1073,10 +1153,14 @@ export default function HomePage() {
       setCheckinCustomWord('');
       setCheckinNote('');
       if (display) {
-        setCheckinDialogue(getDialogue('checkin_prompt' as any));
+        setCheckinDialogue({
+          text: `¡Hola, ${profile?.display_name || 'amigo'}! 🌟 ¿Cómo está tu energía hoy?`,
+          durationMs: 5000,
+          animationCue: 'idle'
+        });
       }
     }
-  }, [activeTab, display, getDialogue]);
+  }, [activeTab, display, profile?.display_name]);
 
   async function handleCheckinSubmit() {
     if (checkinEnergy === null || checkinValence === null || !profile?.id) return;
@@ -1179,6 +1263,16 @@ export default function HomePage() {
     return getWorldPhase(activeWorldScore);
   }, [activeWorldScore]);
 
+  const hasCompletedGoalToday = useMemo(() => {
+    if (!activeGoal) return true; // No active goal means no pending step
+    return activeGoal.one_per_day && activeGoal.microtasks.some((t: any) => {
+      if (t.status !== 'complete' || !t.completed_at) return false;
+      const compDate = new Date(t.completed_at).toLocaleDateString();
+      const todayDate = new Date().toLocaleDateString();
+      return compDate === todayDate;
+    });
+  }, [activeGoal]);
+
   if (authLoading) return (
     <div className="flex items-center justify-center min-h-dvh">
       <div className="w-6 h-6 border-2 border-stone-200 border-t-bloom-400 rounded-full animate-spin" />
@@ -1235,6 +1329,13 @@ export default function HomePage() {
           >
             🎁 Canjear
           </button>
+          <button
+            onClick={toggleSilentMode}
+            className="w-8 h-8 rounded-full bg-white/95 border border-stone-100 hover:bg-white shadow-soft cursor-pointer flex items-center justify-center text-sm transition-all hover:scale-105 active:scale-95"
+            title={silentMode ? 'Activar modo Aventura (animaciones)' : 'Activar modo Calma (silencio visual)'}
+          >
+            {silentMode ? '🌙' : '☀️'}
+          </button>
           <SparkBadge count={sparkBalance} size="md" />
         </div>
       </header>
@@ -1274,21 +1375,55 @@ export default function HomePage() {
                 <span>Mundo: {selectedWorld.name} ({activeWorldPhase.label} {activeWorldPhase.icon}) ▾</span>
               </button>
 
+              {/* World Progress Bar */}
+              {(() => {
+                const { percent, nextLabel } = getWorldProgress(activeWorldScore);
+                return (
+                  <div className="w-full max-w-xs px-4 py-2 bg-white/60 dark:bg-stone-900/40 rounded-2xl border border-stone-200/50 mb-2 flex flex-col gap-1.5 shadow-sm">
+                    <div className="flex justify-between text-[10px] font-semibold text-stone-500 uppercase tracking-wider">
+                      <span>Crecimiento del Mundo</span>
+                      <span>{percent}% {nextLabel}</span>
+                    </div>
+                    <div className="w-full h-2 bg-stone-100 dark:bg-stone-850 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-emerald-400 dark:bg-emerald-500 rounded-full transition-all duration-1000"
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* All Done / Todo Listo Message */}
+              {!showCheckinPrompt && allRoutinesDone && hasCompletedGoalToday && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="w-full max-w-xs px-5 py-4 bg-emerald-50/75 dark:bg-emerald-950/20 border border-emerald-250/30 rounded-[28px] text-center shadow-soft mb-2"
+                >
+                  <p className="text-xl mb-1">🌟</p>
+                  <h4 className="font-display text-xs font-bold text-emerald-850 dark:text-emerald-300">¡Todo listo por hoy!</h4>
+                  <p className="text-[10px] text-emerald-700/80 dark:text-emerald-400/80 font-body mt-1 leading-relaxed">
+                    Has hecho un trabajo increíble hoy. Relájate, disfruta de tu mundo y platica libremente con {display?.name}.
+                  </p>
+                </motion.div>
+              )}
+
               {/* Ambient visual state description */}
-              <p className="text-stone-400 text-center text-xs italic font-body max-w-xs mb-4">
+              <p className="text-stone-400 text-center text-xs italic font-body max-w-xs mb-2">
                 {activeWorldPhase.phase === 'seed' && 'El entorno se encuentra en calma, cuidando de una semilla.'}
                 {activeWorldPhase.phase === 'sprout' && 'Pequeños brotes de naturaleza comienzan a asomar en los rincones.'}
                 {activeWorldPhase.phase === 'bloom' && '¡El entorno irradia flores y una luz vibrante debido a tu crecimiento!'}
               </p>
 
               {/* Viewport container representing the magical terrarium/world */}
-              <div className="relative w-full max-w-[280px] aspect-square flex items-center justify-center my-6 rounded-[40px] border border-stone-250/20 bg-white/45 dark:bg-stone-900/10 backdrop-blur-md shadow-card transition-all duration-700">
+              <div className="relative w-full max-w-[280px] aspect-square flex items-center justify-center my-4 rounded-[40px] border border-stone-250/20 bg-white/45 dark:bg-stone-900/10 backdrop-blur-md shadow-card transition-all duration-700">
                 {/* Background wrapper (clipping landscapes inside rounded border) */}
                 <div className="absolute inset-0 overflow-hidden rounded-[40px] z-0">
-                  <WorldAmbientVisuals worldId={selectedWorld.id} phase={activeWorldPhase.phase} />
+                  <WorldAmbientVisuals worldId={selectedWorld.id} phase={activeWorldPhase.phase} silentMode={silentMode} />
                 </div>
 
-                {/* Companion blob widget (Foreground, allows overflow pop-out) */}
+                {/* Companion widget (Foreground, allows overflow pop-out) */}
                 {isVisible && display && (
                   <div className="z-10 scale-[1.08] relative">
                     <CompanionWidget
@@ -1296,6 +1431,8 @@ export default function HomePage() {
                       dialogue={dialogue}
                       size="lg"
                       onTap={handleCompanionTap}
+                      worldId={selectedWorld.id}
+                      silentMode={silentMode}
                     />
                   </div>
                 )}
@@ -1338,8 +1475,16 @@ export default function HomePage() {
 
               {/* Today's routines */}
               <RoutinesToday
-                onComplete={() => {
+                onComplete={(routine, sparks) => {
+                  checkRoutinesStatus();
                   if (display) setDialogue(getDialogue('routine_complete'));
+                  if (sparks && sparks > 0) {
+                    setCurrentCelebration({
+                      id: Math.random().toString(),
+                      delta: sparks,
+                      note: `¡Completaste la rutina: ${routine.title}! ✨`
+                    });
+                  }
                 }}
               />
             </motion.div>
@@ -1364,9 +1509,16 @@ export default function HomePage() {
 
               {activeGoal ? (
                 <ActiveGoalStep
-                  onComplete={() => {
+                  onComplete={(task, sparks) => {
                     fetchActiveGoal();
                     if (display) setDialogue(getDialogue('goal_step_complete'));
+                    if (sparks && sparks > 0) {
+                      setCurrentCelebration({
+                        id: Math.random().toString(),
+                        delta: sparks,
+                        note: `¡Completaste el capítulo: ${task.title}! ✦`
+                      });
+                    }
                   }}
                 />
               ) : (
@@ -1442,200 +1594,320 @@ export default function HomePage() {
                     display={display}
                     dialogue={checkinStep === 'energy' ? checkinDialogue : undefined}
                     size="md"
+                    worldId={selectedWorld.id}
+                    silentMode={silentMode}
                   />
                 </div>
               )}
 
-              {/* Step 1: Energy */}
-              {checkinStep === 'energy' && (
-                <div className="flex flex-col gap-4 animate-slide-up">
-                  <p className="font-display text-lg text-stone-700 text-center">
-                    ¿Cuánta energía tienes ahora?
-                  </p>
-                  <div className="grid grid-cols-5 gap-1.5">
-                    {ENERGY_OPTIONS.map(opt => (
-                      <button
-                        key={opt.value}
-                        onClick={() => {
-                          setCheckinEnergy(opt.value);
-                          setCheckinStep('valence');
-                        }}
-                        className={cn(
-                          'flex flex-col items-center gap-1 py-4 rounded-2xl border cursor-pointer',
-                          'bg-white border-stone-200 transition-all duration-200',
-                          'hover:border-lavender-300 hover:bg-lavender-50',
-                          'active:scale-95'
-                        )}
-                        aria-label={opt.label}
-                      >
-                        <span className="text-xl">{opt.emoji}</span>
-                        <span className="text-[9px] text-stone-400 font-body text-center">{opt.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {/* Steps container with page transitions */}
+              <div className="relative w-full min-h-[220px]">
+                <AnimatePresence mode="wait">
+                  {/* Step 1: Energy */}
+                  {checkinStep === 'energy' && (
+                    <motion.div
+                      key="step-energy"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex flex-col gap-4 w-full"
+                    >
+                      <p className="font-display text-sm font-bold text-stone-500 uppercase tracking-wider text-center">
+                        Paso 1 de 4: Tu Energía
+                      </p>
+                      <p className="font-display text-lg text-stone-700 text-center font-bold">
+                        ¿Cuánta energía tienes ahora?
+                      </p>
+                      <div className="grid grid-cols-5 gap-2">
+                        {ENERGY_OPTIONS.map(opt => (
+                          <button
+                            key={opt.value}
+                            onClick={() => {
+                              setCheckinEnergy(opt.value);
+                              setCheckinStep('valence');
+                              if (display) {
+                                if (opt.value <= 2) {
+                                  setCheckinDialogue({
+                                    text: `Entiendo, a veces tenemos las pilas bajas... 🔋 ¿Cómo te sientes por dentro?`,
+                                    durationMs: 5000,
+                                    animationCue: 'breathe'
+                                  });
+                                } else {
+                                  setCheckinDialogue({
+                                    text: `¡Se nota esa energía! ⚡ ¿Cómo te sientes por dentro?`,
+                                    durationMs: 5000,
+                                    animationCue: 'bounce'
+                                  });
+                                }
+                              }
+                            }}
+                            className={cn(
+                              'flex flex-col items-center gap-1 py-4 rounded-2xl border cursor-pointer',
+                              'bg-white border-stone-200 transition-all duration-200',
+                              'hover:border-lavender-300 hover:bg-lavender-50',
+                              'active:scale-95'
+                            )}
+                            aria-label={opt.label}
+                          >
+                            <span className="text-xl">{opt.emoji}</span>
+                            <span className="text-[9px] text-stone-400 font-body text-center">{opt.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
 
-              {/* Step 2: Valence */}
-              {checkinStep === 'valence' && (
-                <div className="flex flex-col gap-4 animate-slide-up">
-                  <p className="font-display text-lg text-stone-700 text-center">
-                    ¿Cómo te sientes por dentro?
-                  </p>
-                  <div className="grid grid-cols-5 gap-1.5">
-                    {VALENCE_OPTIONS.map(opt => (
-                      <button
-                        key={opt.value}
-                        onClick={() => {
-                          setCheckinValence(opt.value);
-                          setCheckinStep('word');
-                          if (display) setCheckinDialogue(getDialogue('checkin_prompt' as any));
-                        }}
-                        className={cn(
-                          'flex flex-col items-center gap-1 py-4 rounded-2xl border cursor-pointer',
-                          'bg-white border-stone-200 transition-all duration-200',
-                          'hover:border-lavender-300 hover:bg-lavender-50',
-                          'active:scale-95'
-                        )}
-                        aria-label={opt.label}
-                      >
-                        <span className="text-xl">{opt.emoji}</span>
-                        <span className="text-[9px] text-stone-400 font-body text-center">{opt.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+                  {/* Step 2: Valence */}
+                  {checkinStep === 'valence' && (
+                    <motion.div
+                      key="step-valence"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex flex-col gap-4 w-full"
+                    >
+                      <p className="font-display text-sm font-bold text-stone-500 uppercase tracking-wider text-center">
+                        Paso 2 de 4: Tu Estado de Ánimo
+                      </p>
+                      <p className="font-display text-lg text-stone-700 text-center font-bold">
+                        ¿Cómo te sientes por dentro?
+                      </p>
+                      <div className="grid grid-cols-5 gap-2">
+                        {VALENCE_OPTIONS.map(opt => (
+                          <button
+                            key={opt.value}
+                            onClick={() => {
+                              setCheckinValence(opt.value);
+                              setCheckinStep('word');
+                              if (display) {
+                                if (opt.value >= 4) {
+                                  setCheckinDialogue({
+                                    text: `¡Qué alegría sentir eso! 🌈 ¿Hay alguna palabra que lo describa?`,
+                                    durationMs: 5000,
+                                    animationCue: 'jump'
+                                  });
+                                } else if (opt.value <= 2) {
+                                  setCheckinDialogue({
+                                    text: `Aquí estoy para escucharte y acompañarte. 💖 ¿Hay alguna palabra para lo que sientes?`,
+                                    durationMs: 5000,
+                                    animationCue: 'wiggle'
+                                  });
+                                } else {
+                                  setCheckinDialogue({
+                                    text: `Ya veo. ☯ ¿Hay alguna palabra que describa este momento?`,
+                                    durationMs: 5000,
+                                    animationCue: 'idle'
+                                  });
+                                }
+                              }
+                            }}
+                            className={cn(
+                              'flex flex-col items-center gap-1 py-4 rounded-2xl border cursor-pointer',
+                              'bg-white border-stone-200 transition-all duration-200',
+                              'hover:border-lavender-300 hover:bg-lavender-50',
+                              'active:scale-95'
+                            )}
+                            aria-label={opt.label}
+                          >
+                            <span className="text-xl">{opt.emoji}</span>
+                            <span className="text-[9px] text-stone-400 font-body text-center">{opt.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
 
-              {/* Step 3: Word */}
-              {checkinStep === 'word' && (
-                <div className="flex flex-col gap-4 animate-slide-up">
-                  <p className="font-display text-lg text-stone-700 text-center">
-                    ¿Hay una palabra que lo describa?
-                  </p>
-                  <div className="flex flex-wrap gap-2 justify-center max-h-[140px] overflow-y-auto py-1">
-                    {checkinSuggestedWords.map(w => (
+                  {/* Step 3: Word */}
+                  {checkinStep === 'word' && (
+                    <motion.div
+                      key="step-word"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex flex-col gap-4 w-full"
+                    >
+                      <p className="font-display text-sm font-bold text-stone-500 uppercase tracking-wider text-center">
+                        Paso 3 de 4: Poner una Palabra
+                      </p>
+                      <p className="font-display text-lg text-stone-700 text-center font-bold">
+                        ¿Hay una palabra que lo describa?
+                      </p>
+                      <div className="flex flex-wrap gap-2 justify-center max-h-[140px] overflow-y-auto py-1">
+                        {checkinSuggestedWords.map(w => (
+                          <button
+                            key={w}
+                            onClick={() => {
+                              setCheckinWord(w);
+                              setCheckinStep('note');
+                              if (display) {
+                                setCheckinDialogue({
+                                  text: `"${w}", entiendo perfectamente. ¿Quieres escribirme algo más sobre eso? 📝`,
+                                  durationMs: 5000,
+                                  animationCue: 'idle'
+                                });
+                              }
+                            }}
+                            className={cn(
+                              'px-3.5 py-1.5 rounded-full border text-xs font-semibold transition-all cursor-pointer',
+                              'bg-white border-stone-200 text-stone-700 hover:scale-[1.03]',
+                              'hover:bg-lavender-50 hover:border-lavender-300 hover:text-lavender-700'
+                            )}
+                          >
+                            {w}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="flex gap-2 mt-2">
+                        <input
+                          value={checkinCustomWord}
+                          onChange={e => setCheckinCustomWord(e.target.value)}
+                          placeholder="O escribe tu propia palabra..."
+                          className="flex-1 px-4 py-2 rounded-2xl border border-stone-200 text-xs text-stone-750 bg-white focus:outline-none focus:ring-2 focus:ring-lavender-200"
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' && checkinCustomWord.trim()) {
+                              const w = checkinCustomWord.trim();
+                              setCheckinWord(w);
+                              setCheckinStep('note');
+                              if (display) {
+                                setCheckinDialogue({
+                                  text: `"${w}", entiendo. ¿Quieres contarme un poquito más sobre eso? 📝`,
+                                  durationMs: 5000,
+                                  animationCue: 'idle'
+                                });
+                              }
+                            }
+                          }}
+                        />
+                        {checkinCustomWord.trim() && (
+                          <Button variant="secondary" size="sm" onClick={() => {
+                            const w = checkinCustomWord.trim();
+                            setCheckinWord(w);
+                            setCheckinStep('note');
+                            if (display) {
+                              setCheckinDialogue({
+                                text: `"${w}", entiendo. ¿Quieres contarme un poquito más sobre eso? 📝`,
+                                durationMs: 5000,
+                                animationCue: 'idle'
+                              });
+                            }
+                          }}>
+                            OK
+                          </Button>
+                        )}
+                      </div>
+
                       <button
-                        key={w}
                         onClick={() => {
-                          setCheckinWord(w);
+                          setCheckinWord('');
                           setCheckinStep('note');
+                          if (display) {
+                            setCheckinDialogue({
+                              text: `¡Está bien! ¿Quieres contarme algo más en una nota? 📝`,
+                              durationMs: 5000,
+                              animationCue: 'idle'
+                            });
+                          }
                         }}
-                        className={cn(
-                          'px-3.5 py-1.5 rounded-full border text-xs font-semibold transition-all cursor-pointer',
-                          'bg-white border-stone-200 text-stone-700',
-                          'hover:bg-lavender-50 hover:border-lavender-300 hover:text-lavender-700'
-                        )}
+                        className="text-xs text-stone-400 hover:text-stone-600 text-center cursor-pointer mt-1"
                       >
-                        {w}
+                        Saltar esta pregunta
                       </button>
-                    ))}
-                  </div>
+                    </motion.div>
+                  )}
 
-                  <div className="flex gap-2 mt-2">
-                    <input
-                      value={checkinCustomWord}
-                      onChange={e => setCheckinCustomWord(e.target.value)}
-                      placeholder="O escribe tu propia palabra..."
-                      className="flex-1 px-4 py-2 rounded-2xl border border-stone-200 text-xs text-stone-750 bg-white focus:outline-none focus:ring-2 focus:ring-lavender-200"
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' && checkinCustomWord.trim()) {
-                          setCheckinWord(checkinCustomWord.trim());
-                          setCheckinStep('note');
-                        }
-                      }}
-                    />
-                    {checkinCustomWord.trim() && (
-                      <Button variant="secondary" size="sm" onClick={() => {
-                        setCheckinWord(checkinCustomWord.trim());
-                        setCheckinStep('note');
-                      }}>
-                        OK
+                  {/* Step 4: Note */}
+                  {checkinStep === 'note' && (
+                    <motion.div
+                      key="step-note"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex flex-col gap-4 w-full"
+                    >
+                      <p className="font-display text-sm font-bold text-stone-500 uppercase tracking-wider text-center">
+                        Paso 4 de 4: Nota opcional
+                      </p>
+                      <p className="font-display text-lg text-stone-700 text-center font-bold">
+                        ¿Quieres contar algo más hoy?
+                      </p>
+                      <textarea
+                        value={checkinNote}
+                        onChange={e => setCheckinNote(e.target.value)}
+                        placeholder="Lo que quieras... o nada, también está bien."
+                        rows={3}
+                        className={cn(
+                          'w-full px-4 py-2.5 rounded-2xl border border-stone-200 bg-white',
+                          'text-stone-700 text-xs leading-relaxed resize-none',
+                          'focus:outline-none focus:ring-2 focus:ring-lavender-200',
+                          'placeholder:text-stone-300'
+                        )}
+                      />
+                      <Button size="lg" onClick={handleCheckinSubmit} className="w-full">
+                        Listo
                       </Button>
-                    )}
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      setCheckinWord('');
-                      setCheckinStep('note');
-                    }}
-                    className="text-xs text-stone-400 hover:text-stone-600 text-center cursor-pointer mt-1"
-                  >
-                    Saltar esta pregunta
-                  </button>
-                </div>
-              )}
-
-              {/* Step 4: Note */}
-              {checkinStep === 'note' && (
-                <div className="flex flex-col gap-4 animate-slide-up">
-                  <p className="font-display text-lg text-stone-700 text-center">
-                    ¿Quieres contar algo más?
-                  </p>
-                  <textarea
-                    value={checkinNote}
-                    onChange={e => setCheckinNote(e.target.value)}
-                    placeholder="Lo que quieras... o nada, también está bien."
-                    rows={3}
-                    className={cn(
-                      'w-full px-4 py-2.5 rounded-2xl border border-stone-200 bg-white',
-                      'text-stone-700 text-xs leading-relaxed resize-none',
-                      'focus:outline-none focus:ring-2 focus:ring-lavender-200',
-                      'placeholder:text-stone-300'
-                    )}
-                  />
-                  <Button size="lg" onClick={handleCheckinSubmit} className="w-full">
-                    Listo
-                  </Button>
-                  <button
-                    onClick={handleCheckinSubmit}
-                    className="text-xs text-stone-400 hover:text-stone-600 text-center cursor-pointer"
-                  >
-                    Sin nota, guardar así
-                  </button>
-                </div>
-              )}
-
-              {/* Step 5: Done */}
-              {checkinStep === 'done' && (
-                <div className="flex flex-col items-center gap-4 animate-bloom text-center py-4">
-                  {display && (
-                    <CompanionWidget
-                      display={display}
-                      dialogue={checkinDialogue}
-                      size="lg"
-                    />
+                      <button
+                        onClick={handleCheckinSubmit}
+                        className="text-xs text-stone-400 hover:text-stone-600 text-center cursor-pointer"
+                      >
+                        Sin nota, guardar así
+                      </button>
+                    </motion.div>
                   )}
-                  <div className="flex flex-col gap-1.5">
-                    <p className="font-display text-xl text-stone-800">
-                      Gracias por contármelo
-                    </p>
-                    <p className="text-stone-500 text-xs font-body max-w-xs mx-auto leading-relaxed">
-                      Conocerte mejor me ayuda a estar más cerca de ti y acompañarte en tu día.
-                    </p>
-                  </div>
 
-                  <Button variant="secondary" size="md" className="mt-2" onClick={() => setActiveTab('hogar')}>
-                    Volver a Inicio
-                  </Button>
+                  {/* Step 5: Done */}
+                  {checkinStep === 'done' && (
+                    <motion.div
+                      key="step-done"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.3 }}
+                      className="flex flex-col items-center gap-4 text-center py-4 w-full"
+                    >
+                      {display && (
+                        <CompanionWidget
+                          display={display}
+                          dialogue={checkinDialogue}
+                          size="lg"
+                          worldId={selectedWorld.id}
+                          silentMode={silentMode}
+                        />
+                      )}
+                      <div className="flex flex-col gap-1.5 mt-2">
+                        <p className="font-display text-xl text-stone-850 font-bold">
+                          ¡Gracias por contármelo!
+                        </p>
+                        <p className="text-stone-500 text-xs font-body max-w-xs mx-auto leading-relaxed">
+                          Conocerte mejor me ayuda a estar más cerca de ti y acompañarte en tu día.
+                        </p>
+                      </div>
 
-                  {/* Recent check-ins */}
-                  {recentCheckins.length > 1 && (
-                    <div className="flex gap-1.5 flex-wrap justify-center mt-3 max-w-xs">
-                      {recentCheckins.slice(1, 4).map(c => (
-                        <span
-                          key={c.id}
-                          className="px-2.5 py-0.5 bg-stone-50 rounded-full text-[10px] text-stone-500 border border-stone-150 font-body"
-                        >
-                          {c.emotion_word ?? `${c.valence}/5`}
-                        </span>
-                      ))}
-                    </div>
+                      <Button variant="secondary" size="md" className="mt-2" onClick={() => setActiveTab('hogar')}>
+                        Volver a Inicio
+                      </Button>
+
+                      {/* Recent check-ins */}
+                      {recentCheckins.length > 1 && (
+                        <div className="flex gap-1.5 flex-wrap justify-center mt-3 max-w-xs mx-auto">
+                          {recentCheckins.slice(1, 4).map(c => (
+                            <span
+                              key={c.id}
+                              className="px-2.5 py-0.5 bg-stone-50 rounded-full text-[10px] text-stone-500 border border-stone-150 font-body"
+                            >
+                              {c.emotion_word ?? `${c.valence}/5`}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </motion.div>
                   )}
-                </div>
-              )}
-
+                </AnimatePresence>
+              </div>
             </motion.div>
           )}
 
@@ -2310,10 +2582,18 @@ export default function HomePage() {
                       `}
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-3xl">{world.emoji}</span>
+                        <div className="relative w-14 h-14 rounded-2xl overflow-hidden border border-stone-200/50 shadow-inner flex-shrink-0">
+                          <div className={`absolute inset-0 bg-gradient-to-b ${world.bgGradient}`} />
+                          <div className="absolute inset-0 scale-[0.55] origin-bottom overflow-hidden">
+                            <WorldAmbientVisuals worldId={world.id} phase={phase.phase} silentMode={silentMode} />
+                          </div>
+                          <span className="absolute bottom-0.5 right-0.5 text-xs bg-white/70 dark:bg-stone-900/70 rounded-full w-5 h-5 flex items-center justify-center shadow-soft">
+                            {world.emoji}
+                          </span>
+                        </div>
                         <div className="flex flex-col">
                           <span className="text-sm font-bold text-stone-700">{world.name}</span>
-                          <span className="text-xs text-stone-400 mt-0.5 max-w-[200px] leading-relaxed">
+                          <span className="text-xs text-stone-400 mt-0.5 max-w-[180px] leading-relaxed">
                             {world.description}
                           </span>
                         </div>
@@ -2385,6 +2665,7 @@ export default function HomePage() {
           dimensionId={currentBadgeCelebration.dimensionId}
           tier={currentBadgeCelebration.tier}
           parentNote={currentBadgeCelebration.parentNote}
+          companionName={display?.name}
           onClose={() => setCurrentBadgeCelebration(null)}
         />
       )}

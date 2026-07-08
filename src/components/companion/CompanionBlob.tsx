@@ -12,6 +12,8 @@ interface CompanionBlobProps {
   'aria-label'?: string;
   customTheme?: string | null;
   customAccessory?: string | null;
+  worldId?: string | null;
+  silentMode?: boolean;
 }
 
 function getAccessoryStyle(emoji: string, px: number) {
@@ -129,10 +131,30 @@ export function CompanionBlob({
   'aria-label': ariaLabel,
   customTheme,
   customAccessory,
+  worldId,
+  silentMode = false,
 }: CompanionBlobProps) {
-  const colors = (customTheme && COMPANION_THEME_COLORS[customTheme])
+  let colors = (customTheme && COMPANION_THEME_COLORS[customTheme])
     ? COMPANION_THEME_COLORS[customTheme]
     : STAGE_COLORS[stage];
+
+  if (worldId) {
+    const WORLD_GLOWS: Record<string, string> = {
+      lago_calma: '#0ea5e9', // Blue/cyan
+      valle_habitos: '#22c55e', // Green
+      bosque_autonomia: '#10b981', // Emerald
+      montana_esfuerzo: '#f59e0b', // Amber/gold
+      reino_social: '#d946ef', // Fuchsia/magenta
+    };
+    const worldGlow = WORLD_GLOWS[worldId];
+    if (worldGlow) {
+      colors = {
+        ...colors,
+        glow: worldGlow,
+      };
+    }
+  }
+
   const px = SIZES[size];
   const animClass = animationCue
     ? (ANIMATION_CLASSES[animationCue] ?? STAGE_ANIMATION[stage])
@@ -144,14 +166,19 @@ export function CompanionBlob({
   return (
     <div
       className={cn('relative inline-flex items-center justify-center', className)}
-      style={{ width: px, height: px }}
+      style={{
+        width: px,
+        height: px,
+        animation: silentMode ? 'none' : undefined,
+        transition: silentMode ? 'none' : undefined,
+      }}
       role="img"
       aria-label={ariaLabel ?? `Companion — ${stage} stage`}
     >
-      {/* Outer glow for glow/radiant stages */}
-      {(stage === 'glow' || stage === 'radiant') && (
+      {/* Outer glow for glow/radiant stages or world active in adventure mode */}
+      {!silentMode && (stage === 'glow' || stage === 'radiant' || !!worldId) && (
         <div
-          className="absolute inset-0 rounded-full opacity-40 blur-xl"
+          className="absolute inset-0 rounded-full opacity-40 blur-xl transition-all duration-700 animate-pulse-gentle"
           style={{ backgroundColor: colors.glow, transform: 'scale(1.3)' }}
           aria-hidden="true"
         />
@@ -161,9 +188,13 @@ export function CompanionBlob({
         viewBox="0 0 100 100"
         width={px}
         height={px}
-        className={animClass}
+        className={silentMode ? '' : animClass}
         aria-hidden="true"
-        style={{ overflow: 'visible' }}
+        style={{
+          overflow: 'visible',
+          animation: silentMode ? 'none' : undefined,
+          transition: silentMode ? 'none' : undefined,
+        }}
       >
         <defs>
           <radialGradient id={gradId} cx="40%" cy="35%" r="65%">

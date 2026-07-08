@@ -7,6 +7,7 @@ interface BadgeCelebrationOverlayProps {
   dimensionId: string;
   tier: 'bronze' | 'silver' | 'gold';
   parentNote: string;
+  companionName?: string;
   onClose: () => void;
 }
 
@@ -85,7 +86,44 @@ const generateParticles = (count = 75): Particle[] => {
   });
 };
 
-export function BadgeCelebrationOverlay({ dimensionId, tier, parentNote, onClose }: BadgeCelebrationOverlayProps) {
+function getCompanionCongratulation(dimensionId: string, tier: 'bronze' | 'silver' | 'gold'): string {
+  const congrats: Record<string, Record<'bronze' | 'silver' | 'gold', string>> = {
+    autonomy: {
+      bronze: "¡Mira cómo brillas por ti mismo! Cada paso independiente que das es un paso gigante.",
+      silver: "¡Eres un explorador increíble! Estás haciendo tantas cosas por ti mismo, ¡estoy súper orgulloso!",
+      gold: "¡Eres el rey de la autonomía! Has demostrado que puedes guiar tu propio camino con gran responsabilidad."
+    },
+    empathy: {
+      bronze: "¡Tu corazón es muy grande! Compartir amor y amabilidad hace que nuestro mundo sea un lugar más cálido.",
+      silver: "¡Tu empatía brilla como un faro! Siempre pensando en los demás y ayudando con una sonrisa.",
+      gold: "¡Tienes un alma de oro! Tu gran empatía y generosidad han construido puentes de arcoíris."
+    },
+    regulation: {
+      bronze: "¡Qué gran calma! Respirar hondo y entender tus emociones nos ayuda a crecer juntos.",
+      silver: "¡Encontraste tu equilibrio! Me encanta cómo gestionas las tormentas y traes de vuelta la luz del sol.",
+      gold: "¡Un maestro de la paz! Tu calma y sabiduría emocional iluminan todo el Lago de la Calma."
+    },
+    connection: {
+      bronze: "¡La constancia es tu superpoder! Seguir adelante día a día hace que tu mundo florezca.",
+      silver: "¡Tu constancia es asombrosa! Cada hábito diario ha hecho crecer hermosos frutos en el valle.",
+      gold: "¡Eres imparable! Tu increíble disciplina y perseverancia han transformado el Valle de los Hábitos."
+    },
+    courage: {
+      bronze: "¡Eres muy valiente! Enfrentar nuevos retos hace que tu confianza crezca fuerte.",
+      silver: "¡Qué gran valentía! Has escalado senderos difíciles y no te has rendido frente a los obstáculos.",
+      gold: "¡Un verdadero héroe! Has conquistado las cumbres más altas de las Montañas del Esfuerzo."
+    },
+    curiosity: {
+      bronze: "¡Tu imaginación vuela alto! Crear y aprender cosas nuevas hace que cada día sea divertido.",
+      silver: "¡Qué mente tan brillante y curiosa! Siempre descubriendo nuevas ideas y soluciones únicas.",
+      gold: "¡Un creador legendario! Has llenado nuestro armario de recuerdos mágicos con tu gran creatividad."
+    }
+  };
+
+  return congrats[dimensionId]?.[tier] || "¡Muchas felicidades! Sigue adelante con esa gran energía. ✦";
+}
+
+export function BadgeCelebrationOverlay({ dimensionId, tier, parentNote, companionName, onClose }: BadgeCelebrationOverlayProps) {
   const [particles, setParticles] = useState<Particle[]>([]);
 
   useEffect(() => {
@@ -264,10 +302,10 @@ export function BadgeCelebrationOverlay({ dimensionId, tier, parentNote, onClose
             <motion.div
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.6 }}
-              className="bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 rounded-2xl p-4.5 mb-6 shadow-soft"
+              transition={{ delay: 0.55 }}
+              className="bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 rounded-2xl p-4.5 mb-4 shadow-soft text-left"
             >
-              <p className="text-[9px] font-black text-indigo-400 dark:text-indigo-500 uppercase tracking-widest mb-2 font-display">
+              <p className="text-[9px] font-black text-indigo-400 dark:text-indigo-500 uppercase tracking-widest mb-1 font-display">
                 Mensaje de tus papás 💛
               </p>
               <p className="text-sm text-stone-700 dark:text-stone-200 italic font-medium font-body leading-relaxed">
@@ -275,6 +313,26 @@ export function BadgeCelebrationOverlay({ dimensionId, tier, parentNote, onClose
               </p>
             </motion.div>
           )}
+
+          {/* Companion congratulations speech bubble */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.65 }}
+            className="flex items-center gap-3 bg-gradient-to-r from-bloom-50/55 to-amber-50/55 dark:from-stone-850 dark:to-stone-800 border border-bloom-100/40 dark:border-stone-800 rounded-2xl p-4.5 mb-6 text-left shadow-soft"
+          >
+            <div className="w-10 h-10 rounded-full bg-bloom-100 dark:bg-stone-700 flex items-center justify-center text-2xl flex-shrink-0 animate-bounce">
+              ✨
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[9px] font-black text-bloom-600 dark:text-bloom-450 uppercase tracking-widest mb-1 font-display">
+                ¡Tu compañero {companionName || 'Mira'} dice! 🌟
+              </p>
+              <p className="text-xs text-stone-750 dark:text-stone-300 font-medium font-body leading-relaxed">
+                "{getCompanionCongratulation(dimensionId, tier)}"
+              </p>
+            </div>
+          </motion.div>
 
           <motion.button
             initial={{ opacity: 0, y: 12 }}

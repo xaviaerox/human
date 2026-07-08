@@ -13,7 +13,7 @@ import type { RoutineWithSteps } from '@/types';
 const routineAdapter = getRoutineAdapter();
 
 interface RoutinesTodayProps {
-  onComplete?: () => void;
+  onComplete?: (routine: RoutineWithSteps, sparksEarned: number) => void;
 }
 
 export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
@@ -67,7 +67,7 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
         [routine.id]: routine.steps.map(s => s.position)
       }));
       await interact('routine_complete', { routine_id: routine.id });
-      onComplete?.();
+      onComplete?.(routine, routine.spark_value);
     }
   }
 
@@ -90,7 +90,7 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
         delete next[routine.id];
         return next;
       });
-      onComplete?.();
+      onComplete?.(routine, 0);
     }
   }
 
@@ -112,7 +112,7 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
         [activeRoutine.id]: [...stepsDone]
       }));
       await interact('routine_complete', { routine_id: activeRoutine.id });
-      onComplete?.();
+      onComplete?.(activeRoutine, activeRoutine.spark_value);
       setActiveRoutineId(null);
       setStepsDone(new Set());
     }
@@ -256,9 +256,12 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
                 size="lg"
                 disabled={totalSteps > 0 && doneStepsCount < totalSteps}
                 onClick={handleFinishActive}
-                className="w-full mt-2"
+                className={cn(
+                  "w-full mt-2 transition-all duration-300",
+                  totalSteps > 0 && doneStepsCount === totalSteps && "ring-4 ring-moss-250 animate-pulse bg-moss-300 text-moss-900 border-moss-300 font-bold"
+                )}
               >
-                Completar rutina (+{activeRoutine.spark_value} Sparks) ✦
+                Completar rutina (+{activeRoutine.spark_value} Sparks) ✦ ✨
               </Button>
             )}
           </div>

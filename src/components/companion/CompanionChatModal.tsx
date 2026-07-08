@@ -12,6 +12,14 @@ interface Message {
   content: string;
 }
 
+const TRAIT_LABELS: Record<string, string> = {
+  curious: 'Curioso ✦',
+  gentle: 'Gentil ✿',
+  playful: 'Juguetón ⚡',
+  brave: 'Valiente ▲',
+  warm: 'Cálido ♡',
+};
+
 interface CompanionChatModalProps {
   isOpen: boolean;
   onClose: (lastReply?: string) => void;
@@ -51,14 +59,17 @@ export function CompanionChatModal({
   // Pre-populate chat when opened
   useEffect(() => {
     if (isOpen && messages.length === 0) {
+      const traitList = display.traits && display.traits.length > 0
+        ? ` y soy tu compañero ${display.traits.map(t => (TRAIT_LABELS[t] || t).replace(/[^\w]/g, '').toLowerCase()).join(' y ')}`
+        : '';
       setMessages([
         {
           role: 'assistant',
-          content: `¡Hola! Soy ${display.name}. ¿De qué te gustaría hablar hoy en el ${selectedWorldName}? ✨`
+          content: `¡Hola! Soy ${display.name}${traitList}. ¿De qué te gustaría hablar hoy en el ${selectedWorldName}? ✨`
         }
       ]);
     }
-  }, [isOpen, messages.length, display.name, selectedWorldName]);
+  }, [isOpen, messages.length, display.name, display.traits, selectedWorldName]);
 
   // Scroll to bottom on updates
   useEffect(() => {
@@ -182,7 +193,8 @@ export function CompanionChatModal({
         }
 
         const systemPrompt = `Eres ${display.name}, el compañero mágico de crecimiento de un niño llamado ${childName}.
-Tu etapa de evolución actual es "${display.stage}". Tu personalidad es cálida, empática, paciente y curiosa.
+Tu etapa de evolución actual es "${display.stage}". Tu personalidad es cálida, empática, paciente y curiosa.${display.traits && display.traits.length > 0 ? ` Tus rasgos de personalidad desbloqueados son: ${display.traits.join(', ')}.` : ''}
+Estás en el reino "${selectedWorldName}" (que está en fase de "${activeWorldPhaseLabel}").
 Estás en el reino "${selectedWorldName}" (que está en fase de "${activeWorldPhaseLabel}").
 
 Para ayudarte a conectar mejor con ${childName}, aquí tienes su contexto de crecimiento actual en MIRA:
@@ -349,9 +361,16 @@ Responde en español de forma natural y cariñosa. No uses lenguaje de adulto co
                   <h3 className="font-display text-sm font-bold text-stone-800 dark:text-stone-150 leading-none">
                     Charlando con {display.name}
                   </h3>
-                  <p className="text-[10px] text-stone-400 mt-1 uppercase font-body tracking-wider font-semibold">
-                    Etapa: {display.stage}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                    <span className="text-[10px] text-stone-400 uppercase font-body tracking-wider font-semibold">
+                      Etapa: {display.stage}
+                    </span>
+                    {display.traits && display.traits.length > 0 && display.traits.map(t => (
+                      <span key={t} className="text-[9px] px-1.5 py-0.5 rounded-full bg-bloom-100 dark:bg-stone-800 text-bloom-700 dark:text-bloom-300 font-bold uppercase tracking-wider font-body">
+                        {TRAIT_LABELS[t] || t}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
               <button
