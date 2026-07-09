@@ -899,7 +899,7 @@ export default function HomePage() {
   const [allRoutinesDone, setAllRoutinesDone] = useState(false);
 
   // Active goal context for companion chat
-  // Active goal context for companion chat
+  const [activeGoals, setActiveGoals] = useState<any[]>([]);
   const [activeGoal, setActiveGoal] = useState<any>(null);
   const [nextTask, setNextTask] = useState<any>(null);
 
@@ -979,7 +979,10 @@ export default function HomePage() {
     if (!profile?.id) return;
     goalsAdapter.getGoals(profile.id).then(res => {
       if (res.ok) {
-        const active = res.data.find(g => g.status === 'active');
+        const activeList = res.data.filter(g => g.status === 'active');
+        setActiveGoals(activeList);
+
+        const active = activeList[0] || null;
         if (active) {
           // Check if active goal is stuck (no changes in last 48 hours)
           const isStuck = Date.now() - new Date(active.updated_at).getTime() > 48 * 60 * 60 * 1000;
@@ -1264,14 +1267,17 @@ export default function HomePage() {
   }, [activeWorldScore]);
 
   const hasCompletedGoalToday = useMemo(() => {
-    if (!activeGoal) return true; // No active goal means no pending step
-    return activeGoal.one_per_day && activeGoal.microtasks.some((t: any) => {
-      if (t.status !== 'complete' || !t.completed_at) return false;
-      const compDate = new Date(t.completed_at).toLocaleDateString();
-      const todayDate = new Date().toLocaleDateString();
-      return compDate === todayDate;
+    if (activeGoals.length === 0) return true; // No active goals means no pending steps
+    return activeGoals.every(g => {
+      if (!g.one_per_day) return true;
+      return g.microtasks.some((t: any) => {
+        if (t.status !== 'complete' || !t.completed_at) return false;
+        const compDate = new Date(t.completed_at).toLocaleDateString();
+        const todayDate = new Date().toLocaleDateString();
+        return compDate === todayDate;
+      });
     });
-  }, [activeGoal]);
+  }, [activeGoals]);
 
   if (authLoading) return (
     <div className="flex items-center justify-center min-h-dvh">
@@ -1507,20 +1513,26 @@ export default function HomePage() {
                 </p>
               </div>
 
-              {activeGoal ? (
-                <ActiveGoalStep
-                  onComplete={(task, sparks) => {
-                    fetchActiveGoal();
-                    if (display) setDialogue(getDialogue('goal_step_complete'));
-                    if (sparks && sparks > 0) {
-                      setCurrentCelebration({
-                        id: Math.random().toString(),
-                        delta: sparks,
-                        note: `¡Completaste el capítulo: ${task.title}! ✦`
-                      });
-                    }
-                  }}
-                />
+              {activeGoals.length > 0 ? (
+                <div className="flex flex-col gap-4 w-full">
+                  {activeGoals.map(g => (
+                    <ActiveGoalStep
+                      key={g.id}
+                      goal={g}
+                      onComplete={(task, sparks) => {
+                        fetchActiveGoal();
+                        if (display) setDialogue(getDialogue('goal_step_complete'));
+                        if (sparks && sparks > 0) {
+                          setCurrentCelebration({
+                            id: Math.random().toString(),
+                            delta: sparks,
+                            note: `¡Completaste el capítulo: ${task.title}! ✦`
+                          });
+                        }
+                      }}
+                    />
+                  ))}
+                </div>
               ) : (
                 <div className="bg-white rounded-3xl p-6 border border-stone-150 shadow-soft text-center flex flex-col gap-4 max-w-sm mx-auto w-full mt-2">
                   <span className="text-3xl">🗺️</span>
@@ -2641,6 +2653,7 @@ export default function HomePage() {
           childName={profile?.display_name || 'amigo'}
           childScores={scores}
           activeGoal={activeGoal}
+          activeGoals={activeGoals}
           nextTask={nextTask}
           recentMemories={memories}
           recentCheckins={recentCheckins}

@@ -12,6 +12,7 @@ export async function POST(req: NextRequest) {
       worldPhase = 'Brote',
       childScores,
       activeGoal,
+      activeGoals,
       recentMemories = [],
       recentCheckins = []
     } = await req.json();
@@ -36,16 +37,21 @@ export async function POST(req: NextRequest) {
         .join('\n');
     }
 
-    // Format active goal
+    // Format active goal(s)
     let goalText = 'Ningún objetivo activo actualmente.';
-    if (activeGoal) {
-      goalText = `Objetivo activo: "${activeGoal.title}" (${activeGoal.progress}% completado).`;
-      if (activeGoal.nextTask) {
-        goalText += ` Siguiente paso: "${activeGoal.nextTask.title}" (Recompensa: ${activeGoal.nextTask.spark_value} chispas).`;
-        if (activeGoal.nextTask.isStuck) {
-          goalText += ` Nota: El niño lleva más de 48 horas sin completar este paso (está atascado). Dale apoyo emocional específico y dile que está bien ir despacio.`;
+    const goalsList = activeGoals || (activeGoal ? [activeGoal] : []);
+    if (goalsList.length > 0) {
+      goalText = goalsList.map((g: any) => {
+        let text = `- Objetivo activo: "${g.title}" (${g.progress}% completado).`;
+        const task = g.nextTask || (g.microtasks ? g.microtasks.find((t: any) => t.status === 'pending') : null);
+        if (task) {
+          text += ` Siguiente paso: "${task.title}" (Recompensa: ${task.spark_value} chispas).`;
+          if (task.isStuck) {
+            text += ` Nota: El niño lleva más de 48 horas sin completar este paso (está atascado). Dale apoyo emocional específico y dile que está bien ir despacio.`;
+          }
         }
-      }
+        return text;
+      }).join('\n');
     }
 
     // Format recent memories

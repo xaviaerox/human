@@ -28,6 +28,7 @@ interface CompanionChatModalProps {
   childName?: string;
   childScores?: any;
   activeGoal?: any;
+  activeGoals?: any[];
   nextTask?: any;
   recentMemories?: any[];
   recentCheckins?: any[];
@@ -44,6 +45,7 @@ export function CompanionChatModal({
   childName = 'amigo',
   childScores,
   activeGoal,
+  activeGoals,
   nextTask,
   recentMemories = [],
   recentCheckins = [],
@@ -100,6 +102,15 @@ export function CompanionChatModal({
           nextTask: nextTask ? { title: nextTask.title, spark_value: nextTask.spark_value } : null,
           progress: activeGoal.progress
         } : null,
+        activeGoals: (activeGoals || []).map((g: any) => {
+          const nextT = g.microtasks ? g.microtasks.find((t: any) => t.status === 'pending') : null;
+          return {
+            id: g.id,
+            title: g.title,
+            progress: g.progress,
+            nextTask: nextT ? { title: nextT.title, spark_value: nextT.spark_value, isStuck: nextT.isStuck } : null
+          };
+        }),
         recentMemories: (recentMemories || []).slice(0, 3).map(m => ({
           type: m?.memory_type,
           metadata: m?.metadata,
@@ -151,11 +162,16 @@ export function CompanionChatModal({
         }
 
         let goalText = 'Ningún objetivo activo actualmente.';
-        if (activeGoal) {
-          goalText = `Objetivo activo: "${activeGoal.title}" (${activeGoal.progress}% completado).`;
-          if (nextTask) {
-            goalText += ` Siguiente paso: "${nextTask.title}" (Recompensa: ${nextTask.spark_value} chispas).`;
-          }
+        const goalsList = activeGoals || (activeGoal ? [activeGoal] : []);
+        if (goalsList.length > 0) {
+          goalText = goalsList.map((g: any) => {
+            let txt = `- Objetivo activo: "${g.title}" (${g.progress}% completado).`;
+            const nextT = g.nextTask || (g.microtasks ? g.microtasks.find((t: any) => t.status === 'pending') : null);
+            if (nextT) {
+              txt += ` Siguiente paso: "${nextT.title}" (Recompensa: ${nextT.spark_value} chispas).`;
+            }
+            return txt;
+          }).join('\n');
         }
 
         let memoriesText = 'No hay recuerdos destacados todavía.';

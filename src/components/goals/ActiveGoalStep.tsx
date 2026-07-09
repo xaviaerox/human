@@ -28,9 +28,10 @@ const EFFORT_COLORS: Record<string, string> = {
 
 interface ActiveGoalStepProps {
   onComplete?: (task: GoalMicrotask, sparksEarned: number) => void;
+  goal?: GoalWithMicrotasks;
 }
 
-export function ActiveGoalStep({ onComplete }: ActiveGoalStepProps) {
+export function ActiveGoalStep({ onComplete, goal: initialGoal }: ActiveGoalStepProps) {
   const { profile } = useAuth();
   const { interact } = useCompanion();
   const [goal, setGoal] = useState<GoalWithMicrotasks | null>(null);
@@ -46,6 +47,14 @@ export function ActiveGoalStep({ onComplete }: ActiveGoalStepProps) {
   });
 
   useEffect(() => {
+    if (initialGoal && !completing && !justDone) {
+      setGoal(initialGoal);
+      setNextTask(getNextMicrotask(initialGoal.microtasks));
+    }
+  }, [initialGoal, completing, justDone]);
+
+  useEffect(() => {
+    if (initialGoal) return;
     if (!profile?.id) return;
     goalsAdapter.getGoals(profile.id).then(result => {
       if (!result.ok) return;
@@ -55,7 +64,7 @@ export function ActiveGoalStep({ onComplete }: ActiveGoalStepProps) {
         setNextTask(getNextMicrotask(active.microtasks));
       }
     });
-  }, [profile?.id]);
+  }, [profile?.id, initialGoal]);
 
   async function handleComplete() {
     if (!nextTask || !profile?.id || completing) return;
