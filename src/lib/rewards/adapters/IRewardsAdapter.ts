@@ -11,7 +11,7 @@ export interface IRewardsAdapter {
   deleteReward(rewardId: string): Promise<Result<void>>;
 
   getRewardRequests(familyId: string): Promise<Result<RewardRequest[]>>;
-  createRewardRequest(familyId: string, childId: string, request: { title: string; emoji: string }): Promise<Result<RewardRequest>>;
+  createRewardRequest(familyId: string, childId: string, request: { title: string; emoji: string; cost?: number }): Promise<Result<RewardRequest>>;
   updateRewardRequestStatus(requestId: string, status: 'approved' | 'rejected'): Promise<Result<RewardRequest>>;
   deleteRewardRequest(requestId: string): Promise<Result<void>>;
 }

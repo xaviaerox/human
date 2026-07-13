@@ -67,13 +67,14 @@ export class StaticRewardsAdapter implements IRewardsAdapter {
     return { ok: true, data: familyRequests };
   }
 
-  async createRewardRequest(familyId: string, childId: string, request: { title: string; emoji: string }): Promise<Result<RewardRequest>> {
+  async createRewardRequest(familyId: string, childId: string, request: { title: string; emoji: string; cost?: number }): Promise<Result<RewardRequest>> {
     const newRequest: RewardRequest = {
       id: Math.random().toString(36).substr(2, 9),
       family_id: familyId,
       child_id: childId,
       title: request.title,
       emoji: request.emoji,
+      cost: request.cost ?? 10,
       status: 'pending',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),

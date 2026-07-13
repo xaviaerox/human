@@ -1236,15 +1236,14 @@ export default function HomePage() {
     hour < 18 ? 'Buenas tardes' :
     'Buenas noches';
 
-  async function handleRedeem(rewardId: string, rewardTitle: string, cost: number) {
+  async function handleRedeem(rewardId: string, rewardTitle: string, cost: number, emoji: string) {
     if (sparkBalance < cost || !profile?.id) return;
     setRedeemingId(rewardId);
 
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rewardId);
-
     const res = await rewardsAdapter.createRewardRequest(session?.family?.id || '', profile.id, {
       title: rewardTitle,
-      emoji: '☆' // can use emoji from rewards catalog
+      emoji: emoji || '🎁',
+      cost: cost
     });
 
     setRedeemingId(null);
@@ -2289,7 +2288,7 @@ export default function HomePage() {
 
                           <button
                             disabled={!canAfford || isRedeeming || cooldown.isLocked}
-                            onClick={() => handleRedeem(reward.id, reward.title, reward.cost)}
+                            onClick={() => handleRedeem(reward.id, reward.title, reward.cost, reward.emoji)}
                             className={`
                               text-xs font-bold px-3 py-2 rounded-xl transition-all duration-200
                               ${isRedeeming

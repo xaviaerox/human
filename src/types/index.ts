@@ -411,6 +411,7 @@ export interface RewardRequest {
   child_id: string;
   title: string;
   emoji: string;
+  cost: number;
   status: 'pending' | 'approved' | 'rejected';
   created_at: string;
   updated_at: string;

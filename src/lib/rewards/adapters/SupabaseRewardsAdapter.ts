@@ -82,7 +82,7 @@ export class SupabaseRewardsAdapter implements IRewardsAdapter {
   async createRewardRequest(
     familyId: string,
     childId: string,
-    request: { title: string; emoji: string }
+    request: { title: string; emoji: string; cost?: number }
   ): Promise<Result<RewardRequest>> {
     const { data, error } = await this.client
       .from('reward_requests')

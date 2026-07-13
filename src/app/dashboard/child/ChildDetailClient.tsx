@@ -368,8 +368,7 @@ export default function ChildDetailClient() {
               </CardHeader>
               <CardContent className="flex flex-col gap-3">
                 {pendingRequests.map(req => {
-                  // Standard local costs for approvals
-                  const cost = 10;
+                  const cost = req.cost ?? 10;
                   const canAfford = sparkBalance >= cost;
                   return (
                     <div key={req.id} className="flex flex-col md:flex-row md:items-center justify-between p-3 bg-white rounded-2xl border border-amber-100 gap-3 text-xs shadow-soft">
@@ -648,22 +647,38 @@ export default function ChildDetailClient() {
                   
                   <div className="flex flex-col gap-1">
                     <label className="text-[10px] text-stone-400 uppercase tracking-wider">Cantidad</label>
-                    <div className="flex gap-2">
-                      {[1, 2, 3, 5, 10].map(val => (
-                        <button
-                          key={val}
-                          type="button"
-                          onClick={() => setAwardAmount(val)}
-                          className={cn(
-                            'flex-1 py-1.5 rounded-xl border text-xs font-bold transition-all',
-                            awardAmount === val
-                              ? 'bg-amber-100 border-amber-300 text-amber-700'
-                              : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
-                          )}
-                        >
-                          +{val}
-                        </button>
-                      ))}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-2">
+                        {[1, 2, 3, 5, 10].map(val => (
+                          <button
+                            key={val}
+                            type="button"
+                            onClick={() => setAwardAmount(val)}
+                            className={cn(
+                              'flex-1 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer',
+                              awardAmount === val
+                                ? 'bg-amber-100 border-amber-300 text-amber-700'
+                                : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
+                            )}
+                          >
+                            +{val}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-stone-400 font-medium">Cantidad personalizada:</span>
+                        <input
+                          type="number"
+                          min="1"
+                          placeholder="Escribe una cantidad..."
+                          value={awardAmount || ''}
+                          onChange={e => {
+                            const val = parseInt(e.target.value);
+                            setAwardAmount(isNaN(val) ? 1 : Math.max(1, val));
+                          }}
+                          className="flex-1 px-3 py-1.5 text-xs rounded-xl border border-stone-200 bg-white text-stone-700 focus:outline-none focus:ring-2 focus:ring-bloom-200"
+                        />
+                      </div>
                     </div>
                   </div>
 
