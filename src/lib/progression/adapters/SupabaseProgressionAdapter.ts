@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { IProgressionAdapter } from './IProgressionAdapter';
-import type { Result, ChildValueScore, ValueScoreEvent, ChildBadge, ValueDimensionId } from '@/types';
+import type { Result, ChildValueScore, ValueScoreEvent, ChildBadge } from '@/types';
 
 export class SupabaseProgressionAdapter implements IProgressionAdapter {
   constructor(private readonly client: SupabaseClient) {}
@@ -14,7 +14,7 @@ export class SupabaseProgressionAdapter implements IProgressionAdapter {
     if (error) {
       return { ok: false, error: { code: 'fetch_failed', message: error.message } };
     }
-    return { ok: true, data: data as ChildValueScore[] ?? [] };
+    return { ok: true, data: (data as ChildValueScore[]) ?? [] };
   }
 
   async getEvents(childId: string, limit = 10): Promise<Result<ValueScoreEvent[]>> {
@@ -28,7 +28,7 @@ export class SupabaseProgressionAdapter implements IProgressionAdapter {
     if (error) {
       return { ok: false, error: { code: 'fetch_failed', message: error.message } };
     }
-    return { ok: true, data: data as ValueScoreEvent[] ?? [] };
+    return { ok: true, data: (data as ValueScoreEvent[]) ?? [] };
   }
 
   async getBadges(childId: string): Promise<Result<ChildBadge[]>> {
@@ -40,7 +40,7 @@ export class SupabaseProgressionAdapter implements IProgressionAdapter {
     if (error) {
       return { ok: false, error: { code: 'fetch_failed', message: error.message } };
     }
-    return { ok: true, data: data as ChildBadge[] ?? [] };
+    return { ok: true, data: (data as ChildBadge[]) ?? [] };
   }
 
   async awardBadge(

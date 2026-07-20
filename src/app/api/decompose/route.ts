@@ -1,10 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { checkRateLimit } from '@/lib/rateLimit';
+import { createServerSupabaseClient } from '@/lib/supabaseServer';
+
+const DecomposeSchema = z.object({
+  prompt: z.string().min(1, 'El prompt no puede estar vacío').max(1000, 'Prompt demasiado largo'),
+});
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt } = await req.json();
-    if (!prompt) return NextResponse.json({ error: 'No prompt' }, { status: 400 });
+    // 1. Rate limiting (max 10 requests/min per IP)
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 'anonymous';
+    const rateLimit = checkRateLimit(`decompose:${ip}`, 10, 60000);
 
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: `Demasiadas peticiones. Intenta de nuevo en ${rateLimit.resetInSeconds} segundos.` },
+        { status: 429 }
+      );
+    }
+
+    // 2. Auth check in Supabase mode
+    if (process.env.NEXT_PUBLIC_DATA_SOURCE === 'supabase') {
+      const supabase = await createServerSupabaseClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+      }
+    }
+
+    // 3. Zod validation
+    const body = await req.json().catch(() => ({}));
+    const parseResult = DecomposeSchema.safeParse(body);
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { error: 'Datos no válidos', details: parseResult.error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    const { prompt } = parseResult.data;
+
+    // 4. Call Groq
     const groqKey = process.env.GROQ_API_KEY;
     if (groqKey) {
       try {
@@ -35,7 +72,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Fallback to Gemini if groqKey is missing or fails
+    // 5. Fallback to Gemini
     const geminiKey = process.env.GEMINI_API_KEY;
     if (geminiKey) {
       try {
@@ -67,7 +104,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // If no API key or both failed, return empty JSON so client falls back
+    // 6. Safe fallback JSON
     return NextResponse.json({ text: '{"microtasks":[]}' });
   } catch (err) {
     console.error('[decompose] General error:', err);

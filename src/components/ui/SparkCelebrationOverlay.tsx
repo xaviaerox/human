@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { triggerCelebrationHaptic } from '@/lib/utils/haptics';
+
 interface SparkCelebrationOverlayProps {
   delta: number;
   note: string;
@@ -49,6 +51,7 @@ export function SparkCelebrationOverlay({ delta, note, onClose }: SparkCelebrati
   useEffect(() => {
     setParticles(generateParticles(70));
     playSuccessChime();
+    triggerCelebrationHaptic();
   }, []);
 
   function playSuccessChime() {

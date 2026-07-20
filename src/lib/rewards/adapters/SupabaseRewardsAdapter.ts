@@ -20,7 +20,7 @@ export class SupabaseRewardsAdapter implements IRewardsAdapter {
       return { ok: false, error: { code: 'fetch_failed', message: error.message } };
     }
 
-    return { ok: true, data: data ?? [] };
+    return { ok: true, data: (data as unknown as Reward[]) ?? [] };
   }
 
   async createReward(familyId: string, reward: Omit<Reward, 'id' | 'family_id' | 'created_at' | 'updated_at'>): Promise<Result<Reward>> {
@@ -34,7 +34,7 @@ export class SupabaseRewardsAdapter implements IRewardsAdapter {
       return { ok: false, error: { code: 'create_failed', message: error?.message ?? 'Failed to create reward' } };
     }
 
-    return { ok: true, data };
+    return { ok: true, data: data as unknown as Reward };
   }
 
   async updateReward(rewardId: string, updates: Partial<Omit<Reward, 'id' | 'family_id' | 'created_at' | 'updated_at'>>): Promise<Result<Reward>> {
@@ -49,7 +49,7 @@ export class SupabaseRewardsAdapter implements IRewardsAdapter {
       return { ok: false, error: { code: 'update_failed', message: error?.message ?? 'Failed to update reward' } };
     }
 
-    return { ok: true, data };
+    return { ok: true, data: data as unknown as Reward };
   }
 
   async deleteReward(rewardId: string): Promise<Result<void>> {
@@ -76,7 +76,7 @@ export class SupabaseRewardsAdapter implements IRewardsAdapter {
       return { ok: false, error: { code: 'fetch_failed', message: error.message } };
     }
 
-    return { ok: true, data: (data as any) ?? [] };
+    return { ok: true, data: (data as unknown as RewardRequest[]) ?? [] };
   }
 
   async createRewardRequest(
@@ -94,7 +94,7 @@ export class SupabaseRewardsAdapter implements IRewardsAdapter {
       return { ok: false, error: { code: 'create_failed', message: error?.message ?? 'Failed to create request' } };
     }
 
-    return { ok: true, data: data as any };
+    return { ok: true, data: data as unknown as RewardRequest };
   }
 
   async updateRewardRequestStatus(requestId: string, status: 'approved' | 'rejected'): Promise<Result<RewardRequest>> {
@@ -109,7 +109,7 @@ export class SupabaseRewardsAdapter implements IRewardsAdapter {
       return { ok: false, error: { code: 'update_failed', message: error?.message ?? 'Failed to update request' } };
     }
 
-    return { ok: true, data: data as any };
+    return { ok: true, data: data as unknown as RewardRequest };
   }
 
   async deleteRewardRequest(requestId: string): Promise<Result<void>> {

@@ -205,3 +205,37 @@ export function toDisplayState(
     traits: companion.personality_traits,
   };
 }
+
+// ─────────────────────────────────────────
+// Episodic memory summarizer for AI context
+// ─────────────────────────────────────────
+export interface EpisodicSummaryInput {
+  childName: string;
+  memories?: { category: string; content: string }[];
+  recentCheckins?: { energy: number; valence: number; note?: string }[];
+  selectedWorldName?: string;
+  activeWorldPhaseLabel?: string;
+}
+
+export function buildEpisodicMemorySummary(input: EpisodicSummaryInput): string {
+  const { childName, memories = [], recentCheckins = [], selectedWorldName, activeWorldPhaseLabel } = input;
+  const lines: string[] = [];
+
+  if (selectedWorldName) {
+    lines.push(`Mundo activo: ${selectedWorldName}${activeWorldPhaseLabel ? ` (Estado: ${activeWorldPhaseLabel})` : ''}.`);
+  }
+
+  if (recentCheckins.length > 0) {
+    const latest = recentCheckins[0];
+    const energyLabel = latest.energy >= 4 ? 'alta' : latest.energy <= 2 ? 'tranquila' : 'media';
+    const valenceLabel = latest.valence >= 4 ? 'muy positiva' : latest.valence <= 2 ? 'sensible o cansado' : 'serena';
+    lines.push(`Estado de ánimo reciente de ${childName}: Energía ${energyLabel}, disposición ${valenceLabel}.${latest.note ? ` Nota: "${latest.note}"` : ''}`);
+  }
+
+  if (memories.length > 0) {
+    const topMemories = memories.slice(0, 3).map(m => `• [${m.category}] ${m.content}`).join('\n');
+    lines.push(`Recuerdos significativos compartidos con ${childName}:\n${topMemories}`);
+  }
+
+  return lines.join('\n\n');
+}

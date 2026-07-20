@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
+import { NEURODIVERGENT_ROUTINE_TEMPLATES, type RoutineTemplate } from '@/lib/routines/routineTemplates';
 import type { TimeOfDay, ScheduleType, ValueDimensionId } from '@/types';
 
 const routineAdapter = getRoutineAdapter();
@@ -97,12 +98,44 @@ export default function NewRoutinePage() {
     router.push('/dashboard/routines');
   }
 
+  function applyTemplate(template: RoutineTemplate) {
+    setTitle(template.title);
+    setTimeOfDay(template.time_of_day);
+    setSparkValue(template.spark_value);
+    setDimensions(template.value_dimensions);
+    setSteps(template.steps.map(s => ({ title: s.title, duration_minutes: s.duration_minutes })));
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-3">
         <button onClick={() => router.back()} className="text-stone-400 hover:text-stone-600 text-lg">←</button>
         <h1 className="font-display text-2xl text-stone-800">Nueva rutina</h1>
       </div>
+
+      {/* Preset Templates */}
+      <Card className="bg-gradient-to-r from-teal-50 to-emerald-50 border-teal-200/60 p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-bold text-teal-900 flex items-center gap-1.5">
+            <span>✨</span> Plantillas Neurodivergentes (1-Tap)
+          </h2>
+          <span className="text-[10px] bg-teal-100 text-teal-800 font-semibold px-2 py-0.5 rounded-full">Recomendado</span>
+        </div>
+        <p className="text-xs text-teal-700">Selecciona una estructura probada adaptada para TDAH y TEA:</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {NEURODIVERGENT_ROUTINE_TEMPLATES.map((tpl) => (
+            <button
+              key={tpl.id}
+              type="button"
+              onClick={() => applyTemplate(tpl)}
+              className="text-left p-3 rounded-xl bg-white border border-teal-200/80 hover:border-teal-400 hover:shadow-sm transition-all space-y-1 group"
+            >
+              <div className="font-semibold text-xs text-slate-800 group-hover:text-teal-700">{tpl.title}</div>
+              <div className="text-[11px] text-slate-500 line-clamp-1">{tpl.description}</div>
+            </button>
+          ))}
+        </div>
+      </Card>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <Card>

@@ -4,7 +4,7 @@
 
 import type { IGoalsAdapter, CreateGoalParams } from './IGoalsAdapter';
 import type { Goal, GoalMicrotask, GoalWithMicrotasks, Result } from '../../../types';
-import { enrichGoal } from '../MicrotaskEngine';
+import type { ParsedMicrotask } from '@/lib/goals/MicrotaskEngine';
 
 const STATIC_GOALS: GoalWithMicrotasks[] = [
   {
@@ -84,7 +84,6 @@ export class StaticGoalsAdapter implements IGoalsAdapter {
       value_dimensions: m.value_dimensions,
       status: 'pending' as const,
       ai_generated: true,
-      
     }));
 
     const goal: GoalWithMicrotasks = {
@@ -124,14 +123,19 @@ export class StaticGoalsAdapter implements IGoalsAdapter {
     let updatedMicrotasks: GoalMicrotask[] = currentGoal.microtasks;
 
     if (microtasks) {
-      updatedMicrotasks = microtasks.map((t, i) => ({
-        ...t,
-        id: (t as any).id || this._nextId(),
-        goal_id: goalId,
-        position: t.position ?? i + 1,
-        status: t.status ?? 'pending',
-        ai_generated: t.ai_generated ?? false,
-      }));
+      updatedMicrotasks = microtasks.map((t, i) => {
+        const existingId = 'id' in t && typeof (t as { id?: string }).id === 'string'
+          ? (t as { id: string }).id
+          : this._nextId();
+        return {
+          ...t,
+          id: existingId,
+          goal_id: goalId,
+          position: t.position ?? i + 1,
+          status: t.status ?? 'pending',
+          ai_generated: t.ai_generated ?? false,
+        };
+      });
     }
 
     const updated: GoalWithMicrotasks = {
@@ -150,69 +154,82 @@ export class StaticGoalsAdapter implements IGoalsAdapter {
   }
 
   async completeMicrotask(microtaskId: string, completedBy: string): Promise<Result<GoalMicrotask>> {
-    for (const goal of this._goals) {
-      const idx = goal.microtasks.findIndex(t => t.id === microtaskId);
-      if (idx !== -1) {
-        const updated: GoalMicrotask = {
-          ...goal.microtasks[idx]!,
+    for (let i = 0; i < this._goals.length; i++) {
+      const goal = this._goals[i]!;
+      const taskIdx = goal.microtasks.findIndex(t => t.id === microtaskId);
+      if (taskIdx !== -1) {
+        const task = goal.microtasks[taskIdx]!;
+        const updatedTask: GoalMicrotask = {
+          ...task,
           status: 'complete',
           completed_at: new Date().toISOString(),
           completed_by: completedBy,
         };
-        goal.microtasks[idx] = updated;
+        const updatedMicrotasks = [...goal.microtasks];
+        updatedMicrotasks[taskIdx] = updatedTask;
 
-        // Update progress
-        goal.progress = Math.round(
-          (goal.microtasks.filter(t => t.status === 'complete').length / goal.microtasks.length) * 100
-        );
+        const completedCount = updatedMicrotasks.filter(t => t.status === 'complete').length;
+        const progress = Math.round((completedCount / updatedMicrotasks.length) * 100);
+        const isGoalDone = completedCount === updatedMicrotasks.length;
 
-        // Auto-complete goal if all done
-        if (goal.microtasks.every(t => t.status === 'complete')) {
-          goal.status = 'completed';
-        }
+        this._goals[i] = {
+          ...goal,
+          microtasks: updatedMicrotasks,
+          progress,
+          status: isGoalDone ? 'completed' : goal.status,
+          updated_at: new Date().toISOString(),
+        };
 
-        return { ok: true, data: updated };
+        return { ok: true, data: updatedTask };
       }
     }
-    return { ok: false, error: { code: 'not_found', message: `Microtask ${microtaskId} not found` } };
+
+    return { ok: false, error: { code: 'not_found', message: 'Microtask not found' } };
   }
 
   async uncompleteMicrotask(microtaskId: string): Promise<Result<GoalMicrotask>> {
-    for (const goal of this._goals) {
-      const idx = goal.microtasks.findIndex(t => t.id === microtaskId);
-      if (idx !== -1) {
-        const updated: GoalMicrotask = {
-          ...goal.microtasks[idx]!,
+    for (let i = 0; i < this._goals.length; i++) {
+      const goal = this._goals[i]!;
+      const taskIdx = goal.microtasks.findIndex(t => t.id === microtaskId);
+      if (taskIdx !== -1) {
+        const task = goal.microtasks[taskIdx]!;
+        const updatedTask: GoalMicrotask = {
+          ...task,
           status: 'pending',
           completed_at: undefined,
           completed_by: undefined,
         };
-        goal.microtasks[idx] = updated;
+        const updatedMicrotasks = [...goal.microtasks];
+        updatedMicrotasks[taskIdx] = updatedTask;
 
-        // Update progress
-        goal.progress = Math.round(
-          (goal.microtasks.filter(t => t.status === 'complete').length / goal.microtasks.length) * 100
-        );
+        const completedCount = updatedMicrotasks.filter(t => t.status === 'complete').length;
+        const progress = Math.round((completedCount / updatedMicrotasks.length) * 100);
 
-        // Reset goal status if it was completed
-        if (goal.status === 'completed') {
-          goal.status = 'active';
-        }
+        this._goals[i] = {
+          ...goal,
+          microtasks: updatedMicrotasks,
+          progress,
+          status: 'active',
+          updated_at: new Date().toISOString(),
+        };
 
-        return { ok: true, data: updated };
+        return { ok: true, data: updatedTask };
       }
     }
-    return { ok: false, error: { code: 'not_found', message: `Microtask ${microtaskId} not found` } };
+
+    return { ok: false, error: { code: 'not_found', message: 'Microtask not found' } };
   }
 
-  async addMicrotasks(goalId: string, microtasks: import('../MicrotaskEngine').ParsedMicrotask[]): Promise<Result<GoalMicrotask[]>> {
-    const goal = this._goals.find(g => g.id === goalId);
-    if (!goal) return { ok: false, error: { code: 'not_found', message: 'Goal not found' } };
+  async addMicrotasks(goalId: string, microtasks: ParsedMicrotask[]): Promise<Result<GoalMicrotask[]>> {
+    const idx = this._goals.findIndex(g => g.id === goalId);
+    if (idx === -1) return { ok: false, error: { code: 'not_found', message: 'Goal not found' } };
 
-    const created: GoalMicrotask[] = microtasks.map(m => ({
+    const goal = this._goals[idx]!;
+    const startPos = goal.microtasks.length + 1;
+    const createdTasks: GoalMicrotask[] = microtasks.map((m, i) => ({
       id: this._nextId(),
       goal_id: goalId,
-      position: m.position,
+      position: startPos + i,
       title: m.title,
       description: m.description,
       effort_level: m.effort_level,
@@ -222,8 +239,22 @@ export class StaticGoalsAdapter implements IGoalsAdapter {
       ai_generated: true,
     }));
 
-    goal.microtasks.push(...created);
-    goal.total_sparks = goal.microtasks.reduce((s, t) => s + t.spark_value, 0);
-    return { ok: true, data: created };
+    const updatedMicrotasks = [...goal.microtasks, ...createdTasks];
+    this._goals[idx] = {
+      ...goal,
+      microtasks: updatedMicrotasks,
+      total_sparks: updatedMicrotasks.reduce((sum, t) => sum + t.spark_value, 0),
+      updated_at: new Date().toISOString(),
+    };
+
+    return { ok: true, data: createdTasks };
+  }
+
+  async deleteGoal(goalId: string): Promise<Result<void>> {
+    const idx = this._goals.findIndex(g => g.id === goalId);
+    if (idx === -1) return { ok: false, error: { code: 'not_found', message: 'Goal not found' } };
+
+    this._goals.splice(idx, 1);
+    return { ok: true, data: undefined };
   }
 }

@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { SparkBadge } from '@/components/ui/SparkBadge';
 import { cn } from '@/lib/utils';
+import { triggerSuccessHaptic } from '@/lib/utils/haptics';
 import type { RoutineWithSteps } from '@/types';
 
 const routineAdapter = getRoutineAdapter();
@@ -61,6 +62,7 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
     });
 
     if (result.ok) {
+      triggerSuccessHaptic();
       setCompletedIds(prev => new Set([...prev, routine.id]));
       setCompletionsMap(prev => ({
         ...prev,

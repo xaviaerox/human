@@ -1,9 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { getProgressionAdapter } from '@/lib/adapters';
-import type { ChildValueScore, ChildBadge, Result, ValueDimensionId } from '@/types';
+import type { ChildBadge, Result, ValueDimensionId } from '@/types';
 
 interface ProgressionContextValue {
   scores: Record<ValueDimensionId, number>;
@@ -34,14 +34,14 @@ export function ProgressionProvider({ children }: { children: ReactNode }) {
   const profile = session?.profile ?? null;
   const childId = profile?.id;
   const familyId = session?.family?.id;
-  
+
   const [scores, setScores] = useState<Record<ValueDimensionId, number>>(DEFAULT_SCORES);
   const [badges, setBadges] = useState<ChildBadge[]>([]);
   const [loading, setLoading] = useState(true);
 
   const adapter = useMemo(() => getProgressionAdapter(), []);
 
-  const fetchScores = async (id: string) => {
+  const fetchScores = useCallback(async (id: string) => {
     const res = await adapter.getScores(id);
     if (res.ok) {
       const scoreMap = { ...DEFAULT_SCORES };
@@ -52,58 +52,77 @@ export function ProgressionProvider({ children }: { children: ReactNode }) {
       });
       setScores(scoreMap);
     }
-  };
+  }, [adapter]);
 
-  const fetchBadges = async (id: string) => {
+  const fetchBadges = useCallback(async (id: string) => {
     const res = await adapter.getBadges(id);
     if (res.ok) {
       setBadges(res.data);
     }
-  };
+  }, [adapter]);
 
   useEffect(() => {
+    let isMounted = true;
+
     if (!childId || profile?.role !== 'child') {
-      setScores(DEFAULT_SCORES);
-      setBadges([]);
-      setLoading(false);
-      return;
+      const timer = setTimeout(() => {
+        if (isMounted) setLoading(false);
+      }, 0);
+      return () => {
+        isMounted = false;
+        clearTimeout(timer);
+      };
     }
 
     setLoading(true);
     Promise.all([fetchScores(childId), fetchBadges(childId)]).finally(() => {
-      setLoading(false);
+      if (isMounted) setLoading(false);
     });
-  }, [childId, profile?.role]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [childId, profile?.role, fetchScores, fetchBadges]);
+
+  const awardBadge = useCallback(async (
+    dimensionId: string,
+    tier: 'bronze' | 'silver' | 'gold',
+    note?: string
+  ): Promise<Result<ChildBadge>> => {
+    if (!childId || !familyId || !session?.profile?.id) {
+      return { ok: false, error: { code: 'not_authenticated', message: 'No child active' } };
+    }
+    const res = await adapter.awardBadge(
+      childId,
+      familyId,
+      dimensionId,
+      tier,
+      note,
+      session.profile.id
+    );
+
+    if (res.ok) {
+      await Promise.all([fetchScores(childId), fetchBadges(childId)]);
+    }
+    return res;
+  }, [childId, familyId, session, adapter, fetchScores, fetchBadges]);
+
+  const refreshScores = useCallback(async () => {
+    if (childId) await fetchScores(childId);
+  }, [childId, fetchScores]);
+
+  const refreshBadges = useCallback(async () => {
+    if (childId) await fetchBadges(childId);
+  }, [childId, fetchBadges]);
 
   const value = useMemo<ProgressionContextValue>(() => ({
     scores,
     badges,
     loading,
-    awardBadge: async (dimensionId, tier, note) => {
-      if (!childId || !familyId) {
-        return { ok: false, error: { code: 'not_authenticated', message: 'No child active' } };
-      }
-      const res = await adapter.awardBadge(
-        childId,
-        familyId,
-        dimensionId,
-        tier,
-        note,
-        session.profile.id // Awarded by the logged-in parent
-      );
-
-      if (res.ok) {
-        await Promise.all([fetchScores(childId), fetchBadges(childId)]);
-      }
-      return res;
-    },
-    refreshScores: async () => {
-      if (childId) await fetchScores(childId);
-    },
-    refreshBadges: async () => {
-      if (childId) await fetchBadges(childId);
-    },
-  }), [scores, badges, loading, childId, familyId, session?.profile?.id, adapter]);
+    awardBadge,
+    refreshScores,
+    refreshBadges,
+  }), [scores, badges, loading, awardBadge, refreshScores, refreshBadges]);
 
   return (
     <ProgressionContext.Provider value={value}>

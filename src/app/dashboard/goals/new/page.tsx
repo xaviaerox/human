@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useFamily } from '@/lib/family/FamilyProvider';
 import { getGoalsAdapter } from '@/lib/adapters';
+import { decomposeGoalWithAI } from '@/lib/goals/decomposeAI';
 import { buildDecompositionPrompt, parseDecompositionResponse, fallbackDecomposition } from '@/lib/goals/MicrotaskEngine';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -61,7 +62,7 @@ export default function NewGoalPage() {
       let fetchSuccess = false;
 
       try {
-        const res = await fetch('/human/api/decompose', {
+        const res = await fetch('/api/decompose', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt }),

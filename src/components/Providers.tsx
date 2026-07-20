@@ -7,6 +7,7 @@ import { CompanionProvider } from '@/lib/companion/CompanionProvider';
 import { EmotionalProvider } from '@/lib/emotional/EmotionalProvider';
 import { ProgressionProvider } from '@/lib/progression/ProgressionProvider';
 import { SparkProvider } from '@/lib/sparks/SparkProvider';
+import { RewardsProvider } from '@/lib/rewards/RewardsProvider';
 import {
   getAuthAdapter,
   getFamilyAdapter,
@@ -27,7 +28,9 @@ export function Providers({ children }: { children: ReactNode }) {
           <EmotionalProvider adapter={emotionalAdapter}>
             <ProgressionProvider>
               <SparkProvider>
-                {children}
+                <RewardsProvider>
+                  {children}
+                </RewardsProvider>
               </SparkProvider>
             </ProgressionProvider>
           </EmotionalProvider>
@@ -36,4 +39,3 @@ export function Providers({ children }: { children: ReactNode }) {
     </AuthProvider>
   );
 }
-

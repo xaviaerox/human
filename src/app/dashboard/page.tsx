@@ -3,17 +3,18 @@
 import { useEffect, useState } from 'react';
 import { useFamily } from '@/lib/family/FamilyProvider';
 import { useAuth } from '@/lib/auth/AuthProvider';
-import { getEmotionalAdapter, getRoutineAdapter, DATA_SOURCE } from '@/lib/adapters';
+import { getEmotionalAdapter, getRoutineAdapter, getProgressionAdapter, DATA_SOURCE } from '@/lib/adapters';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { SparkBadge } from '@/components/ui/SparkBadge';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
-import type { Profile, EmotionalWeeklySummary } from '@/types';
+import type { Profile, EmotionalWeeklySummary, ChildValueScore, ValueDimensionId } from '@/types';
 import { supabase } from '@/lib/supabase';
 
-const emotionalAdapter = getEmotionalAdapter();
-const routineAdapter   = getRoutineAdapter();
+const emotionalAdapter   = getEmotionalAdapter();
+const routineAdapter     = getRoutineAdapter();
+const progressionAdapter = getProgressionAdapter();
 
 export default function DashboardPage() {
   const { family, children } = useFamily();
@@ -21,6 +22,7 @@ export default function DashboardPage() {
   const [summaries, setSummaries]         = useState<Record<string, EmotionalWeeklySummary | null>>({});
   const [routineCounts, setRoutineCounts] = useState<Record<string, number>>({});
   const [sparkBalances, setSparkBalances] = useState<Record<string, number>>({});
+  const [valueScores, setValueScores]     = useState<Record<string, Record<string, number>>>({});
 
   useEffect(() => {
     const channels: any[] = [];
@@ -28,6 +30,15 @@ export default function DashboardPage() {
     children.forEach(async child => {
       const s = await emotionalAdapter.getWeeklySummaries(child.id, 1);
       if (s.ok) setSummaries(prev => ({ ...prev, [child.id]: s.data[s.data.length - 1] ?? null }));
+
+      const scoresRes = await progressionAdapter.getScores(child.id);
+      if (scoresRes.ok) {
+        const scoreMap: Record<string, number> = {};
+        scoresRes.data.forEach(item => {
+          scoreMap[item.dimension_id] = item.score;
+        });
+        setValueScores(prev => ({ ...prev, [child.id]: scoreMap }));
+      }
       
       const now = new Date();
       const weekStart = new Date(now);
@@ -91,6 +102,7 @@ export default function DashboardPage() {
           emotionalSummary={summaries[child.id] ?? null}
           routineCount={routineCounts[child.id] ?? 0}
           sparkBalance={sparkBalances[child.id] ?? 0}
+          scores={valueScores[child.id] || {}}
         />
       ))}
       {children.length === 0 && (
@@ -111,8 +123,16 @@ export default function DashboardPage() {
   );
 }
 
-function ChildSummaryCard({ child, emotionalSummary, routineCount, sparkBalance }: {
-  child: Profile; emotionalSummary: EmotionalWeeklySummary | null; routineCount: number; sparkBalance: number;
+const DIMENSION_CONFIG: { id: ValueDimensionId; name: string; emoji: string; color: 'sky' | 'moss' | 'bloom' }[] = [
+  { id: 'regulation', name: 'Regulación', emoji: '☯', color: 'sky' },
+  { id: 'autonomy',   name: 'Autonomía',  emoji: '↟', color: 'moss' },
+  { id: 'courage',    name: 'Valentía',   emoji: '▲', color: 'bloom' },
+  { id: 'connection', name: 'Constancia', emoji: '♾', color: 'moss' },
+  { id: 'empathy',    name: 'Empatía',    emoji: '♡', color: 'sky' },
+];
+
+function ChildSummaryCard({ child, emotionalSummary, routineCount, sparkBalance, scores }: {
+  child: Profile; emotionalSummary: EmotionalWeeklySummary | null; routineCount: number; sparkBalance: number; scores: Record<string, number>;
 }) {
   const valence  = emotionalSummary?.avg_valence  ?? null;
   const energy   = emotionalSummary?.avg_energy   ?? null;
@@ -152,6 +172,28 @@ function ChildSummaryCard({ child, emotionalSummary, routineCount, sparkBalance 
             <p className="text-xs text-stone-400">Rutinas esta semana</p>
             <span className="text-sm font-medium text-stone-700">{routineCount}</span>
           </div>
+
+          {/* Value Dimensions Progress */}
+          <div className="border-t border-stone-100 pt-3 flex flex-col gap-2">
+            <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Evolución de Valores</p>
+            <div className="grid grid-cols-2 gap-2">
+              {DIMENSION_CONFIG.map(dim => {
+                const score = scores[dim.id] || 0;
+                const percent = Math.min(100, Math.round((score / 100) * 100));
+
+                return (
+                  <div key={dim.id} className="p-2 rounded-xl bg-stone-50 border border-stone-150 space-y-1">
+                    <div className="flex items-center justify-between text-xs font-medium text-stone-700">
+                      <span>{dim.emoji} {dim.name}</span>
+                      <span className="text-[10px] text-stone-400 font-bold">{score} pts</span>
+                    </div>
+                    <ProgressBar value={percent} color={dim.color} />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           <Link href={`/dashboard/child?id=${child.id}`}>
             <Button variant="ghost" size="sm" className="w-full">Ver detalle →</Button>
           </Link>

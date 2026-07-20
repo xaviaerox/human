@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { getSparkAdapter, isSupabase } from '@/lib/adapters';
 import { supabase } from '@/lib/supabase';
@@ -29,27 +29,32 @@ export function SparkProvider({ children }: { children: ReactNode }) {
 
   const adapter = useMemo(() => getSparkAdapter(), []);
 
-  const fetchBalance = async (id: string) => {
+  const fetchBalance = useCallback(async (id: string) => {
     const res = await adapter.getBalance(id);
     if (res.ok) setBalance(res.data);
-  };
+  }, [adapter]);
 
-  const fetchHistory = async (id: string) => {
+  const fetchHistory = useCallback(async (id: string) => {
     const res = await adapter.getHistory(id);
     if (res.ok) setHistory(res.data);
-  };
+  }, [adapter]);
 
   useEffect(() => {
+    let isMounted = true;
+
     if (!childId || profile?.role !== 'child') {
-      setBalance(0);
-      setHistory([]);
-      setLoading(false);
-      return;
+      const timer = setTimeout(() => {
+        if (isMounted) setLoading(false);
+      }, 0);
+      return () => {
+        isMounted = false;
+        clearTimeout(timer);
+      };
     }
 
     setLoading(true);
     Promise.all([fetchBalance(childId), fetchHistory(childId)]).finally(() => {
-      setLoading(false);
+      if (isMounted) setLoading(false);
     });
 
     // Realtime subscription for Supabase
@@ -60,51 +65,63 @@ export function SparkProvider({ children }: { children: ReactNode }) {
           'postgres_changes',
           { event: '*', schema: 'public', table: 'spark_ledger', filter: `child_id=eq.${childId}` },
           () => {
-            fetchBalance(childId);
-            fetchHistory(childId);
+            if (isMounted) {
+              fetchBalance(childId);
+              fetchHistory(childId);
+            }
           }
         )
         .subscribe();
 
       return () => {
+        isMounted = false;
         supabase.removeChannel(channel);
       };
     }
-  }, [childId, profile?.role]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [childId, profile?.role, fetchBalance, fetchHistory]);
+
+  const awardBonus = useCallback(async (delta: number, note: string): Promise<Result<SparkLedgerEntry>> => {
+    if (!childId || !familyId || !session?.profile?.id) {
+      return { ok: false, error: { code: 'not_authenticated', message: 'No child active' } };
+    }
+    if (session.profile.role !== 'parent') {
+      return { ok: false, error: { code: 'unauthorized', message: 'Solo los padres pueden otorgar bonus' } };
+    }
+
+    const res = await adapter.awardBonus(
+      childId,
+      familyId,
+      delta,
+      note,
+      session.profile.id
+    );
+
+    if (res.ok) {
+      await Promise.all([fetchBalance(childId), fetchHistory(childId)]);
+    }
+    return res;
+  }, [childId, familyId, session, adapter, fetchBalance, fetchHistory]);
+
+  const refreshBalance = useCallback(async () => {
+    if (childId) await fetchBalance(childId);
+  }, [childId, fetchBalance]);
+
+  const refreshHistory = useCallback(async () => {
+    if (childId) await fetchHistory(childId);
+  }, [childId, fetchHistory]);
 
   const value = useMemo<SparkContextValue>(() => ({
     balance,
     history,
     loading,
-    awardBonus: async (delta, note) => {
-      if (!childId || !familyId) {
-        return { ok: false, error: { code: 'not_authenticated', message: 'No child active' } };
-      }
-      // Logged in user must be parent
-      if (session?.profile?.role !== 'parent') {
-        return { ok: false, error: { code: 'unauthorized', message: 'Solo los padres pueden otorgar bonus' } };
-      }
-
-      const res = await adapter.awardBonus(
-        childId,
-        familyId,
-        delta,
-        note,
-        session.profile.id
-      );
-
-      if (res.ok) {
-        await Promise.all([fetchBalance(childId), fetchHistory(childId)]);
-      }
-      return res;
-    },
-    refreshBalance: async () => {
-      if (childId) await fetchBalance(childId);
-    },
-    refreshHistory: async () => {
-      if (childId) await fetchHistory(childId);
-    },
-  }), [balance, history, loading, childId, familyId, session?.profile?.id, session?.profile?.role, adapter]);
+    awardBonus,
+    refreshBalance,
+    refreshHistory,
+  }), [balance, history, loading, awardBonus, refreshBalance, refreshHistory]);
 
   return (
     <SparkContext.Provider value={value}>

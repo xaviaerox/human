@@ -20,9 +20,11 @@ import { BadgeCelebrationOverlay } from '@/components/ui/BadgeCelebrationOverlay
 import { ChildAvatar } from '@/components/ui/ChildAvatar';
 import { CustomizationModal } from '@/components/companion/CustomizationModal';
 import { CompanionChatModal } from '@/components/companion/CompanionChatModal';
+import { CalmModeModal } from '@/components/emotional/CalmModeModal';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 import { getSuggestedWords } from '@/lib/emotional/EmotionModel';
+import { decomposeGoalWithAI } from '@/lib/goals/decomposeAI';
 
 import { useRouter } from 'next/navigation';
 import type { Reward, RewardRequest, ValueDimensionId, ChildBadge, CompanionMemory, DialogueLine } from '@/types';
@@ -891,6 +893,7 @@ export default function HomePage() {
   const [showMemoriesModal, setShowMemoriesModal] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
   const [showWorldsModal, setShowWorldsModal] = useState(false);
+  const [showCalmModal, setShowCalmModal] = useState(false);
 
   // Silence vs Adventure mode
   const [silentMode, setSilentMode] = useState(false);
@@ -912,6 +915,17 @@ export default function HomePage() {
   const [goalPropStep3, setGoalPropStep3] = useState('');
   const [goalPropSubmitting, setGoalPropSubmitting] = useState(false);
   const [goalPropError, setGoalPropError] = useState('');
+  const [isGeneratingAIDecompose, setIsGeneratingAIDecompose] = useState(false);
+
+  const handleAIDecomposeInModal = async () => {
+    if (!goalPropTitle.trim()) return;
+    setIsGeneratingAIDecompose(true);
+    const result = await decomposeGoalWithAI(goalPropTitle);
+    setIsGeneratingAIDecompose(false);
+    if (result.microtasks.length >= 1) setGoalPropStep1(result.microtasks[0].title);
+    if (result.microtasks.length >= 2) setGoalPropStep2(result.microtasks[1].title);
+    if (result.microtasks.length >= 3) setGoalPropStep3(result.microtasks[2].title);
+  };
 
   // States for companion tapping
   const [tapLoading, setTapLoading] = useState(false);
@@ -1322,6 +1336,12 @@ export default function HomePage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowCalmModal(true)}
+            className="text-xs font-semibold px-3 py-1.5 rounded-full bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-200/60 dark:border-teal-800 hover:bg-teal-500/20 transition-all shadow-soft cursor-pointer flex items-center gap-1"
+          >
+            🌸 Respira
+          </button>
           <button
             onClick={() => setShowCustomization(true)}
             className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white/95 border border-stone-100 hover:bg-white transition-colors shadow-soft cursor-pointer flex items-center gap-1"
@@ -2483,9 +2503,19 @@ export default function HomePage() {
                   </label>
 
                   <div className="flex flex-col gap-1.5 text-left">
-                    <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider font-body">
-                      Pasos sugeridos (Capítulos)
-                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider font-body">
+                        Pasos sugeridos (Capítulos)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleAIDecomposeInModal}
+                        disabled={!goalPropTitle.trim() || isGeneratingAIDecompose}
+                        className="text-[11px] text-teal-600 font-semibold hover:underline disabled:opacity-50 cursor-pointer"
+                      >
+                        {isGeneratingAIDecompose ? 'Pensando pasos...' : '✨ Sugerir con Lumi'}
+                      </button>
+                    </div>
                     <input
                       type="text"
                       placeholder="Paso 1: Practicar equilibrio sentado (Fácil)"
@@ -2626,6 +2656,12 @@ export default function HomePage() {
           </div>
         )}
       </AnimatePresence>
+
+      <CalmModeModal
+        isOpen={showCalmModal}
+        onClose={() => setShowCalmModal(false)}
+        companionName={display?.name}
+      />
 
       <CustomizationModal
         isOpen={showCustomization}
