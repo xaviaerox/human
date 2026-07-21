@@ -9,7 +9,6 @@ import React, {
   useContext,
   useEffect,
   useState,
-  useRef,
   useMemo,
   useCallback,
   type ReactNode,
@@ -52,7 +51,7 @@ interface CompanionContextValue {
   /** Create a new memory dynamically */
   createMemory: (
     type: 'routine_streak_milestone' | 'difficult_checkin' | 'adventure_complete' | 'parent_badge_award',
-    metadata: Record<string, any>
+    metadata: Record<string, unknown>
   ) => Promise<boolean>;
 
   /** Refresh memories list manually */
@@ -72,7 +71,7 @@ export function CompanionProvider({ adapter, children }: CompanionProviderProps)
   const [memories, setMemories] = useState<CompanionMemory[]>([]);
   const [loading, setLoading] = useState(true);
   const [appearanceCtx, setAppearanceCtx] = useState<AppearanceContext>('home');
-  const previousStageRef = useRef<Companion['stage'] | undefined>(undefined);
+  const [previousStage, setPreviousStage] = useState<Companion['stage'] | undefined>(undefined);
 
   const isChild = profile?.role === 'child';
   const childId = isChild ? profile?.id : undefined;
@@ -84,24 +83,37 @@ export function CompanionProvider({ adapter, children }: CompanionProviderProps)
 
   // Load companion & memories
   useEffect(() => {
-    if (!childId) { setLoading(false); return; }
+    let isMounted = true;
+    if (!childId) {
+      queueMicrotask(() => {
+        if (isMounted) setLoading(false);
+      });
+      return () => { isMounted = false; };
+    }
 
     adapter.getCompanion(childId).then(result => {
-      if (result.ok) setCompanion(result.data);
-      setLoading(false);
+      if (isMounted) {
+        if (result.ok) setCompanion(result.data);
+        setLoading(false);
+      }
     });
 
-    fetchMemories(childId);
+    adapter.getMemories(childId).then(result => {
+      if (isMounted && result.ok) setMemories(result.data);
+    });
 
     const unsubscribe = adapter.subscribeToCompanion(childId, updated => {
       setCompanion(prev => {
-        if (prev) previousStageRef.current = prev.stage;
+        if (prev) setPreviousStage(prev.stage);
         return updated;
       });
     });
 
-    return unsubscribe;
-  }, [adapter, childId, fetchMemories]);
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, [adapter, childId]);
 
   const createCompanion = useCallback(async (name: string): Promise<boolean> => {
     if (!childId) return false;
@@ -127,7 +139,7 @@ export function CompanionProvider({ adapter, children }: CompanionProviderProps)
 
   const createMemory = useCallback(async (
     type: 'routine_streak_milestone' | 'difficult_checkin' | 'adventure_complete' | 'parent_badge_award',
-    metadata: Record<string, any>
+    metadata: Record<string, unknown>
   ): Promise<boolean> => {
     if (!companion || !childId) return false;
     const result = await adapter.createMemory(childId, companion.id, type, metadata);
@@ -143,8 +155,6 @@ export function CompanionProvider({ adapter, children }: CompanionProviderProps)
   ): DialogueLine => {
     if (!companion) return { text: '~', durationMs: 2000 };
 
-    // Give 45% chance of selecting a memory-based custom dialogue line
-    // when greeting, sitting idle, or tapping the companion
     if ((trigger === 'greeting' || trigger === 'idle_presence' || trigger === 'free_interaction') && memories.length > 0) {
       const shouldMentionMemory = Math.random() < 0.45;
       if (shouldMentionMemory) {
@@ -153,7 +163,6 @@ export function CompanionProvider({ adapter, children }: CompanionProviderProps)
       }
     }
 
-    // Default to the static DialogueBank
     return selectDialogue({
       stage: companion.stage,
       childEmotion: emotion,
@@ -164,8 +173,8 @@ export function CompanionProvider({ adapter, children }: CompanionProviderProps)
   }, [companion, memories]);
 
   const display = useMemo(
-    () => companion ? toDisplayState(companion, previousStageRef.current) : null,
-    [companion]
+    () => companion ? toDisplayState(companion, previousStage) : null,
+    [companion, previousStage]
   );
 
   const isVisible = useMemo(

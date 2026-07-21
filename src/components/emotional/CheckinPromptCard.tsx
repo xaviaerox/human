@@ -2,9 +2,8 @@
 
 import { useState } from 'react';
 import { useEmotional } from '@/lib/emotional/EmotionalProvider';
-import { classifyEmotion, getSuggestedWords } from '@/lib/emotional/EmotionModel';
+import { getSuggestedWords } from '@/lib/emotional/EmotionModel';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 import type { EmotionState } from '@/types';
 
@@ -22,13 +21,11 @@ export function CheckinPromptCard({ onComplete }: CheckinPromptCardProps) {
   const [step, setStep] = useState<CheckinStep>('energy');
   const [energy, setEnergy] = useState<number | null>(null);
   const [valence, setValence] = useState<number | null>(null);
-  const [word, setWord] = useState('');
   const [dismissed, setDismissed] = useState(false);
 
   if (dismissed) return null;
 
   async function handleWordSelect(w: string) {
-    setWord(w);
     if (energy === null || valence === null) return;
 
     const emotion: EmotionState = {
@@ -47,7 +44,7 @@ export function CheckinPromptCard({ onComplete }: CheckinPromptCardProps) {
 
   const suggestedWords =
     energy !== null && valence !== null
-      ? getSuggestedWords({ energy_level: energy as any, valence: valence as any })
+      ? getSuggestedWords({ energy_level: energy as 1 | 2 | 3 | 4 | 5, valence: valence as 1 | 2 | 3 | 4 | 5 })
       : [];
 
   return (

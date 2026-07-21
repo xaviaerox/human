@@ -44,24 +44,25 @@ export function RewardsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isMounted = true;
     if (!familyId) {
-      const timer = setTimeout(() => {
+      queueMicrotask(() => {
         if (isMounted) setLoading(false);
-      }, 0);
+      });
       return () => {
         isMounted = false;
-        clearTimeout(timer);
       };
     }
 
-    setLoading(true);
-    Promise.all([fetchRewards(familyId), fetchRequests(familyId)]).finally(() => {
-      if (isMounted) setLoading(false);
+    Promise.all([adapter.getRewards(familyId), adapter.getRewardRequests(familyId)]).then(([rewardsRes, reqsRes]) => {
+      if (!isMounted) return;
+      if (rewardsRes.ok) setRewards(rewardsRes.data);
+      if (reqsRes.ok) setRequests(reqsRes.data);
+      setLoading(false);
     });
 
     return () => {
       isMounted = false;
     };
-  }, [familyId, fetchRewards, fetchRequests]);
+  }, [adapter, familyId]);
 
   const createReward = useCallback(
     async (reward: Omit<Reward, 'id' | 'family_id' | 'created_at' | 'updated_at'>): Promise<Result<Reward>> => {

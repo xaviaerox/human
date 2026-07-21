@@ -30,21 +30,13 @@ export function CompanionWidget({
   const [showBubble, setShowBubble] = useState(false);
   const [isWakingUp, setIsWakingUp] = useState(!silentMode);
 
-  let companionContext = null;
-  try {
-    companionContext = useCompanion();
-  } catch (e) {
-    // Fail silently if used outside provider
-  }
+  const companionContext = useCompanion();
   const companion = companionContext?.companion;
   const customTheme = companion?.equipped_color_theme || null;
   const customAccessory = companion?.equipped_accessory || null;
 
   useEffect(() => {
-    if (silentMode) {
-      setIsWakingUp(false);
-      return;
-    }
+    if (silentMode) return;
     const wakeTimer = setTimeout(() => {
       setIsWakingUp(false);
     }, 1500);
@@ -53,9 +45,6 @@ export function CompanionWidget({
 
   useEffect(() => {
     if (!dialogue?.text) return;
-
-    setShowBubble(false);
-    setVisibleText('');
 
     const timer = setTimeout(() => {
       setVisibleText(dialogue.text);

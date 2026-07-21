@@ -53,9 +53,9 @@ Responde ÚNICAMENTE con un JSON válido con este formato:
       if (rawText) {
         const parsed = JSON.parse(rawText);
         if (parsed.microtasks && Array.isArray(parsed.microtasks) && parsed.microtasks.length > 0) {
-          const validated: AIMicrotaskSuggestion[] = parsed.microtasks.slice(0, 3).map((item: any, idx: number) => ({
+          const validated: AIMicrotaskSuggestion[] = parsed.microtasks.slice(0, 3).map((item: Record<string, unknown>, idx: number) => ({
             title: String(item.title || `Paso ${idx + 1}`),
-            effort: item.effort === 'easy' || item.effort === 'medium' || item.effort === 'stretch' ? item.effort : idx === 0 ? 'easy' : idx === 1 ? 'medium' : 'stretch',
+            effort: item.effort === 'easy' || item.effort === 'medium' || item.effort === 'stretch' ? (item.effort as EffortLevel) : idx === 0 ? 'easy' : idx === 1 ? 'medium' : 'stretch',
             description: item.description ? String(item.description) : undefined,
           }));
 

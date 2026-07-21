@@ -11,7 +11,7 @@ import type {
   SignInParams,
   AuthSession,
 } from './IAuthAdapter';
-import type { Profile, Family, Result } from '@/types';
+import type { Profile, Result } from '@/types';
 
 export class SupabaseAuthAdapter implements IAuthAdapter {
   constructor(private readonly client: SupabaseClient) {}

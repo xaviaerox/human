@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useEmotional } from '@/lib/emotional/EmotionalProvider';
 import { useCompanion } from '@/lib/companion/CompanionProvider';
-import { classifyEmotion, getSuggestedWords } from '@/lib/emotional/EmotionModel';
+import { getSuggestedWords } from '@/lib/emotional/EmotionModel';
 import { CompanionWidget } from '@/components/companion/CompanionWidget';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
@@ -88,7 +88,8 @@ export default function CheckinPage() {
   const progress = (stepIndex / 4) * 100;
 
   const lastCheckinTime = lastCheckin ? new Date(lastCheckin.occurred_at).getTime() : 0;
-  const isCooldown = Date.now() - lastCheckinTime < 8 * 60 * 60 * 1000;
+  const [now] = useState(() => Date.now());
+  const isCooldown = now - lastCheckinTime < 8 * 60 * 60 * 1000;
 
   return (
     <div className="min-h-dvh bg-stone-50 flex flex-col">

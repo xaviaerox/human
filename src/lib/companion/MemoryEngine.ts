@@ -8,7 +8,7 @@ import { resolveAnimationCue } from './dialogue/DialogueBank';
 export function selectMemoryDialogue(
   memories: CompanionMemory[],
   stage: CompanionStage,
-  companionName: string
+  _companionName: string
 ): DialogueLine | null {
   // If stage is egg, the companion cannot speak
   if (stage === 'egg') return null;
@@ -29,8 +29,8 @@ export function selectMemoryDialogue(
       break;
 
     case 'difficult_checkin':
-      const emoWord = latest.metadata.emotion_word ? `cuando te sentías "${latest.metadata.emotion_word}"` : 'ayer';
-      text = `Ayer te sentías un poco abrumado o cansado. Quería decirte que estoy aquí contigo hoy, sin prisa.`;
+      const emoDetail = latest.metadata.emotion_word ? ` (${latest.metadata.emotion_word})` : '';
+      text = `Ayer te sentías un poco abrumado o cansado${emoDetail}. Quería decirte que estoy aquí contigo hoy, sin prisa.`;
       break;
 
     case 'adventure_complete':

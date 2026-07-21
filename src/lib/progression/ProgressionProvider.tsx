@@ -34,6 +34,7 @@ export function ProgressionProvider({ children }: { children: ReactNode }) {
   const profile = session?.profile ?? null;
   const childId = profile?.id;
   const familyId = session?.family?.id;
+  const currentUserId = profile?.id;
 
   const [scores, setScores] = useState<Record<ValueDimensionId, number>>(DEFAULT_SCORES);
   const [badges, setBadges] = useState<ChildBadge[]>([]);
@@ -65,31 +66,38 @@ export function ProgressionProvider({ children }: { children: ReactNode }) {
     let isMounted = true;
 
     if (!childId || profile?.role !== 'child') {
-      const timer = setTimeout(() => {
+      queueMicrotask(() => {
         if (isMounted) setLoading(false);
-      }, 0);
+      });
       return () => {
         isMounted = false;
-        clearTimeout(timer);
       };
     }
 
-    setLoading(true);
-    Promise.all([fetchScores(childId), fetchBadges(childId)]).finally(() => {
-      if (isMounted) setLoading(false);
+    Promise.all([adapter.getScores(childId), adapter.getBadges(childId)]).then(([scoresRes, badgesRes]) => {
+      if (!isMounted) return;
+      if (scoresRes.ok) {
+        const scoreMap = { ...DEFAULT_SCORES };
+        scoresRes.data.forEach(s => {
+          if (s.dimension_id in scoreMap) scoreMap[s.dimension_id] = s.score;
+        });
+        setScores(scoreMap);
+      }
+      if (badgesRes.ok) setBadges(badgesRes.data);
+      setLoading(false);
     });
 
     return () => {
       isMounted = false;
     };
-  }, [childId, profile?.role, fetchScores, fetchBadges]);
+  }, [adapter, childId, profile?.role]);
 
   const awardBadge = useCallback(async (
     dimensionId: string,
     tier: 'bronze' | 'silver' | 'gold',
     note?: string
   ): Promise<Result<ChildBadge>> => {
-    if (!childId || !familyId || !session?.profile?.id) {
+    if (!childId || !familyId || !currentUserId) {
       return { ok: false, error: { code: 'not_authenticated', message: 'No child active' } };
     }
     const res = await adapter.awardBadge(
@@ -98,14 +106,14 @@ export function ProgressionProvider({ children }: { children: ReactNode }) {
       dimensionId,
       tier,
       note,
-      session.profile.id
+      currentUserId
     );
 
     if (res.ok) {
       await Promise.all([fetchScores(childId), fetchBadges(childId)]);
     }
     return res;
-  }, [childId, familyId, session, adapter, fetchScores, fetchBadges]);
+  }, [childId, familyId, currentUserId, adapter, fetchScores, fetchBadges]);
 
   const refreshScores = useCallback(async () => {
     if (childId) await fetchScores(childId);

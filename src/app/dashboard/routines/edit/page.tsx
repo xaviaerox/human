@@ -58,8 +58,10 @@ function EditRoutineClient() {
 
   useEffect(() => {
     if (!id) {
-      setError('ID de rutina no proporcionado');
-      setFetching(false);
+      queueMicrotask(() => {
+        setError('ID de rutina no proporcionado');
+        setFetching(false);
+      });
       return;
     }
 

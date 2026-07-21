@@ -67,16 +67,7 @@ export class SupabaseCompanionAdapter implements ICompanionAdapter {
       return { ok: false, error: { code: 'interaction_failed', message: interactionError?.message ?? 'Failed' } };
     }
 
-    // Update bonding score (DB trigger handles stage progression)
-    const { error: updateError } = await this.client
-      .from('companions')
-      .update({ bonding_score: this.client.rpc as unknown as number })
-      .eq('id', companionId);
-
-    // Use RPC to increment atomically
-    await this.client.rpc('award_sparks' as never, {} as never); // placeholder — use raw SQL increment via edge function in prod
-
-    // For now: read current, increment, write back
+    // Read current bonding_score, increment, write back
     const { data: current } = await this.client
       .from('companions')
       .select('bonding_score')
@@ -163,7 +154,7 @@ export class SupabaseCompanionAdapter implements ICompanionAdapter {
     childId: string,
     companionId: string,
     type: 'routine_streak_milestone' | 'difficult_checkin' | 'adventure_complete' | 'parent_badge_award',
-    metadata: Record<string, any>
+    metadata: Record<string, unknown>
   ): Promise<Result<CompanionMemory>> {
     const { data, error } = await this.client
       .from('companion_memories')

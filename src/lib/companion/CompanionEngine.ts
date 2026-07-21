@@ -9,7 +9,6 @@ import type {
   CompanionStage,
   CompanionInteractionType,
   DialogueContext,
-  DialogueLine,
 } from '@/types';
 
 // ─────────────────────────────────────────

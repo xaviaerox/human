@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useState, useCallback } from 'react';
+import { motion } from 'framer-motion';
 
 import { triggerCelebrationHaptic } from '@/lib/utils/haptics';
 
@@ -19,6 +19,8 @@ interface Particle {
   size: number;
   rotate: number;
   type: 'circle' | 'star';
+  duration: number;
+  delay: number;
 }
 
 const PARTICLE_COLORS = ['#fbbf24', '#f59e0b', '#3b82f6', '#10b981', '#ec4899', '#8b5cf6', '#ef4444'];
@@ -27,6 +29,7 @@ const generateParticles = (count = 70): Particle[] => {
   return Array.from({ length: count }).map((_, idx) => {
     const angle = Math.random() * Math.PI * 2;
     const distance = 100 + Math.random() * 260; // spread radius
+    const isStar = Math.random() > 0.4;
     return {
       id: idx,
       x: Math.cos(angle) * distance,
@@ -34,7 +37,9 @@ const generateParticles = (count = 70): Particle[] => {
       color: PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)],
       size: 8 + Math.random() * 16,
       rotate: Math.random() * 720,
-      type: Math.random() > 0.4 ? 'star' : 'circle'
+      type: isStar ? 'star' : 'circle',
+      duration: (isStar ? 2.0 : 1.8) + Math.random() * 0.5,
+      delay: Math.random() * 0.1,
     };
   });
 };
@@ -46,22 +51,15 @@ const StarSvg = ({ color, size }: { color: string; size: number }) => (
 );
 
 export function SparkCelebrationOverlay({ delta, note, onClose }: SparkCelebrationOverlayProps) {
-  const [particles, setParticles] = useState<Particle[]>([]);
+  const [particles] = useState<Particle[]>(() => generateParticles(70));
 
-  useEffect(() => {
-    setParticles(generateParticles(70));
-    playSuccessChime();
-    triggerCelebrationHaptic();
-  }, []);
-
-  function playSuccessChime() {
+  const playSuccessChime = useCallback(() => {
     if (typeof window === 'undefined') return;
-    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContext) return;
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
     try {
-      const ctx = new AudioContext();
+      const ctx = new AudioCtx();
       
-      // Beautiful pentatonic rising chime sequence (gentle sound)
       const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99]; // C4, E4, G4, C5, E5, G5
       notes.forEach((freq, idx) => {
         const osc = ctx.createOscillator();
@@ -83,7 +81,12 @@ export function SparkCelebrationOverlay({ delta, note, onClose }: SparkCelebrati
     } catch (err) {
       console.warn('Audio Context error (likely blocked by autoplay rules):', err);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    playSuccessChime();
+    triggerCelebrationHaptic();
+  }, [playSuccessChime]);
 
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
@@ -119,9 +122,9 @@ export function SparkCelebrationOverlay({ delta, note, onClose }: SparkCelebrati
                   rotate: p.rotate,
                 }}
                 transition={{
-                  duration: 2.0 + Math.random() * 0.5,
+                  duration: p.duration,
                   ease: 'easeOut',
-                  delay: Math.random() * 0.1,
+                  delay: p.delay,
                 }}
               >
                 <StarSvg color={p.color} size={p.size} />
@@ -141,9 +144,9 @@ export function SparkCelebrationOverlay({ delta, note, onClose }: SparkCelebrati
                   scale: [0, 1.3, 1, 0],
                 }}
                 transition={{
-                  duration: 1.8 + Math.random() * 0.5,
+                  duration: p.duration,
                   ease: 'easeOut',
-                  delay: Math.random() * 0.1,
+                  delay: p.delay,
                 }}
               />
             )}
@@ -206,7 +209,7 @@ export function SparkCelebrationOverlay({ delta, note, onClose }: SparkCelebrati
               Por tu gran labor
             </p>
             <p className="text-base text-stone-700 dark:text-stone-200 italic font-medium leading-relaxed">
-              "{note}"
+              &quot;{note}&quot;
             </p>
           </motion.div>
 

@@ -25,13 +25,24 @@ export function CustomizationModal({ isOpen, onClose, sparkBalance, onPurchaseSu
   const [activeTab, setActiveTab] = useState<'avatar' | 'companion'>('avatar');
   const [buyingId, setBuyingId] = useState<string | null>(null);
   const [companionName, setCompanionName] = useState(companion?.name || '');
+  const [prevName, setPrevName] = useState(companion?.name);
   const [renaming, setRenaming] = useState(false);
 
   useEffect(() => {
-    if (companion?.name) {
-      setCompanionName(companion.name);
-    }
-  }, [companion?.name]);
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (companion?.name && companion.name !== prevName) {
+    setPrevName(companion.name);
+    setCompanionName(companion.name);
+  }
 
   async function handleRenameCompanion() {
     if (!companionName.trim() || !companion) return;
@@ -111,7 +122,7 @@ export function CustomizationModal({ isOpen, onClose, sparkBalance, onPurchaseSu
 
   function playPurchaseChime() {
     if (typeof window === 'undefined') return;
-    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    const AudioContext = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
     if (!AudioContext) return;
     try {
       const ctx = new AudioContext();
@@ -179,6 +190,9 @@ export function CustomizationModal({ isOpen, onClose, sparkBalance, onPurchaseSu
 
           {/* Modal Panel */}
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="customization-modal-title"
             initial={{ scale: 0.9, y: 30, opacity: 0 }}
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.9, y: 30, opacity: 0 }}
@@ -187,7 +201,7 @@ export function CustomizationModal({ isOpen, onClose, sparkBalance, onPurchaseSu
             {/* Header */}
             <div className="p-5 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between bg-stone-50/50 dark:bg-stone-850/50">
               <div>
-                <h2 className="font-display text-xl text-stone-800 dark:text-stone-100">
+                <h2 id="customization-modal-title" className="font-display text-xl text-stone-800 dark:text-stone-100">
                   🎨 Mi Armario de Estrellas
                 </h2>
                 <p className="text-xs text-stone-400 mt-0.5">
@@ -202,10 +216,12 @@ export function CustomizationModal({ isOpen, onClose, sparkBalance, onPurchaseSu
             </div>
 
             {/* TAB SELECTOR */}
-            <div className="flex border-b border-stone-100 dark:border-stone-800 text-sm font-bold">
+            <div className="flex border-b border-stone-100 dark:border-stone-800 text-sm font-bold" role="tablist">
               <button
+                role="tab"
+                aria-selected={activeTab === 'avatar'}
                 onClick={() => setActiveTab('avatar')}
-                className={`flex-1 py-3 text-center transition-colors border-b-2 ${
+                className={`flex-1 py-3 text-center transition-colors border-b-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-bloom-300 ${
                   activeTab === 'avatar'
                     ? 'border-bloom-500 text-bloom-600 dark:text-bloom-400'
                     : 'border-transparent text-stone-400 hover:text-stone-600'
@@ -214,8 +230,10 @@ export function CustomizationModal({ isOpen, onClose, sparkBalance, onPurchaseSu
                 🦊 Mi Avatar
               </button>
               <button
+                role="tab"
+                aria-selected={activeTab === 'companion'}
                 onClick={() => setActiveTab('companion')}
-                className={`flex-1 py-3 text-center transition-colors border-b-2 ${
+                className={`flex-1 py-3 text-center transition-colors border-b-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-bloom-300 ${
                   activeTab === 'companion'
                     ? 'border-bloom-500 text-bloom-600 dark:text-bloom-400'
                     : 'border-transparent text-stone-400 hover:text-stone-600'

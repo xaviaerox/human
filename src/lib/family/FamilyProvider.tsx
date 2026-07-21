@@ -39,30 +39,54 @@ export function FamilyProvider({ adapter, children }: FamilyProviderProps) {
   const [family, setFamily] = useState<FamilyWithMembers | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const familyId = session?.family.id;
+  const profileId = session?.profile.id;
+
   const load = useCallback(async () => {
-    if (!session?.family.id) {
+    if (!familyId) {
       setFamily(null);
       setLoading(false);
       return;
     }
-    setLoading(true);
-    const result = await adapter.getFamily(session.family.id);
+    const result = await adapter.getFamily(familyId);
     if (result.ok) setFamily(result.data);
     setLoading(false);
-  }, [adapter, session?.family.id]);
+  }, [adapter, familyId]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    let isMounted = true;
+    if (!familyId) {
+      queueMicrotask(() => {
+        if (isMounted) {
+          setFamily(null);
+          setLoading(false);
+        }
+      });
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    adapter.getFamily(familyId).then(result => {
+      if (isMounted) {
+        if (result.ok) setFamily(result.data);
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [adapter, familyId]);
 
   // Realtime subscription
   useEffect(() => {
-    if (!session?.family.id) return;
-    const unsubscribe = adapter.subscribeToFamily(session.family.id, members => {
+    if (!familyId) return;
+    const unsubscribe = adapter.subscribeToFamily(familyId, members => {
       setFamily(prev => prev ? { ...prev, members } : null);
     });
     return unsubscribe;
-  }, [adapter, session?.family.id]);
+  }, [adapter, familyId]);
 
   const familyChildren = useMemo(
     () => family?.members.filter(m => m.role === 'child') ?? [],
@@ -70,22 +94,22 @@ export function FamilyProvider({ adapter, children }: FamilyProviderProps) {
   );
 
   const createInvite = useCallback(async (role: 'parent' | 'child') => {
-    if (!session?.family.id || !session.profile.id) return null;
-    const result = await adapter.createInvite(session.family.id, session.profile.id, role);
+    if (!familyId || !profileId) return null;
+    const result = await adapter.createInvite(familyId, profileId, role);
     return result.ok ? result.data : null;
-  }, [adapter, session]);
+  }, [adapter, familyId, profileId]);
 
   const getActiveInvites = useCallback(async () => {
-    if (!session?.family.id) return [];
-    const result = await adapter.getActiveInvites(session.family.id);
+    if (!familyId) return [];
+    const result = await adapter.getActiveInvites(familyId);
     return result.ok ? result.data : [];
-  }, [adapter, session?.family.id]);
+  }, [adapter, familyId]);
 
   const updateSettings = useCallback(async (settings: Partial<Family['settings']>) => {
-    if (!session?.family.id) return;
-    const result = await adapter.updateFamilySettings(session.family.id, settings);
+    if (!familyId) return;
+    const result = await adapter.updateFamilySettings(familyId, settings);
     if (result.ok) setFamily(prev => prev ? { ...prev, settings: result.data.settings } : null);
-  }, [adapter, session?.family.id]);
+  }, [adapter, familyId]);
 
   const value = useMemo<FamilyContextValue>(() => ({
     family,

@@ -46,12 +46,13 @@ export function ActiveGoalStep({ onComplete, goal: initialGoal }: ActiveGoalStep
     return compDate === todayDate;
   });
 
-  useEffect(() => {
-    if (initialGoal && !completing && !justDone) {
-      setGoal(initialGoal);
-      setNextTask(getNextMicrotask(initialGoal.microtasks));
-    }
-  }, [initialGoal, completing, justDone]);
+  const [prevInitialGoal, setPrevInitialGoal] = useState(initialGoal);
+
+  if (initialGoal && initialGoal !== prevInitialGoal && !completing && !justDone) {
+    setPrevInitialGoal(initialGoal);
+    setGoal(initialGoal);
+    setNextTask(getNextMicrotask(initialGoal.microtasks));
+  }
 
   useEffect(() => {
     if (initialGoal) return;

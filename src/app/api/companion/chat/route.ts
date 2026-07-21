@@ -1,11 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { checkRateLimit } from '@/lib/rateLimit';
+import { checkRateLimit } from '@/lib/security/RateLimiter';
 import { createServerSupabaseClient } from '@/lib/supabaseServer';
+
+function sanitizePromptText(input?: string): string {
+  if (!input) return '';
+  return input
+    .replace(/[\r\n]+/g, ' ')
+    .replace(/[<>]/g, '')
+    .trim()
+    .slice(0, 300);
+}
 
 const ChatMessageSchema = z.object({
   role: z.enum(['user', 'assistant', 'system']),
   content: z.string(),
+});
+
+const MicrotaskSchema = z.object({
+  title: z.string().optional(),
+  status: z.string().optional(),
+  spark_value: z.number().optional(),
+  isStuck: z.boolean().optional(),
+});
+
+const GoalSchema = z.object({
+  title: z.string().optional(),
+  progress: z.number().optional(),
+  nextTask: MicrotaskSchema.optional(),
+  microtasks: z.array(MicrotaskSchema).optional(),
+});
+
+const MemorySchema = z.object({
+  type: z.string().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+const CheckinSchema = z.object({
+  emotion_word: z.string().optional(),
+  valence: z.number().optional(),
+  energy_level: z.number().optional(),
+  note: z.string().optional(),
 });
 
 const CompanionChatSchema = z.object({
@@ -16,22 +51,49 @@ const CompanionChatSchema = z.object({
   stage: z.string().optional().default('sprout'),
   worldName: z.string().optional().default('Lago de la Calma'),
   worldPhase: z.string().optional().default('Brote'),
-  childScores: z.record(z.string(), z.number()).optional(),
-  activeGoal: z.any().optional(),
-  activeGoals: z.array(z.any()).optional(),
-  recentMemories: z.array(z.any()).optional(),
-  recentCheckins: z.array(z.any()).optional(),
+  childScores: z.record(z.string(), z.number()).nullable().optional(),
+  activeGoal: GoalSchema.nullable().optional(),
+  activeGoals: z.array(GoalSchema).nullable().optional(),
+  recentMemories: z.array(MemorySchema).nullable().optional(),
+  recentCheckins: z.array(CheckinSchema).nullable().optional(),
+  stream: z.boolean().optional().default(false),
 });
+
+function createTextStreamResponse(fullText: string) {
+  const encoder = new TextEncoder();
+  const words = fullText.split(' ');
+
+  const readableStream = new ReadableStream({
+    async start(controller) {
+      for (let i = 0; i < words.length; i++) {
+        const chunk = (i === 0 ? '' : ' ') + words[i];
+        controller.enqueue(encoder.encode(chunk));
+        // Add subtle delay to simulate live typewriter stream
+        await new Promise((res) => setTimeout(res, 25));
+      }
+      controller.close();
+    },
+  });
+
+  return new NextResponse(readableStream, {
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Transfer-Encoding': 'chunked',
+      'Cache-Control': 'no-cache, no-transform',
+    },
+  });
+}
 
 export async function POST(req: NextRequest) {
   try {
     // 1. Rate limiting (max 15 requests/min per IP)
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 'anonymous';
-    const rateLimit = checkRateLimit(`companion-chat:${ip}`, 15, 60000);
+    const rateLimit = await checkRateLimit(`companion-chat:${ip}`, 15, 60000);
 
     if (!rateLimit.success) {
+      const resetSec = Math.ceil((rateLimit.resetMs - Date.now()) / 1000);
       return NextResponse.json(
-        { error: `Has interactuado mucho. Descansa un momento y reintenta en ${rateLimit.resetInSeconds} segundos.` },
+        { error: `Has interactuado mucho. Descansa un momento y reintenta en ${resetSec} segundos.` },
         { status: 429 }
       );
     }
@@ -68,7 +130,14 @@ export async function POST(req: NextRequest) {
       activeGoals,
       recentMemories,
       recentCheckins,
+      stream,
     } = parseResult.data;
+
+    const safeCompanionName = sanitizePromptText(companionName) || 'Lumi';
+    const safeChildName = sanitizePromptText(childName) || 'Alex';
+    const safeWorldName = sanitizePromptText(worldName) || 'Lago de la Calma';
+    const safeWorldPhase = sanitizePromptText(worldPhase) || 'Brote';
+    const safeStage = sanitizePromptText(stage) || 'sprout';
 
     // Format value scores
     let scoresText = '';
@@ -82,7 +151,7 @@ export async function POST(req: NextRequest) {
         curiosity: 'Creatividad'
       };
       scoresText = Object.entries(childScores)
-        .map(([k, v]) => `- ${scoreLabels[k] || k}: ${v} pts`)
+        .map(([k, v]) => `- ${scoreLabels[k] || sanitizePromptText(k)}: ${Number(v) || 0} pts`)
         .join('\n');
     }
 
@@ -90,11 +159,13 @@ export async function POST(req: NextRequest) {
     let goalText = 'Ningún objetivo activo actualmente.';
     const goalsList = activeGoals || (activeGoal ? [activeGoal] : []);
     if (goalsList.length > 0) {
-      goalText = goalsList.map((g: any) => {
-        let text = `- Objetivo activo: "${g.title}" (${g.progress || 0}% completado).`;
-        const task = g.nextTask || (g.microtasks ? g.microtasks.find((t: any) => t.status === 'pending') : null);
+      goalText = goalsList.map((g) => {
+        const title = sanitizePromptText(g.title || 'Objetivo');
+        let text = `- Objetivo activo: "${title}" (${g.progress || 0}% completado).`;
+        const task = g.nextTask || (g.microtasks ? g.microtasks.find((t) => t.status === 'pending') : null);
         if (task) {
-          text += ` Siguiente paso: "${task.title}" (Recompensa: ${task.spark_value} chispas).`;
+          const taskTitle = sanitizePromptText(task.title || 'Paso');
+          text += ` Siguiente paso: "${taskTitle}" (Recompensa: ${task.spark_value || 1} chispas).`;
           if (task.isStuck) {
             text += ` Nota: El niño lleva más de 48 horas sin completar este paso. Dale apoyo específico.`;
           }
@@ -108,19 +179,24 @@ export async function POST(req: NextRequest) {
     const memoriesList = recentMemories || [];
     if (memoriesList.length > 0) {
       memoriesText = memoriesList
-        .map((m: any) => {
+        .map((m) => {
           if (!m) return null;
           const meta = m.metadata || {};
           if (m.type === 'parent_badge_award') {
-            return `- Insignia de ${meta.badge_tier || 'oro'} en "${meta.badge_name || 'Valores'}" otorgada por sus padres. Nota: "${meta.parent_note || ''}"`;
+            const badgeTier = sanitizePromptText(String(meta.badge_tier || 'oro'));
+            const badgeName = sanitizePromptText(String(meta.badge_name || 'Valores'));
+            const parentNote = sanitizePromptText(String(meta.parent_note || ''));
+            return `- Insignia de ${badgeTier} en "${badgeName}" otorgada por sus padres. Nota: "${parentNote}"`;
           }
           if (m.type === 'adventure_complete') {
-            return `- Aventura completada: "${meta.adventure_title || 'Objetivo'}".`;
+            const advTitle = sanitizePromptText(String(meta.adventure_title || 'Objetivo'));
+            return `- Aventura completada: "${advTitle}".`;
           }
           if (m.type === 'difficult_checkin') {
-            return `- Check-in difícil reciente: se sintió "${meta.emotion_word || 'triste'}".`;
+            const emotionWord = sanitizePromptText(String(meta.emotion_word || 'triste'));
+            return `- Check-in difícil reciente: se sintió "${emotionWord}".`;
           }
-          return `- Hito: ${m.type}`;
+          return `- Hito: ${sanitizePromptText(m.type || 'Hito')}`;
         })
         .filter(Boolean)
         .join('\n');
@@ -131,22 +207,25 @@ export async function POST(req: NextRequest) {
     const checkinsList = recentCheckins || [];
     if (checkinsList.length > 0) {
       checkinsText = checkinsList
-        .map((c: any) => {
+        .map((c) => {
           if (!c) return null;
-          return `- Se sintió "${c.emotion_word || 'neutral'}" (valencia: ${c.valence || 3}/5, energía: ${c.energy_level || 3}/5)${c.note ? `, nota: "${c.note}"` : ''}`;
+          const emotion = sanitizePromptText(c.emotion_word || 'neutral');
+          const note = sanitizePromptText(c.note || '');
+          return `- Se sintió "${emotion}" (valencia: ${c.valence || 3}/5, energía: ${c.energy_level || 3}/5)${note ? `, nota: "${note}"` : ''}`;
         })
         .filter(Boolean)
         .join('\n');
     }
 
     const isTap = message.trim() === '[TAP]';
+    const cleanUserMsg = sanitizePromptText(message);
 
-    const systemPrompt = `Eres ${companionName}, el compañero mágico de crecimiento de un niño llamado ${childName}.
-Tu etapa de evolución actual es "${stage}". Tu personalidad es cálida, empática, paciente y curiosa.
-Estás en el reino "${worldName}" (que está en fase de "${worldPhase}").
+    const systemPrompt = `Eres ${safeCompanionName}, el compañero mágico de crecimiento de un niño llamado ${safeChildName}.
+Tu etapa de evolución actual es "${safeStage}". Tu personalidad es cálida, empática, paciente y curiosa.
+Estás en el reino "${safeWorldName}" (que está en fase de "${safeWorldPhase}").
 
-Para ayudarte a conectar mejor con ${childName}, aquí tienes su contexto de crecimiento actual en MIRA:
-[Puntos de Valores de ${childName}]
+Para ayudarte a conectar mejor con ${safeChildName}, aquí tienes su contexto de crecimiento actual en MIRA:
+[Puntos de Valores de ${safeChildName}]
 ${scoresText || 'Ninguno aún.'}
 
 [Objetivo/Aventura Activa]
@@ -159,7 +238,7 @@ ${memoriesText}
 ${checkinsText}
 
 ${isTap ? `El niño ha tocado tu avatar en la pantalla de inicio para saludarte o interactuar.
-Tu objetivo es responder con una frase mágica muy corta, cariñosa y llena de apoyo (máximo 12 palabras).` : `Tu objetivo es responder a ${childName} de forma muy corta (máximo 2 frases), amables y alentadores.`}
+Tu objetivo es responder con una frase mágica muy corta, cariñosa y llena de apoyo (máximo 12 palabras).` : `Tu objetivo es responder a ${safeChildName} de forma muy corta (máximo 2 frases), amables y alentadores.`}
 Sigue estas reglas fundamentales de MIRA:
 1. SÉ EMPÁTICO Y VALIDA SUS EMOCIONES. Si el niño indica estar triste o cansado, NUNCA descartes su emoción ni le pidas que "sonría". Valida su sentir.
 2. UTILIZA SU CONTEXTO DE FORMA SUTIL Y MÁGICA.
@@ -171,6 +250,8 @@ Responde en español de forma natural y cariñosa.`;
     const groqKey = process.env.GROQ_API_KEY;
     const geminiKey = process.env.GEMINI_API_KEY;
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
+
+    let finalReply = '';
 
     // 1. GROQ PROVIDER
     if (groqKey) {
@@ -185,8 +266,8 @@ Responde en español de forma natural y cariñosa.`;
             model: 'llama-3.1-8b-instant',
             messages: [
               { role: 'system', content: systemPrompt },
-              ...history.map((h) => ({ role: h.role, content: h.content })),
-              { role: 'user', content: message }
+              ...history.map((h) => ({ role: h.role, content: sanitizePromptText(h.content) })),
+              { role: 'user', content: cleanUserMsg }
             ],
             max_tokens: 120,
             temperature: 0.7
@@ -197,7 +278,7 @@ Responde en español de forma natural y cariñosa.`;
           const data = await groqRes.json();
           const reply = data.choices?.[0]?.message?.content || '';
           if (reply.trim()) {
-            return NextResponse.json({ text: reply.trim() });
+            finalReply = reply.trim();
           }
         }
       } catch (err) {
@@ -206,7 +287,7 @@ Responde en español de forma natural y cariñosa.`;
     }
 
     // 2. GEMINI PROVIDER
-    if (geminiKey) {
+    if (!finalReply && geminiKey) {
       try {
         const geminiRes = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
@@ -217,7 +298,7 @@ Responde en español de forma natural y cariñosa.`;
               contents: [
                 {
                   role: 'user',
-                  parts: [{ text: `${systemPrompt}\n\nHistorial previo:\n${history.map((h) => `${h.role === 'assistant' ? companionName : 'Niño'}: ${h.content}`).join('\n')}\n\nNiño: ${message}` }]
+                  parts: [{ text: `${systemPrompt}\n\nHistorial previo:\n${history.map((h) => `${h.role === 'assistant' ? safeCompanionName : 'Niño'}: ${sanitizePromptText(h.content)}`).join('\n')}\n\nNiño: ${cleanUserMsg}` }]
                 }
               ],
               generationConfig: {
@@ -232,7 +313,7 @@ Responde en español de forma natural y cariñosa.`;
           const data = await geminiRes.json();
           const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
           if (reply.trim()) {
-            return NextResponse.json({ text: reply.trim() });
+            finalReply = reply.trim();
           }
         }
       } catch (err) {
@@ -241,7 +322,7 @@ Responde en español de forma natural y cariñosa.`;
     }
 
     // 3. ANTHROPIC PROVIDER
-    if (anthropicKey) {
+    if (!finalReply && anthropicKey) {
       try {
         const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
@@ -255,8 +336,8 @@ Responde en español de forma natural y cariñosa.`;
             max_tokens: 120,
             system: systemPrompt,
             messages: [
-              ...history.map((h) => ({ role: h.role, content: h.content })),
-              { role: 'user', content: message }
+              ...history.map((h) => ({ role: h.role, content: sanitizePromptText(h.content) })),
+              { role: 'user', content: cleanUserMsg }
             ]
           })
         });
@@ -265,7 +346,7 @@ Responde en español de forma natural y cariñosa.`;
           const data = await anthropicRes.json();
           const reply = data.content?.[0]?.text || '';
           if (reply.trim()) {
-            return NextResponse.json({ text: reply.trim() });
+            finalReply = reply.trim();
           }
         }
       } catch (err) {
@@ -274,11 +355,17 @@ Responde en español de forma natural y cariñosa.`;
     }
 
     // Fallback response if no LLM key works
-    const fallbackText = isTap
-      ? `¡Hola ${childName}! Me alegra mucho verte hoy en el ${worldName}.`
-      : `¡Estoy aquí contigo, ${childName}! Sigamos explorando juntos a tu ritmo.`;
+    if (!finalReply) {
+      finalReply = isTap
+        ? `¡Hola ${safeChildName}! Me alegra mucho verte hoy en el ${safeWorldName}.`
+        : `¡Estoy aquí contigo, ${safeChildName}! Sigamos explorando juntos a tu ritmo.`;
+    }
 
-    return NextResponse.json({ text: fallbackText });
+    if (stream) {
+      return createTextStreamResponse(finalReply);
+    }
+
+    return NextResponse.json({ text: finalReply });
   } catch (err) {
     console.error('[companion-chat] Error:', err);
     return NextResponse.json({ text: '¡Hola! Aquí estoy contigo para ayudarte.' });

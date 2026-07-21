@@ -38,7 +38,7 @@ const STATIC_MEMBERS: Profile[] = [
 ];
 
 export class StaticFamilyAdapter implements IFamilyAdapter {
-  async getFamily(familyId: string): Promise<Result<FamilyWithMembers>> {
+  async getFamily(_familyId: string): Promise<Result<FamilyWithMembers>> {
     return {
       ok: true,
       data: { ...STATIC_FAMILY, members: STATIC_MEMBERS },
@@ -53,11 +53,11 @@ export class StaticFamilyAdapter implements IFamilyAdapter {
     return { ok: true, data: profile };
   }
 
-  async getChildren(familyId: string): Promise<Result<Profile[]>> {
+  async getChildren(_familyId: string): Promise<Result<Profile[]>> {
     return { ok: true, data: STATIC_MEMBERS.filter(m => m.role === 'child') };
   }
 
-  async updateFamilySettings(familyId: string, settings: Partial<Family['settings']>): Promise<Result<Family>> {
+  async updateFamilySettings(_familyId: string, settings: Partial<Family['settings']>): Promise<Result<Family>> {
     return { ok: true, data: { ...STATIC_FAMILY, settings: { ...STATIC_FAMILY.settings, ...settings } } };
   }
 
@@ -76,11 +76,11 @@ export class StaticFamilyAdapter implements IFamilyAdapter {
     };
   }
 
-  async getActiveInvites(familyId: string): Promise<Result<FamilyInvite[]>> {
+  async getActiveInvites(_familyId: string): Promise<Result<FamilyInvite[]>> {
     return { ok: true, data: [] };
   }
 
-  subscribeToFamily(familyId: string, callback: (members: Profile[]) => void): () => void {
+  subscribeToFamily(_familyId: string, callback: (members: Profile[]) => void): () => void {
     setTimeout(() => callback(STATIC_MEMBERS), 0);
     return () => {};
   }

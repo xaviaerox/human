@@ -115,6 +115,7 @@ export default function ChildDetailClient() {
         setSparkBalance(sum);
       }
     } else {
+      await Promise.resolve();
       setSparkBalance(19);
       setActivities([
         { id: '1', delta: 5, source_type: 'routine_complete', note: 'Routine: Noche', created_at: new Date().toISOString() },
@@ -159,7 +160,6 @@ export default function ChildDetailClient() {
     const weekStart = new Date();
     weekStart.setDate(weekStart.getDate() - weekStart.getDay());
 
-    setLoading(true);
     Promise.all([
       emotionalAdapter.getWeeklySummaries(childId, 8),
       goalsAdapter.getGoals(childId),
@@ -168,13 +168,13 @@ export default function ChildDetailClient() {
         weekStart.toISOString().split('T')[0]!,
         new Date().toISOString().split('T')[0]!
       ),
-      fetchBalanceAndLedger(),
-      fetchPendingRequests(),
-      fetchProgressionData(),
     ]).then(([s, g, r]) => {
       if (s.ok) setSummaries(s.data);
       if (g.ok) setGoals(g.data);
       if (r.ok) setRoutineCount(r.data.length);
+      fetchBalanceAndLedger();
+      fetchPendingRequests();
+      fetchProgressionData();
       setLoading(false);
     });
 

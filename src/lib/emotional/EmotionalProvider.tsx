@@ -13,7 +13,7 @@ import React, {
   useMemo,
   type ReactNode,
 } from 'react';
-import type { IEmotionalAdapter, SubmitCheckinParams } from './adapters/IEmotionalAdapter';
+import type { IEmotionalAdapter } from './adapters/IEmotionalAdapter';
 import type {
   EmotionalCheckin,
   EmotionalWeeklySummary,
@@ -73,12 +73,13 @@ export function EmotionalProvider({ adapter, children }: EmotionalProviderProps)
   const [loading, setLoading] = useState(true);
 
   const childId = profile?.role === 'child' ? profile.id : undefined;
-  // Parents can view a selected child — for now use first child (extended in parent dashboard)
   const targetChildId = childId;
 
   const load = useCallback(async () => {
-    if (!targetChildId) { setLoading(false); return; }
-    setLoading(true);
+    if (!targetChildId) {
+      setLoading(false);
+      return;
+    }
 
     const [recent, last, summaries, sched] = await Promise.all([
       adapter.getRecentCheckins(targetChildId, 10),
@@ -95,7 +96,36 @@ export function EmotionalProvider({ adapter, children }: EmotionalProviderProps)
     setLoading(false);
   }, [adapter, targetChildId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    let isMounted = true;
+    if (!targetChildId) {
+      queueMicrotask(() => {
+        if (isMounted) setLoading(false);
+      });
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    Promise.all([
+      adapter.getRecentCheckins(targetChildId, 10),
+      adapter.getLastCheckin(targetChildId),
+      adapter.getWeeklySummaries(targetChildId, 8),
+      adapter.getCheckinSchedule(targetChildId),
+    ]).then(([recent, last, summaries, sched]) => {
+      if (isMounted) {
+        if (recent.ok) setRecentCheckins(recent.data);
+        if (last.ok) setLastCheckin(last.data);
+        if (summaries.ok) setWeeklySummaries(summaries.data);
+        if (sched.ok) setSchedule(sched.data);
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [adapter, targetChildId]);
 
   const submitCheckin = useCallback(async (
     emotion: EmotionState,

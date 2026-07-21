@@ -303,7 +303,11 @@ export function RoutinesToday({ onComplete }: RoutinesTodayProps) {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  done ? handleUncomplete(routine) : handleComplete(routine);
+                  if (done) {
+                    handleUncomplete(routine);
+                  } else {
+                    handleComplete(routine);
+                  }
                 }}
                 className={cn(
                   'w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2',

@@ -35,7 +35,7 @@ export interface ICompanionAdapter {
     childId: string,
     companionId: string,
     type: 'routine_streak_milestone' | 'difficult_checkin' | 'adventure_complete' | 'parent_badge_award',
-    metadata: Record<string, any>
+    metadata: Record<string, unknown>
   ): Promise<Result<CompanionMemory>>;
 }
 

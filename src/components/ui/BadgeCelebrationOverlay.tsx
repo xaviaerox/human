@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 
 interface BadgeCelebrationOverlayProps {
@@ -19,6 +19,8 @@ interface Particle {
   size: number;
   rotate: number;
   type: 'circle' | 'star' | 'medal';
+  duration: number;
+  delay: number;
 }
 
 const PARTICLE_COLORS = ['#fbbf24', '#f59e0b', '#3b82f6', '#10b981', '#ec4899', '#8b5cf6', '#ef4444'];
@@ -74,6 +76,10 @@ const generateParticles = (count = 75): Particle[] => {
   return Array.from({ length: count }).map((_, idx) => {
     const angle = Math.random() * Math.PI * 2;
     const distance = 120 + Math.random() * 280; // spread radius
+    const isStar = Math.random() > 0.55;
+    const isMedal = !isStar && Math.random() > 0.2;
+    const pType = isStar ? 'star' : isMedal ? 'circle' : 'medal';
+    const baseDuration = isStar ? 2.2 : isMedal ? 2.5 : 2.0;
     return {
       id: idx,
       x: Math.cos(angle) * distance,
@@ -81,7 +87,9 @@ const generateParticles = (count = 75): Particle[] => {
       color: PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)],
       size: 10 + Math.random() * 18,
       rotate: Math.random() * 720,
-      type: Math.random() > 0.55 ? 'star' : Math.random() > 0.2 ? 'circle' : 'medal'
+      type: pType,
+      duration: baseDuration + Math.random() * 0.5,
+      delay: Math.random() * 0.1,
     };
   });
 };
@@ -124,19 +132,14 @@ function getCompanionCongratulation(dimensionId: string, tier: 'bronze' | 'silve
 }
 
 export function BadgeCelebrationOverlay({ dimensionId, tier, parentNote, companionName, onClose }: BadgeCelebrationOverlayProps) {
-  const [particles, setParticles] = useState<Particle[]>([]);
+  const [particles] = useState<Particle[]>(() => generateParticles(75));
 
-  useEffect(() => {
-    setParticles(generateParticles(75));
-    playFanfareChime();
-  }, []);
-
-  function playFanfareChime() {
+  const playFanfareChime = useCallback(() => {
     if (typeof window === 'undefined') return;
-    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContext) return;
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
     try {
-      const ctx = new AudioContext();
+      const ctx = new AudioCtx();
       
       const playTone = (freq: number, start: number, duration: number, volume = 0.2) => {
         const osc = ctx.createOscillator();
@@ -168,7 +171,11 @@ export function BadgeCelebrationOverlay({ dimensionId, tier, parentNote, compani
     } catch (err) {
       console.warn('Audio Context error:', err);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    playFanfareChime();
+  }, [playFanfareChime]);
 
   const label = VALUE_LABELS[dimensionId] || dimensionId;
   const emoji = DIMENSION_EMOJIS[dimensionId] || '🏅';
@@ -206,9 +213,9 @@ export function BadgeCelebrationOverlay({ dimensionId, tier, parentNote, compani
                   rotate: p.rotate,
                 }}
                 transition={{
-                  duration: 2.2 + Math.random() * 0.5,
+                  duration: p.duration,
                   ease: 'easeOut',
-                  delay: Math.random() * 0.1,
+                  delay: p.delay,
                 }}
               >
                 <StarSvg color={p.color} size={p.size} />
@@ -224,9 +231,9 @@ export function BadgeCelebrationOverlay({ dimensionId, tier, parentNote, compani
                   rotate: p.rotate,
                 }}
                 transition={{
-                  duration: 2.5 + Math.random() * 0.5,
+                  duration: p.duration,
                   ease: 'easeOut',
-                  delay: Math.random() * 0.05,
+                  delay: p.delay,
                 }}
               >
                 🏅
@@ -246,9 +253,9 @@ export function BadgeCelebrationOverlay({ dimensionId, tier, parentNote, compani
                   scale: [0, 1.4, 1, 0],
                 }}
                 transition={{
-                  duration: 2.0 + Math.random() * 0.5,
+                  duration: p.duration,
                   ease: 'easeOut',
-                  delay: Math.random() * 0.1,
+                  delay: p.delay,
                 }}
               />
             )}
@@ -309,7 +316,7 @@ export function BadgeCelebrationOverlay({ dimensionId, tier, parentNote, compani
                 Mensaje de tus papás 💛
               </p>
               <p className="text-sm text-stone-700 dark:text-stone-200 italic font-medium font-body leading-relaxed">
-                "{parentNote}"
+                &quot;{parentNote}&quot;
               </p>
             </motion.div>
           )}
@@ -329,7 +336,7 @@ export function BadgeCelebrationOverlay({ dimensionId, tier, parentNote, compani
                 ¡Tu compañero {companionName || 'Mira'} dice! 🌟
               </p>
               <p className="text-xs text-stone-750 dark:text-stone-300 font-medium font-body leading-relaxed">
-                "{getCompanionCongratulation(dimensionId, tier)}"
+                &quot;{getCompanionCongratulation(dimensionId, tier)}&quot;
               </p>
             </div>
           </motion.div>

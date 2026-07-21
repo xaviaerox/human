@@ -17,11 +17,20 @@ import { getNextMicrotask } from '@/lib/goals/MicrotaskEngine';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SparkCelebrationOverlay } from '@/components/ui/SparkCelebrationOverlay';
 import { BadgeCelebrationOverlay } from '@/components/ui/BadgeCelebrationOverlay';
+import dynamic from 'next/dynamic';
 import { ChildAvatar } from '@/components/ui/ChildAvatar';
-import { CustomizationModal } from '@/components/companion/CustomizationModal';
-import { CompanionChatModal } from '@/components/companion/CompanionChatModal';
 import { CalmModeModal } from '@/components/emotional/CalmModeModal';
 import { Button } from '@/components/ui/Button';
+
+const CustomizationModal = dynamic(
+  () => import('@/components/companion/CustomizationModal').then((mod) => mod.CustomizationModal),
+  { ssr: false }
+);
+
+const CompanionChatModal = dynamic(
+  () => import('@/components/companion/CompanionChatModal').then((mod) => mod.CompanionChatModal),
+  { ssr: false }
+);
 import { cn } from '@/lib/utils';
 import { getSuggestedWords } from '@/lib/emotional/EmotionModel';
 import { decomposeGoalWithAI } from '@/lib/goals/decomposeAI';
@@ -870,6 +879,11 @@ function WorldAmbientVisuals({ worldId, phase, silentMode = false }: WorldAmbien
   );
 }
 
+function getRandomLoadingText() {
+  const loadingTexts = ['*tarareando*', '*pensando*', '💭...', '*sonriendo*', '*mirándote*'];
+  return loadingTexts[Math.floor(Math.random() * loadingTexts.length)]!;
+}
+
 export default function HomePage() {
   const router = useRouter();
   const { session, loading: authLoading, signOut } = useAuth();
@@ -906,6 +920,14 @@ export default function HomePage() {
   const [activeGoal, setActiveGoal] = useState<any>(null);
   const [nextTask, setNextTask] = useState<any>(null);
 
+  const [currentCelebration, setCurrentCelebration] = useState<{ id: string; delta: number; note: string } | null>(null);
+  const [currentBadgeCelebration, setCurrentBadgeCelebration] = useState<{
+    id: string;
+    dimensionId: string;
+    tier: 'bronze' | 'silver' | 'gold';
+    parentNote: string;
+  } | null>(null);
+
   // States for child goal proposal
   const [isProposingGoal, setIsProposingGoal] = useState(false);
   const [goalPropTitle, setGoalPropTitle] = useState('');
@@ -933,10 +955,8 @@ export default function HomePage() {
   // Load silent mode preferences
   useEffect(() => {
     const stored = localStorage.getItem('mira_silent_mode');
-    if (stored === 'true') {
-      setSilentMode(true);
-    } else if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setSilentMode(true);
+    if (stored === 'true' || (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+      queueMicrotask(() => setSilentMode(true));
     }
   }, []);
 
@@ -964,7 +984,7 @@ export default function HomePage() {
         setAllRoutinesDone(pending.length === 0);
       });
     });
-  }, [profile?.id, session?.family?.id]);
+  }, [profile, session]);
 
   useEffect(() => {
     checkRoutinesStatus();
@@ -984,7 +1004,7 @@ export default function HomePage() {
         reino_social: `¡Este es el Reino de la Vida Social! ♡ Comparte amor y empatía para construir puentes de arcoíris.`,
       };
       const welcomeText = worldWelcomes[selectedWorld.id] || `¡Bienvenido a este nuevo rincón de nuestro mundo!`;
-      setDialogue({ text: welcomeText, durationMs: 6000 });
+      queueMicrotask(() => setDialogue({ text: welcomeText, durationMs: 6000 }));
       localStorage.setItem(key, 'true');
     }
   }, [selectedWorld.id, profile?.id, display]);
@@ -1012,7 +1032,7 @@ export default function HomePage() {
         }
       }
     });
-  }, [profile?.id]);
+  }, [profile]);
 
   useEffect(() => {
     fetchActiveGoal();
@@ -1022,8 +1042,7 @@ export default function HomePage() {
     if (tapLoading || !display) return;
     
     // Quick thinking message
-    const loadingTexts = ['*tarareando*', '*pensando*', '💭...', '*sonriendo*', '*mirándote*'];
-    const randomLoading = loadingTexts[Math.floor(Math.random() * loadingTexts.length)]!;
+    const randomLoading = getRandomLoadingText();
     setDialogue({ text: randomLoading, durationMs: 4000 });
     setTapLoading(true);
 
@@ -1158,24 +1177,27 @@ export default function HomePage() {
   }, [checkinEnergy, checkinValence]);
 
   const lastCheckinTime = lastCheckin ? new Date(lastCheckin.occurred_at).getTime() : 0;
-  const isCooldown = Date.now() - lastCheckinTime < 8 * 60 * 60 * 1000;
+  const [now] = useState(() => Date.now());
+  const isCooldown = now - lastCheckinTime < 8 * 60 * 60 * 1000;
 
   // Handle Tab Change to Check-in
   useEffect(() => {
     if (activeTab === 'checkin') {
-      setCheckinStep('energy');
-      setCheckinEnergy(null);
-      setCheckinValence(null);
-      setCheckinWord('');
-      setCheckinCustomWord('');
-      setCheckinNote('');
-      if (display) {
-        setCheckinDialogue({
-          text: `¡Hola, ${profile?.display_name || 'amigo'}! 🌟 ¿Cómo está tu energía hoy?`,
-          durationMs: 5000,
-          animationCue: 'idle'
-        });
-      }
+      queueMicrotask(() => {
+        setCheckinStep('energy');
+        setCheckinEnergy(null);
+        setCheckinValence(null);
+        setCheckinWord('');
+        setCheckinCustomWord('');
+        setCheckinNote('');
+        if (display) {
+          setCheckinDialogue({
+            text: `¡Hola, ${profile?.display_name || 'amigo'}! 🌟 ¿Cómo está tu energía hoy?`,
+            durationMs: 5000,
+            animationCue: 'idle'
+          });
+        }
+      });
     }
   }, [activeTab, display, profile?.display_name]);
 
@@ -1198,13 +1220,6 @@ export default function HomePage() {
     setCheckinStep('done');
   }
 
-  const [currentCelebration, setCurrentCelebration] = useState<{ id: string; delta: number; note: string } | null>(null);
-  const [currentBadgeCelebration, setCurrentBadgeCelebration] = useState<{
-    id: string;
-    dimensionId: string;
-    tier: 'bronze' | 'silver' | 'gold';
-    parentNote: string;
-  } | null>(null);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [lastRedemptions, setLastRedemptions] = useState<Record<string, string>>({});
@@ -1275,9 +1290,7 @@ export default function HomePage() {
     return scores[dim] ?? 0;
   }, [selectedWorld, scores]);
 
-  const activeWorldPhase = useMemo(() => {
-    return getWorldPhase(activeWorldScore);
-  }, [activeWorldScore]);
+  const activeWorldPhase = getWorldPhase(activeWorldScore);
 
   const hasCompletedGoalToday = useMemo(() => {
     if (activeGoals.length === 0) return true; // No active goals means no pending steps

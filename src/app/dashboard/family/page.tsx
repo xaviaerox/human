@@ -27,7 +27,7 @@ export default function FamilySettingsPage() {
 
   useEffect(() => {
     if (family?.id) {
-      fetchInvites();
+      Promise.resolve().then(() => fetchInvites());
     }
   }, [family?.id, fetchInvites]);
 

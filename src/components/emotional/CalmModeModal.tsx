@@ -18,13 +18,20 @@ export function CalmModeModal({ isOpen, onClose, companionName = 'Lumi' }: CalmM
   const [secondsLeft, setSecondsLeft] = useState(60);
   const [cycleCount, setCycleCount] = useState(0);
 
+  // Keyboard accessibility (Escape key to dismiss)
   useEffect(() => {
-    if (!isOpen) {
-      setPhase('inhale');
-      setSecondsLeft(60);
-      setCycleCount(0);
-      return;
-    }
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return;
 
     // 60-second countdown
     const timer = setInterval(() => {
@@ -84,6 +91,9 @@ export function CalmModeModal({ isOpen, onClose, companionName = 'Lumi' }: CalmM
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
         <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="calm-modal-title"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.9 }}
@@ -92,7 +102,7 @@ export function CalmModeModal({ isOpen, onClose, companionName = 'Lumi' }: CalmM
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 text-teal-200/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+            className="absolute top-4 right-4 p-2 text-teal-200/70 hover:text-white hover:bg-white/10 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300"
             aria-label="Cerrar modo calma"
           >
             <X className="w-5 h-5" />
@@ -104,7 +114,7 @@ export function CalmModeModal({ isOpen, onClose, companionName = 'Lumi' }: CalmM
               <Sparkles className="w-3.5 h-3.5" />
               <span>Espacio de Calma con {companionName}</span>
             </div>
-            <h2 className="text-xl font-bold tracking-wide text-teal-100">Respira Conmigo</h2>
+            <h2 id="calm-modal-title" className="text-xl font-bold tracking-wide text-teal-100">Respira Conmigo</h2>
           </div>
 
           {/* Animated Breathing Blob / Orb */}
@@ -127,7 +137,7 @@ export function CalmModeModal({ isOpen, onClose, companionName = 'Lumi' }: CalmM
           </div>
 
           {/* Instructions */}
-          <div className="space-y-2 min-h-[70px]">
+          <div className="space-y-2 min-h-[70px]" aria-live="polite">
             <motion.p
               key={phase}
               initial={{ opacity: 0, y: 5 }}
@@ -151,7 +161,7 @@ export function CalmModeModal({ isOpen, onClose, companionName = 'Lumi' }: CalmM
           {/* Exit / Done Button */}
           <Button
             onClick={onClose}
-            className="w-full bg-teal-500 hover:bg-teal-400 text-teal-950 font-bold py-3 rounded-2xl transition-all shadow-lg shadow-teal-500/20"
+            className="w-full bg-teal-500 hover:bg-teal-400 text-teal-950 font-bold py-3 rounded-2xl transition-all shadow-lg shadow-teal-500/20 focus:ring-2 focus:ring-teal-300"
           >
             {secondsLeft === 0 ? 'Me siento mejor 🌸' : 'Terminar sesión'}
           </Button>

@@ -39,7 +39,7 @@ describe('OfflineQueue (Phase 6)', () => {
   describe('drain', () => {
     it('drains items successfully', async () => {
       let drainedCount = 0;
-      const drainableQueue = new OfflineQueue(async (_entry) => {
+      const drainableQueue = new OfflineQueue(async () => {
         drainedCount++;
         return true;
       });

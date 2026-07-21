@@ -79,7 +79,11 @@ export default function RoutinesPage() {
     if (active && completedIds.has(active.id)) return; // Disable toggling if completed
     setStepsDone(prev => {
       const next = new Set(prev);
-      next.has(pos) ? next.delete(pos) : next.add(pos);
+      if (next.has(pos)) {
+        next.delete(pos);
+      } else {
+        next.add(pos);
+      }
       return next;
     });
   }

@@ -96,7 +96,7 @@ export class StaticCompanionAdapter implements ICompanionAdapter {
     return { ok: true, data: interaction };
   }
 
-  async getInteractionCounts(companionId: string): Promise<Result<Record<CompanionInteractionType, number>>> {
+  async getInteractionCounts(_companionId: string): Promise<Result<Record<CompanionInteractionType, number>>> {
     const all: CompanionInteractionType[] = [
       'routine_complete', 'emotional_checkin', 'goal_step_complete',
       'free_interaction', 'spark_received',
@@ -148,7 +148,7 @@ export class StaticCompanionAdapter implements ICompanionAdapter {
     childId: string,
     companionId: string,
     type: 'routine_streak_milestone' | 'difficult_checkin' | 'adventure_complete' | 'parent_badge_award',
-    metadata: Record<string, any>
+    metadata: Record<string, unknown>
   ): Promise<Result<CompanionMemory>> {
     const memory: CompanionMemory = {
       id: `mem-${Date.now()}`,

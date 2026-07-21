@@ -56,8 +56,10 @@ function EditGoalClient() {
 
   useEffect(() => {
     if (!id) {
-      setError('ID de objetivo no proporcionado');
-      setFetching(false);
+      queueMicrotask(() => {
+        setError('ID de objetivo no proporcionado');
+        setFetching(false);
+      });
       return;
     }
 

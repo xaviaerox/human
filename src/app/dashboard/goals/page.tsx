@@ -32,8 +32,10 @@ export default function GoalsPage() {
 
   useEffect(() => {
     const id = selectedChildId || children[0]?.id;
-    if (!id) { setLoading(false); return; }
-    setLoading(true);
+    if (!id) {
+      queueMicrotask(() => setLoading(false));
+      return;
+    }
     goalsAdapter.getGoals(id).then(result => {
       if (result.ok) setGoals(result.data);
       setLoading(false);

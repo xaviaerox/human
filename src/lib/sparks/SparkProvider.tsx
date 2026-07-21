@@ -22,6 +22,8 @@ export function SparkProvider({ children }: { children: ReactNode }) {
   const profile = session?.profile ?? null;
   const childId = profile?.id;
   const familyId = session?.family?.id;
+  const currentUserId = profile?.id;
+  const currentUserRole = profile?.role;
 
   const [balance, setBalance] = useState(0);
   const [history, setHistory] = useState<SparkLedgerEntry[]>([]);
@@ -43,18 +45,19 @@ export function SparkProvider({ children }: { children: ReactNode }) {
     let isMounted = true;
 
     if (!childId || profile?.role !== 'child') {
-      const timer = setTimeout(() => {
+      queueMicrotask(() => {
         if (isMounted) setLoading(false);
-      }, 0);
+      });
       return () => {
         isMounted = false;
-        clearTimeout(timer);
       };
     }
 
-    setLoading(true);
-    Promise.all([fetchBalance(childId), fetchHistory(childId)]).finally(() => {
-      if (isMounted) setLoading(false);
+    Promise.all([adapter.getBalance(childId), adapter.getHistory(childId)]).then(([balRes, histRes]) => {
+      if (!isMounted) return;
+      if (balRes.ok) setBalance(balRes.data);
+      if (histRes.ok) setHistory(histRes.data);
+      setLoading(false);
     });
 
     // Realtime subscription for Supabase
@@ -82,13 +85,13 @@ export function SparkProvider({ children }: { children: ReactNode }) {
     return () => {
       isMounted = false;
     };
-  }, [childId, profile?.role, fetchBalance, fetchHistory]);
+  }, [adapter, childId, profile?.role, fetchBalance, fetchHistory]);
 
   const awardBonus = useCallback(async (delta: number, note: string): Promise<Result<SparkLedgerEntry>> => {
-    if (!childId || !familyId || !session?.profile?.id) {
+    if (!childId || !familyId || !currentUserId) {
       return { ok: false, error: { code: 'not_authenticated', message: 'No child active' } };
     }
-    if (session.profile.role !== 'parent') {
+    if (currentUserRole !== 'parent') {
       return { ok: false, error: { code: 'unauthorized', message: 'Solo los padres pueden otorgar bonus' } };
     }
 
@@ -97,14 +100,14 @@ export function SparkProvider({ children }: { children: ReactNode }) {
       familyId,
       delta,
       note,
-      session.profile.id
+      currentUserId
     );
 
     if (res.ok) {
       await Promise.all([fetchBalance(childId), fetchHistory(childId)]);
     }
     return res;
-  }, [childId, familyId, session, adapter, fetchBalance, fetchHistory]);
+  }, [childId, familyId, currentUserId, currentUserRole, adapter, fetchBalance, fetchHistory]);
 
   const refreshBalance = useCallback(async () => {
     if (childId) await fetchBalance(childId);
