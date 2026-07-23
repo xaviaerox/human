@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useCompanion } from '@/lib/companion/CompanionProvider';
 import { getRoutineAdapter } from '@/lib/adapters';
-import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { SparkBadge, SparkDelta } from '@/components/ui/SparkBadge';
 import { ProgressBar } from '@/components/ui/ProgressBar';
@@ -21,7 +21,7 @@ export default function RoutinesPage() {
   const profile = session?.profile ?? null;
   const family = session?.family ?? null;
 
-  const { interact, getDialogue, setAppearanceContext } = useCompanion();
+  const { interact, setAppearanceContext } = useCompanion();
   const [routines, setRoutines] = useState<RoutineWithSteps[]>([]);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [completionsMap, setCompletionsMap] = useState<Record<string, number[]>>({});

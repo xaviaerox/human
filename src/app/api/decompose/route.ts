@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { checkRateLimit } from '@/lib/rateLimit';
+import { checkRateLimit } from '@/lib/security/RateLimiter';
 import { createServerSupabaseClient } from '@/lib/supabaseServer';
+
+import { sanitizePii, restorePii } from '@/lib/security/PiiSanitizer';
 
 const DecomposeSchema = z.object({
   prompt: z.string().min(1, 'El prompt no puede estar vacío').max(1000, 'Prompt demasiado largo'),
@@ -11,11 +13,12 @@ export async function POST(req: NextRequest) {
   try {
     // 1. Rate limiting (max 10 requests/min per IP)
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 'anonymous';
-    const rateLimit = checkRateLimit(`decompose:${ip}`, 10, 60000);
+    const rateLimit = await checkRateLimit(`decompose:${ip}`, 10, 60000);
 
     if (!rateLimit.success) {
+      const resetInSeconds = Math.ceil((rateLimit.resetMs - Date.now()) / 1000);
       return NextResponse.json(
-        { error: `Demasiadas peticiones. Intenta de nuevo en ${rateLimit.resetInSeconds} segundos.` },
+        { error: `Demasiadas peticiones. Intenta de nuevo en ${resetInSeconds} segundos.` },
         { status: 429 }
       );
     }
@@ -39,7 +42,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { prompt } = parseResult.data;
+    const { prompt: rawPrompt } = parseResult.data;
+    const { sanitizedText: prompt, replacements: piiReplacements } = sanitizePii(rawPrompt);
 
     // 4. Call Groq
     const groqKey = process.env.GROQ_API_KEY;
@@ -62,7 +66,8 @@ export async function POST(req: NextRequest) {
 
         if (res.ok) {
           const data = await res.json();
-          const text = data.choices?.[0]?.message?.content || '';
+          const rawText = data.choices?.[0]?.message?.content || '';
+          const text = restorePii(rawText, piiReplacements);
           return NextResponse.json({ text });
         } else {
           console.error('[decompose] Groq API error:', await res.text());
@@ -94,7 +99,8 @@ export async function POST(req: NextRequest) {
 
         if (res.ok) {
           const data = await res.json();
-          const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          const text = restorePii(rawText, piiReplacements);
           return NextResponse.json({ text });
         } else {
           console.error('[decompose] Gemini API error:', await res.text());

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useFamily } from '@/lib/family/FamilyProvider';
 import { getRoutineAdapter } from '@/lib/adapters';
-import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { SparkBadge } from '@/components/ui/SparkBadge';
 import Link from 'next/link';
@@ -20,7 +20,7 @@ const TIME_LABELS: Record<string, string> = {
 };
 
 export default function RoutinesPage() {
-  const { family, children } = useFamily();
+  const { family } = useFamily();
   const [routines, setRoutines] = useState<RoutineWithSteps[]>([]);
   const [loading, setLoading] = useState(true);
 

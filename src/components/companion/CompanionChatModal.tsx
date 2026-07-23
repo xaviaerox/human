@@ -6,6 +6,7 @@ import { CompanionBlob } from './CompanionBlob';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 import type { CompanionDisplayState } from '@/types';
+import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -56,6 +57,14 @@ export function CompanionChatModal({
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const { isListening, transcript, isSupported: speechSupported, startListening, stopListening, resetTranscript } = useSpeechRecognition('es-ES');
+
+  useEffect(() => {
+    if (transcript) {
+      queueMicrotask(() => setInput(transcript));
+    }
+  }, [transcript]);
 
   // Pre-populate chat when opened
   useEffect(() => {
@@ -321,12 +330,34 @@ export function CompanionChatModal({
             </div>
 
             {/* Input Bar */}
-            <form onSubmit={handleSend} className="p-3 border-t border-stone-100 dark:border-stone-800 bg-white dark:bg-stone-900 flex gap-2">
+            <form onSubmit={(e) => { resetTranscript(); if (isListening) stopListening(); handleSend(e); }} className="p-3 border-t border-stone-100 dark:border-stone-800 bg-white dark:bg-stone-900 flex gap-2 items-center">
+              {speechSupported && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isListening) {
+                      stopListening();
+                    } else {
+                      startListening();
+                    }
+                  }}
+                  title={isListening ? 'Escuchando... Haz clic para detener' : 'Hablar con el micrófono'}
+                  aria-label={isListening ? 'Detener micrófono' : 'Activar micrófono'}
+                  className={cn(
+                    "w-9 h-9 rounded-2xl flex items-center justify-center text-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer",
+                    isListening
+                      ? "bg-rose-500 text-white animate-pulse shadow-md"
+                      : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700"
+                  )}
+                >
+                  🎙️
+                </button>
+              )}
               <input
                 type="text"
                 value={input}
                 onChange={e => setInput(e.target.value)}
-                placeholder={`Dile algo a ${display.name}...`}
+                placeholder={isListening ? 'Escuchando tu voz...' : `Dile algo a ${display.name}...`}
                 maxLength={200}
                 aria-label={`Escribir mensaje para ${display.name}`}
                 className="flex-1 px-4 py-2.5 rounded-2xl border border-stone-200 dark:border-stone-750 text-xs text-stone-700 dark:text-stone-250 bg-stone-50/50 dark:bg-stone-850/50 focus:outline-none focus:ring-2 focus:ring-indigo-500"

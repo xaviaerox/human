@@ -9,8 +9,9 @@ import { SparkBadge } from '@/components/ui/SparkBadge';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
-import type { Profile, EmotionalWeeklySummary, ChildValueScore, ValueDimensionId } from '@/types';
+import type { Profile, EmotionalWeeklySummary, ValueDimensionId } from '@/types';
 import { supabase } from '@/lib/supabase';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 const emotionalAdapter   = getEmotionalAdapter();
 const routineAdapter     = getRoutineAdapter();
@@ -25,7 +26,7 @@ export default function DashboardPage() {
   const [valueScores, setValueScores]     = useState<Record<string, Record<string, number>>>({});
 
   useEffect(() => {
-    const channels: any[] = [];
+    const channels: RealtimeChannel[] = [];
 
     children.forEach(async child => {
       const s = await emotionalAdapter.getWeeklySummaries(child.id, 1);

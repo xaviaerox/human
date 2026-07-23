@@ -18,8 +18,9 @@ import { Button } from '@/components/ui/Button';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { SparkBadge } from '@/components/ui/SparkBadge';
 import { cn } from '@/lib/utils';
-import type { EmotionalWeeklySummary, GoalWithMicrotasks, Reward, RewardRequest, ChildBadge, ChildValueScore, ValueDimensionId } from '@/types';
+import type { EmotionalWeeklySummary, GoalWithMicrotasks, Reward, RewardRequest, ChildBadge, ValueDimensionId } from '@/types';
 import { supabase } from '@/lib/supabase';
+import { generateEmotionalReportPrintout } from '@/lib/pdf/EmotionalReportPdf';
 
 const emotionalAdapter = getEmotionalAdapter();
 const goalsAdapter     = getGoalsAdapter();
@@ -43,11 +44,11 @@ const VALUE_LABELS: Record<ValueDimensionId, string> = {
   curiosity: 'Creatividad',
 };
 
-const VALUE_COLORS: Record<ValueDimensionId, 'moss' | 'empathy' | 'sky' | 'lavender' | 'bloom' | 'courage' | any> = {
+const VALUE_COLORS: Record<ValueDimensionId, 'moss' | 'sky' | 'lavender' | 'bloom'> = {
   autonomy: 'moss',
-  empathy: 'empathy',
+  empathy: 'lavender',
   regulation: 'sky',
-  connection: 'courage',
+  connection: 'sky',
   courage: 'bloom',
   curiosity: 'lavender',
 };
@@ -71,7 +72,7 @@ export default function ChildDetailClient() {
   const [routineCount, setRoutineCount] = useState(0);
   const [loading,      setLoading]      = useState(true);
   const [sparkBalance, setSparkBalance] = useState(0);
-  const [activities,   setActivities]   = useState<any[]>([]);
+  const [activities,   setActivities]   = useState<Array<{ id: string; delta: number; source_type?: string; note?: string; created_at: string }>>([]);
 
   // Sparks award / custom rewards
   const [awardAmount,     setAwardAmount]     = useState(2);
@@ -195,6 +196,7 @@ export default function ChildDetailClient() {
         supabase.removeChannel(channel);
       };
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- fetch functions are intentionally stable references defined in component scope
   }, [childId]);
 
   async function handleAwardSparks() {
@@ -351,7 +353,26 @@ export default function ChildDetailClient() {
           <button onClick={() => router.back()} className="text-stone-400 hover:text-stone-600 text-lg cursor-pointer">←</button>
           <h1 className="font-display text-2xl text-stone-800">{child.display_name}</h1>
         </div>
-        <SparkBadge count={sparkBalance} size="md" />
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              generateEmotionalReportPrintout({
+                child,
+                familyName: family?.name || 'Familia',
+                weeklySummary: summaries[0] ?? null,
+                valueScores: valueScores || {},
+                totalSparks: sparkBalance,
+                completedRoutinesCount: activities.filter(a => a.source_type === 'routine_complete').length,
+              });
+            }}
+            className="text-xs font-semibold text-moss-700 bg-moss-50 hover:bg-moss-100 border border-moss-200 rounded-xl"
+          >
+            📄 Reporte PDF
+          </Button>
+          <SparkBadge count={sparkBalance} size="md" />
+        </div>
       </div>
 
       {loading && <p className="text-stone-400 text-center py-8">Cargando...</p>}
@@ -577,7 +598,7 @@ export default function ChildDetailClient() {
                       <label className="text-[10px] text-stone-400 uppercase tracking-wider font-semibold">Nivel</label>
                       <select
                         value={badgeTier}
-                        onChange={e => setBadgeTier(e.target.value as any)}
+                        onChange={e => setBadgeTier(e.target.value as 'bronze' | 'silver' | 'gold')}
                         className="px-3 py-2 text-sm rounded-xl border border-stone-200 bg-white text-stone-700 focus:outline-none focus:ring-2 focus:ring-bloom-200 cursor-pointer"
                       >
                         <option value="bronze">Bronce</option>
@@ -858,7 +879,7 @@ function WeekRow({ summary }: { summary: EmotionalWeeklySummary }) {
     <div className="flex items-center gap-3">
       <p className="text-xs text-stone-400 w-16 flex-shrink-0">{label}</p>
       <div className="flex-1">
-        <ProgressBar value={(valence / 5) * 100} color={color as any} />
+        <ProgressBar value={(valence / 5) * 100} color={color as 'bloom' | 'moss' | 'sky' | 'lavender'} />
       </div>
       <p className="text-xs text-stone-400 w-14 text-right flex-shrink-0">
         {summary.checkin_count} registro{summary.checkin_count !== 1 ? 's' : ''}

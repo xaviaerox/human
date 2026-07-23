@@ -5,14 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useFamily } from '@/lib/family/FamilyProvider';
 import { getGoalsAdapter } from '@/lib/adapters';
-import { decomposeGoalWithAI } from '@/lib/goals/decomposeAI';
 import { buildDecompositionPrompt, parseDecompositionResponse, fallbackDecomposition } from '@/lib/goals/MicrotaskEngine';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { SparkBadge } from '@/components/ui/SparkBadge';
 import { cn } from '@/lib/utils';
-import type { ValueDimensionId, ParsedMicrotask } from '@/types';
+import type { ParsedMicrotask } from '@/types';
 
 const goalsAdapter = getGoalsAdapter();
 

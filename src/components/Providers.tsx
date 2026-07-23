@@ -15,6 +15,8 @@ import {
   getEmotionalAdapter,
 } from '@/lib/adapters';
 
+import { NotifierQueueProvider } from '@/components/ui/NotifierQueueProvider';
+
 const authAdapter      = getAuthAdapter();
 const familyAdapter    = getFamilyAdapter();
 const companionAdapter = getCompanionAdapter();
@@ -29,7 +31,9 @@ export function Providers({ children }: { children: ReactNode }) {
             <ProgressionProvider>
               <SparkProvider>
                 <RewardsProvider>
-                  {children}
+                  <NotifierQueueProvider>
+                    {children}
+                  </NotifierQueueProvider>
                 </RewardsProvider>
               </SparkProvider>
             </ProgressionProvider>

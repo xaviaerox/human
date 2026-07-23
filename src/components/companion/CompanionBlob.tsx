@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { cn } from '@/lib/utils';
 import type { CompanionStage } from '@/types';
 import { COMPANION_THEME_COLORS } from '@/lib/customization/CustomizationItems';
@@ -31,23 +32,18 @@ function getAccessoryStyle(emoji: string, px: number) {
   const hasHeadphones = emoji.includes('🎧');
 
   if (hasSunglasses) {
-    fontSize = px * 0.46; // Ensure it covers both eyes perfectly
-    // Target Y: 45%. Center of box is at top + fontSize/2.
-    // top = 45% - 23% = 22%
+    fontSize = px * 0.46;
     top = '22%';
   } else if (hasCrown) {
     fontSize = px * 0.48;
-    // Target bottom Y: 15% (rests on head top). top = 15% - 48% = -33%
     top = '-33%';
     transform = 'translateX(-50%) rotate(-8deg)';
   } else if (hasTopHat) {
     fontSize = px * 0.52;
-    // Target bottom Y: 15%. top = 15% - 52% = -37%
     top = '-37%';
     transform = 'translateX(-50%) rotate(-4deg)';
   } else if (hasGradCap) {
     fontSize = px * 0.52;
-    // Target bottom Y: 16%. top = 16% - 52% = -36%
     top = '-36%';
     transform = 'translateX(-50%) rotate(-6deg)';
   } else if (hasRibbon) {
@@ -58,7 +54,6 @@ function getAccessoryStyle(emoji: string, px: number) {
     transform = 'rotate(15deg)';
   } else if (hasHeadphones) {
     fontSize = px * 0.65;
-    // Target Y: 45%. Center of box is top + fontSize/2. top = 45% - 32.5% = 12.5%
     top = '12.5%';
   } else {
     top = '-10%';
@@ -109,7 +104,6 @@ const SIZES = {
   xl:  200,
 };
 
-// Blob paths per stage — increasingly complex and expressive
 const BLOB_PATHS: Record<CompanionStage, string> = {
   egg:
     'M50,15 C65,15 78,25 82,40 C86,55 80,70 68,78 C56,86 44,86 32,78 C20,70 14,55 18,40 C22,25 35,15 50,15 Z',
@@ -123,7 +117,7 @@ const BLOB_PATHS: Record<CompanionStage, string> = {
     'M50,6 C68,4 84,16 89,34 C94,52 88,72 73,82 C58,92 38,93 23,83 C8,73 4,52 9,34 C14,16 32,8 50,6 Z',
 };
 
-export function CompanionBlob({
+export const CompanionBlob = memo(function CompanionBlob({
   stage,
   size = 'md',
   animationCue,
@@ -140,11 +134,11 @@ export function CompanionBlob({
 
   if (worldId) {
     const WORLD_GLOWS: Record<string, string> = {
-      lago_calma: '#0ea5e9', // Blue/cyan
-      valle_habitos: '#22c55e', // Green
-      bosque_autonomia: '#10b981', // Emerald
-      montana_esfuerzo: '#f59e0b', // Amber/gold
-      reino_social: '#d946ef', // Fuchsia/magenta
+      lago_calma: '#0ea5e9',
+      valle_habitos: '#22c55e',
+      bosque_autonomia: '#10b981',
+      montana_esfuerzo: '#f59e0b',
+      reino_social: '#d946ef',
     };
     const worldGlow = WORLD_GLOWS[worldId];
     if (worldGlow) {
@@ -175,7 +169,6 @@ export function CompanionBlob({
       role="img"
       aria-label={ariaLabel ?? `Companion — ${stage} stage`}
     >
-      {/* Outer glow for glow/radiant stages or world active in adventure mode */}
       {!silentMode && (stage === 'glow' || stage === 'radiant' || !!worldId) && (
         <div
           className="absolute inset-0 rounded-full opacity-40 blur-xl transition-all duration-700 animate-pulse-gentle"
@@ -210,7 +203,6 @@ export function CompanionBlob({
           )}
         </defs>
 
-        {/* Radiant Stage: Starburst Background (render under the body) */}
         {stage === 'radiant' && (
           <g stroke={colors.secondary} strokeWidth="1.5" strokeLinecap="round" opacity="0.75" transform="translate(50,50)">
             <line x1="0" y1="-50" x2="0" y2="-43" />
@@ -224,7 +216,6 @@ export function CompanionBlob({
           </g>
         )}
 
-        {/* Glow Stage: Luminous Wings (render under the body) */}
         {stage === 'glow' && (
           <>
             <path d="M 18 45 C 5 38 0 52 10 56 C 20 60 22 48 18 45 Z" fill={colors.glow} opacity="0.65" />
@@ -232,7 +223,6 @@ export function CompanionBlob({
           </>
         )}
 
-        {/* Radiant Stage: Cute Animal/Fox Ears (render under or partially under/over the body) */}
         {stage === 'radiant' && (
           <>
             <path d="M 24 22 L 10 2 L 34 16 Z" fill={colors.secondary} stroke={colors.secondary} strokeWidth="1.5" />
@@ -242,47 +232,38 @@ export function CompanionBlob({
           </>
         )}
 
-        {/* Main blob */}
         <path
           d={BLOB_PATHS[stage]}
           fill={`url(#${gradId})`}
           filter={stage === 'glow' || stage === 'radiant' ? `url(#${glowId})` : undefined}
         />
 
-        {/* EGG STAGE FEATURES */}
         {stage === 'egg' && (
           <>
             <ellipse cx="38" cy="35" rx="8" ry="5" fill="white" opacity="0.25" />
-            {/* Cracked pattern */}
             <path d="M 35 68 L 42 60 L 50 66 L 58 58 L 65 68" stroke="#a39b8c" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-            {/* Sleeping eyes */}
             <path d="M 36 46 Q 41 49 46 46" stroke="#8c8273" strokeWidth="2.5" fill="none" strokeLinecap="round" />
             <path d="M 54 46 Q 59 49 64 46" stroke="#8c8273" strokeWidth="2.5" fill="none" strokeLinecap="round" />
           </>
         )}
 
-        {/* SPROUT STAGE FEATURES */}
         {stage === 'sprout' && (
           <>
             <ellipse cx="35" cy="30" rx="10" ry="6" fill="white" opacity="0.20" />
             <circle cx="62" cy="28" r="3" fill={colors.glow} opacity="0.5" />
-            {/* Sprout on head */}
             <path d="M 50 12 Q 47 0 38 2 Q 47 8 50 12" fill="#789d4a" stroke="#5d7b36" strokeWidth="0.5" />
             <path d="M 50 12 Q 53 0 62 2 Q 53 8 50 12" fill="#8cb857" stroke="#5d7b36" strokeWidth="0.5" />
-            {/* Simple cute dot eyes & mouth */}
             <circle cx="39" cy="46" r="3" fill="#4d5c36" />
             <circle cx="61" cy="46" r="3" fill="#4d5c36" />
             <path d="M 48 51 Q 50 54 52 51" stroke="#4d5c36" strokeWidth="2" fill="none" strokeLinecap="round" />
           </>
         )}
 
-        {/* BLOOM STAGE FEATURES */}
         {stage === 'bloom' && (
           <>
             <ellipse cx="34" cy="28" rx="12" ry="7" fill="white" opacity="0.22" />
             <circle cx="66" cy="26" r="4" fill={colors.glow} opacity="0.5" />
             <circle cx="70" cy="60" r="3" fill={colors.glow} opacity="0.3" />
-            {/* Flower blooming on head */}
             <g transform="translate(50, 10)">
               <circle cx="-5" cy="-5" r="4" fill="#fb7185" />
               <circle cx="5" cy="-5" r="4" fill="#fb7185" />
@@ -290,26 +271,21 @@ export function CompanionBlob({
               <circle cx="-5" cy="5" r="4" fill="#fb7185" />
               <circle cx="0" cy="0" r="3" fill="#f59e0b" />
             </g>
-            {/* Cheerful happy eyes & mouth */}
             <path d="M 35 46 Q 40 40 45 46" stroke="#9a3412" strokeWidth="2.5" fill="none" strokeLinecap="round" />
             <path d="M 55 46 Q 60 40 65 46" stroke="#9a3412" strokeWidth="2.5" fill="none" strokeLinecap="round" />
             <path d="M 47 52 Q 50 55 53 52" stroke="#9a3412" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-            {/* Rosy cheeks */}
             <circle cx="31" cy="50" r="3.5" fill="#fca5a5" opacity="0.7" />
             <circle cx="69" cy="50" r="3.5" fill="#fca5a5" opacity="0.7" />
           </>
         )}
 
-        {/* GLOW STAGE FEATURES */}
         {stage === 'glow' && (
           <>
             <ellipse cx="33" cy="27" rx="13" ry="8" fill="white" opacity="0.25" />
             <circle cx="68" cy="24" r="4" fill="white" opacity="0.4" />
             <circle cx="72" cy="62" r="3" fill="white" opacity="0.3" />
             <circle cx="28" cy="65" r="2.5" fill="white" opacity="0.25" />
-            {/* Floating Halo above head */}
             <ellipse cx="50" cy="-2" rx="15" ry="4" stroke="#c084fc" strokeWidth="2.5" fill="none" opacity="0.8" />
-            {/* Shiny expressive purple eyes & cute smile */}
             <ellipse cx="38" cy="45" rx="4.5" ry="6.5" fill="#581c87" />
             <circle cx="36.5" cy="42.5" r="1.5" fill="white" />
             <ellipse cx="62" cy="45" rx="4.5" ry="6.5" fill="#581c87" />
@@ -318,7 +294,6 @@ export function CompanionBlob({
           </>
         )}
 
-        {/* RADIANT STAGE FEATURES */}
         {stage === 'radiant' && (
           <>
             <ellipse cx="32" cy="26" rx="14" ry="9" fill="white" opacity="0.30" />
@@ -327,7 +302,6 @@ export function CompanionBlob({
             <circle cx="26" cy="66" r="3" fill="white" opacity="0.30" />
             <circle cx="50" cy="80" r="2.5" fill="white" opacity="0.25" />
             <circle cx="20" cy="45" r="2" fill="white" opacity="0.20" />
-            {/* Golden shiny eyes & broad smile */}
             <ellipse cx="38" cy="45" rx="5" ry="7" fill="#78350f" />
             <circle cx="36" cy="42" r="1.8" fill="white" />
             <circle cx="40" cy="48" r="0.9" fill="white" />
@@ -335,14 +309,12 @@ export function CompanionBlob({
             <circle cx="60" cy="42" r="1.8" fill="white" />
             <circle cx="64" cy="48" r="0.9" fill="white" />
             <path d="M 43 51 Q 50 58 57 51" stroke="#78350f" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-            {/* Rosy cheeks */}
             <circle cx="30" cy="49" r="4" fill="#f87171" opacity="0.65" />
             <circle cx="70" cy="49" r="4" fill="#f87171" opacity="0.65" />
           </>
         )}
       </svg>
 
-      {/* Accessory Overlay */}
       {customAccessory && (() => {
         const style = getAccessoryStyle(customAccessory, px);
         return (
@@ -361,4 +333,4 @@ export function CompanionBlob({
       })()}
     </div>
   );
-}
+});

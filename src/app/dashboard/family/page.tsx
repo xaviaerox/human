@@ -5,7 +5,7 @@ import { useFamily } from '@/lib/family/FamilyProvider';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
-import type { FamilyInvite, Profile } from '@/types';
+import type { FamilyInvite } from '@/types';
 
 export default function FamilySettingsPage() {
   const { family, createInvite, getActiveInvites, loading: familyLoading } = useFamily();

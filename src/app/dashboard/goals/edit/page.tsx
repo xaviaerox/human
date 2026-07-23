@@ -9,7 +9,6 @@ import { buildDecompositionPrompt, parseDecompositionResponse, fallbackDecomposi
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { SparkBadge } from '@/components/ui/SparkBadge';
 import { cn } from '@/lib/utils';
 import type { GoalMicrotask, ParsedMicrotask } from '@/types';
 

@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth/AuthProvider';
 import { useCompanion } from '@/lib/companion/CompanionProvider';
 import { getGoalsAdapter } from '@/lib/adapters';
 import { getNextMicrotask } from '@/lib/goals/MicrotaskEngine';
-import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { SparkBadge } from '@/components/ui/SparkBadge';

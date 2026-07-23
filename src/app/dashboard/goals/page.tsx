@@ -1,10 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/lib/auth/AuthProvider';
 import { useFamily } from '@/lib/family/FamilyProvider';
 import { getGoalsAdapter } from '@/lib/adapters';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { SparkBadge } from '@/components/ui/SparkBadge';
@@ -14,15 +13,7 @@ import type { GoalWithMicrotasks } from '@/types';
 
 const goalsAdapter = getGoalsAdapter();
 
-const STATUS_LABELS: Record<string, string> = {
-  active: 'En curso',
-  completed: 'Completado',
-  paused: 'En pausa',
-  archived: 'Archivado',
-};
-
 export default function GoalsPage() {
-  const { profile } = useAuth();
   const { children } = useFamily();
   const [selectedChildId, setSelectedChildId] = useState<string>(children[0]?.id ?? '');
   const [goals, setGoals] = useState<GoalWithMicrotasks[]>([]);

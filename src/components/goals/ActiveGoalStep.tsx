@@ -189,6 +189,7 @@ export function ActiveGoalStep({ onComplete, goal: initialGoal }: ActiveGoalStep
             onClick={handleComplete}
             loading={completing}
             className="w-full text-xs font-bold py-3 rounded-2xl shadow-soft hover:scale-[1.01]"
+            aria-label={`Completar capítulo ${chapterNumber}: ${nextTask.title}`}
           >
             ¡He completado este capítulo! ✓ ✨
           </Button>

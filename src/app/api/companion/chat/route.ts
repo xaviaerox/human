@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { checkRateLimit } from '@/lib/security/RateLimiter';
 import { createServerSupabaseClient } from '@/lib/supabaseServer';
+import { sanitizePii, restorePii } from '@/lib/security/PiiSanitizer';
 
 function sanitizePromptText(input?: string): string {
   if (!input) return '';
@@ -59,30 +60,134 @@ const CompanionChatSchema = z.object({
   stream: z.boolean().optional().default(false),
 });
 
-function createTextStreamResponse(fullText: string) {
-  const encoder = new TextEncoder();
-  const words = fullText.split(' ');
+// ─────────────────────────────────────────────────────────────────────────────
+// STREAMING HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
 
-  const readableStream = new ReadableStream({
+/**
+ * Parses a single SSE data line and extracts the text delta.
+ * Handles OpenAI-compatible format (Groq, OpenAI) and Anthropic format.
+ */
+function parseOpenAIChunk(line: string): string {
+  if (!line.startsWith('data: ')) return '';
+  const data = line.slice(6).trim();
+  if (data === '[DONE]') return '';
+  try {
+    const json = JSON.parse(data) as {
+      choices?: Array<{ delta?: { content?: string } }>;
+    };
+    return json.choices?.[0]?.delta?.content ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function parseAnthropicChunk(line: string): string {
+  if (!line.startsWith('data: ')) return '';
+  const data = line.slice(6).trim();
+  try {
+    const json = JSON.parse(data) as {
+      type?: string;
+      delta?: { type?: string; text?: string };
+    };
+    if (json.type === 'content_block_delta' && json.delta?.type === 'text_delta') {
+      return json.delta.text ?? '';
+    }
+    return '';
+  } catch {
+    return '';
+  }
+}
+
+function parseGeminiChunk(line: string): string {
+  if (!line.startsWith('data: ')) return '';
+  const data = line.slice(6).trim();
+  try {
+    const json = JSON.parse(data) as {
+      candidates?: Array<{
+        content?: { parts?: Array<{ text?: string }> };
+      }>;
+    };
+    return json.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Creates a ReadableStream that proxies an LLM SSE response to the client,
+ * extracting text deltas using the provided parser function.
+ * Also restores PII after reading the full text.
+ */
+function createLLMProxyStream(
+  llmResponse: Response,
+  parseChunk: (line: string) => string,
+  piiReplacements: Record<string, string>
+): ReadableStream<Uint8Array> {
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+
+  return new ReadableStream({
     async start(controller) {
-      for (let i = 0; i < words.length; i++) {
-        const chunk = (i === 0 ? '' : ' ') + words[i];
-        controller.enqueue(encoder.encode(chunk));
-        // Add subtle delay to simulate live typewriter stream
-        await new Promise((res) => setTimeout(res, 25));
+      if (!llmResponse.body) {
+        controller.close();
+        return;
       }
-      controller.close();
+
+      const reader = llmResponse.body.getReader();
+      let buffer = '';
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          // Keep the last (potentially incomplete) line in the buffer
+          buffer = lines.pop() ?? '';
+
+          for (const line of lines) {
+            const text = parseChunk(line.trim());
+            if (text) {
+              // Restore PII in each delta chunk
+              const restored = restorePii(text, piiReplacements);
+              controller.enqueue(encoder.encode(restored));
+            }
+          }
+        }
+
+        // Process any remaining buffer
+        if (buffer.trim()) {
+          const text = parseChunk(buffer.trim());
+          if (text) {
+            controller.enqueue(encoder.encode(restorePii(text, piiReplacements)));
+          }
+        }
+      } catch (err) {
+        console.error('[companion-chat] Stream proxy error:', err);
+      } finally {
+        controller.close();
+        reader.releaseLock();
+      }
     },
   });
+}
 
-  return new NextResponse(readableStream, {
+function streamResponse(stream: ReadableStream<Uint8Array>): NextResponse {
+  return new NextResponse(stream, {
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
       'Transfer-Encoding': 'chunked',
       'Cache-Control': 'no-cache, no-transform',
+      'X-Accel-Buffering': 'no',
     },
   });
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN HANDLER
+// ─────────────────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   try {
@@ -220,7 +325,7 @@ export async function POST(req: NextRequest) {
     const isTap = message.trim() === '[TAP]';
     const cleanUserMsg = sanitizePromptText(message);
 
-    const systemPrompt = `Eres ${safeCompanionName}, el compañero mágico de crecimiento de un niño llamado ${safeChildName}.
+    const rawSystemPrompt = `Eres ${safeCompanionName}, el compañero mágico de crecimiento de un niño llamado ${safeChildName}.
 Tu etapa de evolución actual es "${safeStage}". Tu personalidad es cálida, empática, paciente y curiosa.
 Estás en el reino "${safeWorldName}" (que está en fase de "${safeWorldPhase}").
 
@@ -247,10 +352,123 @@ Sigue estas reglas fundamentales de MIRA:
 5. Mantén tus respuestas mágicas y relacionadas con tu entorno (flores, agua, naturaleza, estrellas).
 Responde en español de forma natural y cariñosa.`;
 
+    const piiSanitization = sanitizePii(rawSystemPrompt, safeChildName);
+    const systemPrompt = piiSanitization.sanitizedText;
+    const piiReplacements = piiSanitization.replacements;
+
     const groqKey = process.env.GROQ_API_KEY;
     const geminiKey = process.env.GEMINI_API_KEY;
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
 
+    const messagesPayload = [
+      ...history.map((h) => ({ role: h.role, content: sanitizePromptText(h.content) })),
+      { role: 'user' as const, content: cleanUserMsg },
+    ];
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // STREAMING PATH: pipe LLM tokens directly to client
+    // ─────────────────────────────────────────────────────────────────────────
+    if (stream) {
+      // 1. GROQ STREAMING (OpenAI-compatible SSE)
+      if (groqKey) {
+        try {
+          const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${groqKey}`,
+            },
+            body: JSON.stringify({
+              model: 'llama-3.1-8b-instant',
+              messages: [{ role: 'system', content: systemPrompt }, ...messagesPayload],
+              max_tokens: 120,
+              temperature: 0.7,
+              stream: true,
+            }),
+          });
+
+          if (groqRes.ok && groqRes.body) {
+            return streamResponse(createLLMProxyStream(groqRes, parseOpenAIChunk, piiReplacements));
+          }
+        } catch (err) {
+          console.error('[companion-chat] Groq stream error:', err);
+        }
+      }
+
+      // 2. GEMINI STREAMING (SSE via ?alt=sse)
+      if (geminiKey) {
+        try {
+          const geminiRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${geminiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    role: 'user',
+                    parts: [{
+                      text: `${systemPrompt}\n\nHistorial previo:\n${history.map((h) => `${h.role === 'assistant' ? safeCompanionName : 'Niño'}: ${sanitizePromptText(h.content)}`).join('\n')}\n\nNiño: ${cleanUserMsg}`
+                    }]
+                  }
+                ],
+                generationConfig: { maxOutputTokens: 120, temperature: 0.7 },
+              }),
+            }
+          );
+
+          if (geminiRes.ok && geminiRes.body) {
+            return streamResponse(createLLMProxyStream(geminiRes, parseGeminiChunk, piiReplacements));
+          }
+        } catch (err) {
+          console.error('[companion-chat] Gemini stream error:', err);
+        }
+      }
+
+      // 3. ANTHROPIC STREAMING
+      if (anthropicKey) {
+        try {
+          const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': anthropicKey,
+              'anthropic-version': '2023-06-01',
+            },
+            body: JSON.stringify({
+              model: 'claude-3-haiku-20240307',
+              max_tokens: 120,
+              system: systemPrompt,
+              messages: messagesPayload,
+              stream: true,
+            }),
+          });
+
+          if (anthropicRes.ok && anthropicRes.body) {
+            return streamResponse(createLLMProxyStream(anthropicRes, parseAnthropicChunk, piiReplacements));
+          }
+        } catch (err) {
+          console.error('[companion-chat] Anthropic stream error:', err);
+        }
+      }
+
+      // Fallback: stream a static message if no LLM key works
+      const fallback = isTap
+        ? `¡Hola ${safeChildName}! Me alegra mucho verte hoy en el ${safeWorldName}.`
+        : `¡Estoy aquí contigo, ${safeChildName}! Sigamos explorando juntos a tu ritmo.`;
+      const encoder = new TextEncoder();
+      const fallbackStream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(encoder.encode(fallback));
+          controller.close();
+        },
+      });
+      return streamResponse(fallbackStream);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // NON-STREAMING PATH (kept for backward compatibility / static mode)
+    // ─────────────────────────────────────────────────────────────────────────
     let finalReply = '';
 
     // 1. GROQ PROVIDER
@@ -264,22 +482,18 @@ Responde en español de forma natural y cariñosa.`;
           },
           body: JSON.stringify({
             model: 'llama-3.1-8b-instant',
-            messages: [
-              { role: 'system', content: systemPrompt },
-              ...history.map((h) => ({ role: h.role, content: sanitizePromptText(h.content) })),
-              { role: 'user', content: cleanUserMsg }
-            ],
+            messages: [{ role: 'system', content: systemPrompt }, ...messagesPayload],
             max_tokens: 120,
             temperature: 0.7
           })
         });
 
         if (groqRes.ok) {
-          const data = await groqRes.json();
+          const data = await groqRes.json() as {
+            choices?: Array<{ message?: { content?: string } }>;
+          };
           const reply = data.choices?.[0]?.message?.content || '';
-          if (reply.trim()) {
-            finalReply = reply.trim();
-          }
+          if (reply.trim()) finalReply = reply.trim();
         }
       } catch (err) {
         console.error('[companion-chat] Groq error:', err);
@@ -301,20 +515,17 @@ Responde en español de forma natural y cariñosa.`;
                   parts: [{ text: `${systemPrompt}\n\nHistorial previo:\n${history.map((h) => `${h.role === 'assistant' ? safeCompanionName : 'Niño'}: ${sanitizePromptText(h.content)}`).join('\n')}\n\nNiño: ${cleanUserMsg}` }]
                 }
               ],
-              generationConfig: {
-                maxOutputTokens: 120,
-                temperature: 0.7
-              }
+              generationConfig: { maxOutputTokens: 120, temperature: 0.7 }
             })
           }
         );
 
         if (geminiRes.ok) {
-          const data = await geminiRes.json();
+          const data = await geminiRes.json() as {
+            candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+          };
           const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-          if (reply.trim()) {
-            finalReply = reply.trim();
-          }
+          if (reply.trim()) finalReply = reply.trim();
         }
       } catch (err) {
         console.error('[companion-chat] Gemini error:', err);
@@ -335,19 +546,16 @@ Responde en español de forma natural y cariñosa.`;
             model: 'claude-3-haiku-20240307',
             max_tokens: 120,
             system: systemPrompt,
-            messages: [
-              ...history.map((h) => ({ role: h.role, content: sanitizePromptText(h.content) })),
-              { role: 'user', content: cleanUserMsg }
-            ]
+            messages: messagesPayload
           })
         });
 
         if (anthropicRes.ok) {
-          const data = await anthropicRes.json();
+          const data = await anthropicRes.json() as {
+            content?: Array<{ text?: string }>;
+          };
           const reply = data.content?.[0]?.text || '';
-          if (reply.trim()) {
-            finalReply = reply.trim();
-          }
+          if (reply.trim()) finalReply = reply.trim();
         }
       } catch (err) {
         console.error('[companion-chat] Anthropic error:', err);
@@ -359,10 +567,8 @@ Responde en español de forma natural y cariñosa.`;
       finalReply = isTap
         ? `¡Hola ${safeChildName}! Me alegra mucho verte hoy en el ${safeWorldName}.`
         : `¡Estoy aquí contigo, ${safeChildName}! Sigamos explorando juntos a tu ritmo.`;
-    }
-
-    if (stream) {
-      return createTextStreamResponse(finalReply);
+    } else {
+      finalReply = restorePii(finalReply, piiReplacements);
     }
 
     return NextResponse.json({ text: finalReply });
