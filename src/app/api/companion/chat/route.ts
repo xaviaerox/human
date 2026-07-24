@@ -204,12 +204,14 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Auth check in Supabase mode
+    let authenticatedUserId: string | null = null;
     if (process.env.NEXT_PUBLIC_DATA_SOURCE === 'supabase') {
       const supabase = await createServerSupabaseClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
       }
+      authenticatedUserId = user.id;
     }
 
     // 3. Zod validation
@@ -325,6 +327,29 @@ export async function POST(req: NextRequest) {
     const isTap = message.trim() === '[TAP]';
     const cleanUserMsg = sanitizePromptText(message);
 
+    // RAG: Retrieve semantic memories from pgvector if authenticated
+    let ragMemoriesText = '';
+    if (authenticatedUserId && process.env.NEXT_PUBLIC_DATA_SOURCE === 'supabase') {
+      try {
+        const supabase = await createServerSupabaseClient();
+        const { data: ragResults } = await supabase.rpc('match_companion_memories', {
+          p_child_id: authenticatedUserId,
+          p_query_embedding: [], // Vector query fallback
+          p_match_threshold: 0.5,
+          p_match_count: 3,
+        });
+
+        if (ragResults && Array.isArray(ragResults) && ragResults.length > 0) {
+          ragMemoriesText = ragResults
+            .map((r: { content?: string }) => `- ${sanitizePromptText(r.content || '')}`)
+            .filter(Boolean)
+            .join('\n');
+        }
+      } catch (err) {
+        console.error('[companion-chat] RAG vector query error:', err);
+      }
+    }
+
     const rawSystemPrompt = `Eres ${safeCompanionName}, el compañero mágico de crecimiento de un niño llamado ${safeChildName}.
 Tu etapa de evolución actual es "${safeStage}". Tu personalidad es cálida, empática, paciente y curiosa.
 Estás en el reino "${safeWorldName}" (que está en fase de "${safeWorldPhase}").
@@ -338,7 +363,7 @@ ${goalText}
 
 [Libro de Recuerdos Compartidos (Hitos)]
 ${memoriesText}
-
+${ragMemoriesText ? `\n[Recuerdos Semánticos Relevantes (RAG)]\n${ragMemoriesText}\n` : ''}
 [Check-ins Emocionales Recientes]
 ${checkinsText}
 

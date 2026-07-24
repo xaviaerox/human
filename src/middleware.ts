@@ -53,6 +53,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
+  if (user) {
+    const userRole = user.user_metadata?.role as 'parent' | 'child' | undefined;
+
+    // Enforce role-based access: children cannot access parent dashboard
+    if (isParentRoute && userRole === 'child') {
+      const redirectUrl = new URL('/home', request.url);
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
+
   return response;
 }
 

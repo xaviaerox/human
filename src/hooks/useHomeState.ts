@@ -7,26 +7,25 @@ import { useCompanion } from '@/lib/companion/CompanionProvider';
 import { useProgression } from '@/lib/progression/ProgressionProvider';
 import { useSparks } from '@/lib/sparks/SparkProvider';
 import { useEmotional } from '@/lib/emotional/EmotionalProvider';
-import { supabase } from '@/lib/supabase';
-import { getRewardsAdapter, getGoalsAdapter, getRoutineAdapter } from '@/lib/adapters';
-import { WORLD_THEMES, type WorldTheme, getWorldPhase } from '@/components/worlds/worldThemes';
+import { getGoalsAdapter, getRoutineAdapter } from '@/lib/adapters';
+import { getWorldPhase } from '@/components/worlds/worldThemes';
 import { getNextMicrotask } from '@/lib/goals/MicrotaskEngine';
-import { getSuggestedWords } from '@/lib/emotional/EmotionModel';
 import type {
-  Reward,
-  RewardRequest,
   DialogueLine,
   GoalWithMicrotasks,
   GoalMicrotask,
-  EmotionState,
 } from '@/types';
 import type { RealtimePostgresInsertPayload } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 
 import { useGoalProposals } from '@/hooks/useGoalProposals';
 import { useRewardRequests } from '@/hooks/useRewardRequests';
+import { useChildNavigation } from '@/hooks/useChildNavigation';
+import { useChildModals } from '@/hooks/useChildModals';
+import { useChildCheckinState } from '@/hooks/useChildCheckinState';
+import { useChildRewardsState } from '@/hooks/useChildRewardsState';
 
 const goalsAdapter = getGoalsAdapter();
-const rewardsAdapter = getRewardsAdapter();
 
 function getRandomLoadingText(): string {
   const lines = [
@@ -48,56 +47,12 @@ export function useHomeState() {
   const { balance: sparkBalance } = useSparks();
   const { shouldPrompt, submitCheckin, recentCheckins, lastCheckin } = useEmotional();
 
+  const navigation = useChildNavigation();
+  const modals = useChildModals();
+
   const [dialogue, setDialogue] = useState<DialogueLine | undefined>(() =>
     display ? getDialogue('greeting') : undefined
   );
-
-  // Navigation tabs: 'hogar' | 'routines' | 'goals' | 'checkin'
-  const [activeTab, setActiveTab] = useState<'hogar' | 'routines' | 'goals' | 'checkin'>('hogar');
-
-  // Load persisted world from localStorage
-  const [selectedWorld, setSelectedWorldState] = useState<WorldTheme>(() => {
-    if (typeof window !== 'undefined') {
-      const savedWorldId = localStorage.getItem('mira_selected_world_id');
-      if (savedWorldId) {
-        const found = WORLD_THEMES.find((w) => w.id === savedWorldId);
-        if (found) return found;
-      }
-    }
-    return WORLD_THEMES[0]!;
-  });
-
-  const setSelectedWorld = (world: WorldTheme) => {
-    setSelectedWorldState(world);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('mira_selected_world_id', world.id);
-    }
-  };
-
-  const [showRewards, setShowRewards] = useState(false);
-  const [showCustomization, setShowCustomization] = useState(false);
-  const [showMemoriesModal, setShowMemoriesModal] = useState(false);
-  const [showChatModal, setShowChatModal] = useState(false);
-  const [showWorldsModal, setShowWorldsModal] = useState(false);
-  const [showCalmModal, setShowCalmModal] = useState(false);
-
-  // Silence vs Adventure mode (persisted in localStorage)
-  const [silentMode, setSilentModeState] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('mira_silent_mode') === 'true';
-    }
-    return false;
-  });
-
-  const toggleSilentMode = () => {
-    setSilentModeState((prev) => {
-      const next = !prev;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('mira_silent_mode', String(next));
-      }
-      return next;
-    });
-  };
 
   // Routines status for 'Todo Listo' state
   const [allRoutinesDone, setAllRoutinesDone] = useState(false);
@@ -160,18 +115,11 @@ export function useHomeState() {
 
   // Set companion appearance context
   useEffect(() => {
-    setAppearanceContext(activeTab === 'hogar' ? 'home' : 'transition');
-  }, [activeTab, setAppearanceContext]);
+    setAppearanceContext(navigation.activeTab === 'hogar' ? 'home' : 'transition');
+  }, [navigation.activeTab, setAppearanceContext]);
 
   // States for companion tapping
   const [tapLoading, setTapLoading] = useState(false);
-
-  // Initialize prefers-reduced-motion automatically if set
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      queueMicrotask(() => setSilentModeState(true));
-    }
-  }, []);
 
   // Check if routines are completed
   const checkRoutinesStatus = useCallback(() => {
@@ -195,12 +143,12 @@ export function useHomeState() {
 
   useEffect(() => {
     checkRoutinesStatus();
-  }, [checkRoutinesStatus, activeTab]);
+  }, [checkRoutinesStatus, navigation.activeTab]);
 
   // World first-visit greeting dialogue trigger
   useEffect(() => {
     if (!profile?.id || !display) return;
-    const key = `mira_world_seen_${profile.id}_${selectedWorld.id}`;
+    const key = `mira_world_seen_${profile.id}_${navigation.selectedWorld.id}`;
     const alreadySeen = localStorage.getItem(key);
     if (!alreadySeen) {
       const worldWelcomes: Record<string, string> = {
@@ -210,13 +158,11 @@ export function useHomeState() {
         montana_esfuerzo: `¡Llegamos a las Montañas del Esfuerzo! ▲ Cada hito que superes te ayudará a escalar las cumbres más altas.`,
         reino_social: `¡Este es el Reino de la Vida Social! ♡ Comparte amor y empatía para construir puentes de arcoíris.`,
       };
-      const welcomeText = worldWelcomes[selectedWorld.id] || `¡Bienvenido a este nuevo rincón de nuestro mundo!`;
+      const welcomeText = worldWelcomes[navigation.selectedWorld.id] || `¡Bienvenido a este nuevo rincón de nuestro mundo!`;
       queueMicrotask(() => setDialogue({ text: welcomeText, durationMs: 6000 }));
       localStorage.setItem(key, 'true');
     }
-  }, [selectedWorld.id, profile?.id, display]);
-
-  // Realtime subscription for goal updates
+  }, [navigation.selectedWorld.id, profile?.id, display]);
 
   async function handleCompanionTap() {
     if (tapLoading || !display) return;
@@ -227,7 +173,7 @@ export function useHomeState() {
     setTapLoading(true);
 
     try {
-      const activeWorldScore = scores[selectedWorld.dimension] || 0;
+      const activeWorldScore = scores[navigation.selectedWorld.dimension] || 0;
       const activeWorldPhase = getWorldPhase(activeWorldScore);
 
       const res = await fetch('/api/companion/chat', {
@@ -239,7 +185,7 @@ export function useHomeState() {
           companionName: display.name,
           childName: profile?.display_name || 'amigo',
           stage: display.stage,
-          worldName: selectedWorld.name,
+          worldName: navigation.selectedWorld.name,
           worldPhase: activeWorldPhase.label,
           childScores: scores,
           activeGoal: activeGoal ? {
@@ -340,103 +286,22 @@ export function useHomeState() {
     };
   }, [profile?.id, profile?.role, refreshBadges, refreshScores]);
 
-  // Check-in State
-  const [checkinStep, setCheckinStep] = useState<'energy' | 'valence' | 'word' | 'note' | 'done'>('energy');
-  const [checkinEnergy, setCheckinEnergy] = useState<number | null>(null);
-  const [checkinValence, setCheckinValence] = useState<number | null>(null);
-  const [checkinWord, setCheckinWord] = useState('');
-  const [checkinCustomWord, setCheckinCustomWord] = useState('');
-  const [checkinNote, setCheckinNote] = useState('');
-  const [checkinDialogue, setCheckinDialogue] = useState<DialogueLine | undefined>(undefined);
+  const checkinState = useChildCheckinState(
+    navigation.activeTab,
+    display,
+    getDialogue,
+    submitCheckin,
+    interact,
+    lastCheckin
+  );
 
-  const checkinSuggestedWords = useMemo(() => {
-    return checkinEnergy !== null && checkinValence !== null
-      ? getSuggestedWords({
-          energy_level: checkinEnergy as 1 | 2 | 3 | 4 | 5,
-          valence: checkinValence as 1 | 2 | 3 | 4 | 5,
-        })
-      : [];
-  }, [checkinEnergy, checkinValence]);
+  const rewardsState = useChildRewardsState(
+    session?.family?.id,
+    profile?.id,
+    sparkBalance
+  );
 
-  const lastCheckinTime = lastCheckin ? new Date(lastCheckin.occurred_at).getTime() : 0;
-  const [now] = useState(() => Date.now());
-  const isCooldown = now - lastCheckinTime < 8 * 60 * 60 * 1000;
-
-  // Handle Tab Change to Check-in
-  useEffect(() => {
-    if (activeTab === 'checkin') {
-      queueMicrotask(() => {
-        setCheckinStep('energy');
-        setCheckinEnergy(null);
-        setCheckinValence(null);
-        setCheckinWord('');
-        setCheckinCustomWord('');
-        setCheckinNote('');
-        if (display) {
-          setCheckinDialogue(getDialogue('checkin_prompt'));
-        }
-      });
-    }
-  }, [activeTab, display, getDialogue]);
-
-  async function handleCompleteCheckin() {
-    if (checkinEnergy === null || checkinValence === null) return;
-
-    const emotion = {
-      energy_level: checkinEnergy,
-      valence: checkinValence,
-      emotion_word: checkinWord || checkinCustomWord || undefined,
-    };
-
-    await submitCheckin(emotion as EmotionState, 'free', undefined, checkinNote || undefined, 'child');
-    await interact('emotional_checkin', { energy: checkinEnergy, valence: checkinValence, word: emotion.emotion_word });
-
-    if (display) {
-      setCheckinDialogue(getDialogue('checkin_response', emotion as EmotionState));
-    }
-
-    setCheckinStep('done');
-  }
-
-  const [redeemingId, setRedeemingId] = useState<string | null>(null);
-  const [rewards, setRewards] = useState<Reward[]>([]);
-  const [lastRedemptions] = useState<Record<string, string>>({});
-  const [rewardRequests, setRewardRequests] = useState<RewardRequest[]>([]);
-
-  useEffect(() => {
-    if (profile?.family_id && profile.id) {
-      rewardsAdapter.getRewards(profile.family_id).then(res => {
-        if (res.ok) setRewards(res.data);
-      });
-      rewardsAdapter.getRewardRequests(profile.family_id).then(res => {
-        if (res.ok && profile?.id) {
-          const pending = res.data.filter(r => r.status === 'pending' && r.child_id === profile.id);
-          setRewardRequests(pending);
-        }
-      });
-    }
-  }, [profile?.family_id, profile?.id]);
-
-  async function handleRedeem(rewardId: string, rewardTitle: string, cost: number, emoji: string) {
-    if (sparkBalance < cost || !profile?.id) return;
-    setRedeemingId(rewardId);
-
-    const res = await rewardsAdapter.createRewardRequest(session?.family?.id || '', profile.id, {
-      title: rewardTitle,
-      emoji: emoji || '🎁',
-      cost: cost
-    });
-
-    setRedeemingId(null);
-    if (res.ok) {
-      alert(`¡Propuesta enviada con éxito! Dile a papá/mamá que apruebe: "${rewardTitle}"`);
-      setShowRewards(false);
-    } else {
-      alert(`Error al proponer: ${res.error.message}`);
-    }
-  }
-
-  const activeWorldScore = scores[selectedWorld.dimension] || 0;
+  const activeWorldScore = scores[navigation.selectedWorld.dimension] || 0;
   const activeWorldPhase = getWorldPhase(activeWorldScore);
 
   const hasCompletedGoalToday = useMemo(() => {
@@ -453,11 +318,6 @@ export function useHomeState() {
   }, [activeGoals]);
 
   const showCheckinPrompt = shouldPrompt('morning');
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 12 ? 'Buenos días' :
-    hour < 18 ? 'Buenas tardes' :
-    'Buenas noches';
 
   return {
     router,
@@ -482,24 +342,8 @@ export function useHomeState() {
     lastCheckin,
     dialogue,
     setDialogue,
-    activeTab,
-    setActiveTab,
-    selectedWorld,
-    setSelectedWorld,
-    showRewards,
-    setShowRewards,
-    showCustomization,
-    setShowCustomization,
-    showMemoriesModal,
-    setShowMemoriesModal,
-    showChatModal,
-    setShowChatModal,
-    showWorldsModal,
-    setShowWorldsModal,
-    showCalmModal,
-    setShowCalmModal,
-    silentMode,
-    toggleSilentMode,
+    ...navigation,
+    ...modals,
     allRoutinesDone,
     checkRoutinesStatus,
     activeGoals,
@@ -513,36 +357,12 @@ export function useHomeState() {
     ...goalProposalState,
     tapLoading,
     handleCompanionTap,
-    checkinStep,
-    setCheckinStep,
-    checkinEnergy,
-    setCheckinEnergy,
-    checkinValence,
-    setCheckinValence,
-    checkinWord,
-    setCheckinWord,
-    checkinCustomWord,
-    setCheckinCustomWord,
-    checkinNote,
-    setCheckinNote,
-    checkinDialogue,
-    setCheckinDialogue,
-    checkinSuggestedWords,
-    isCooldown,
-    handleCompleteCheckin,
-    handleCheckinSubmit: handleCompleteCheckin,
-    redeemingId,
-    setRedeemingId,
-    rewards,
-    lastRedemptions,
-    rewardRequests,
-    setRewardRequests,
+    ...checkinState,
+    ...rewardsState,
     ...rewardRequestState,
     activeWorldScore,
     activeWorldPhase,
     hasCompletedGoalToday,
     showCheckinPrompt,
-    greeting,
-    handleRedeem,
   };
 }
