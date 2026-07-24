@@ -15,7 +15,7 @@ const SEED_CHECKINS: EmotionalCheckin[] = [
   {
     id: 'ci-1',
     child_id: 'static-child-1',
-    emotion_word: 'happy',
+    emotion_word: 'Alegre',
     energy_level: 4,
     valence: 4,
     context_type: 'morning',
@@ -25,7 +25,7 @@ const SEED_CHECKINS: EmotionalCheckin[] = [
   {
     id: 'ci-2',
     child_id: 'static-child-1',
-    emotion_word: 'calm',
+    emotion_word: 'Tranquilo/a',
     energy_level: 3,
     valence: 4,
     context_type: 'bedtime',

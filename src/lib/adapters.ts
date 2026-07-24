@@ -40,53 +40,43 @@ import { StaticSparkAdapter }   from './sparks/adapters/StaticSparkAdapter';
 import { SupabaseSparkAdapter } from './sparks/adapters/SupabaseSparkAdapter';
 import type { ISparkAdapter }   from './sparks/adapters/ISparkAdapter';
 
+export function isUseSupabase(): boolean {
+  if (typeof window !== 'undefined') {
+    if (localStorage.getItem('mira_demo_mode') === 'true') {
+      return false;
+    }
+  }
+  return (process.env.NEXT_PUBLIC_DATA_SOURCE ?? 'static') === 'supabase';
+}
+
 export const DATA_SOURCE = process.env.NEXT_PUBLIC_DATA_SOURCE ?? 'static';
 export const isSupabase  = DATA_SOURCE === 'supabase';
 
-let _auth:        IAuthAdapter        | null = null;
-let _family:      IFamilyAdapter      | null = null;
-let _companion:   ICompanionAdapter   | null = null;
-let _routines:    IRoutineAdapter     | null = null;
-let _goals:       IGoalsAdapter       | null = null;
-let _emotional:   IEmotionalAdapter   | null = null;
-let _rewards:     IRewardsAdapter     | null = null;
-let _progression: IProgressionAdapter | null = null;
-let _sparks:      ISparkAdapter       | null = null;
-
 export function getAuthAdapter(): IAuthAdapter {
-  if (!_auth) _auth = isSupabase ? new SupabaseAuthAdapter(supabase) : new StaticAuthAdapter();
-  return _auth;
+  return isUseSupabase() ? new SupabaseAuthAdapter(supabase) : new StaticAuthAdapter();
 }
 export function getFamilyAdapter(): IFamilyAdapter {
-  if (!_family) _family = isSupabase ? new SupabaseFamilyAdapter(supabase) : new StaticFamilyAdapter();
-  return _family;
+  return isUseSupabase() ? new SupabaseFamilyAdapter(supabase) : new StaticFamilyAdapter();
 }
 export function getCompanionAdapter(): ICompanionAdapter {
-  if (!_companion) _companion = isSupabase ? new SupabaseCompanionAdapter(supabase) : new StaticCompanionAdapter();
-  return _companion;
+  return isUseSupabase() ? new SupabaseCompanionAdapter(supabase) : new StaticCompanionAdapter();
 }
 export function getRoutineAdapter(): IRoutineAdapter {
-  if (!_routines) _routines = isSupabase ? new SupabaseRoutineAdapter(supabase) : new StaticRoutineAdapter();
-  return _routines;
+  return isUseSupabase() ? new SupabaseRoutineAdapter(supabase) : new StaticRoutineAdapter();
 }
 export function getGoalsAdapter(): IGoalsAdapter {
-  if (!_goals) _goals = isSupabase ? new SupabaseGoalsAdapter(supabase) : new StaticGoalsAdapter();
-  return _goals;
+  return isUseSupabase() ? new SupabaseGoalsAdapter(supabase) : new StaticGoalsAdapter();
 }
 export function getEmotionalAdapter(): IEmotionalAdapter {
-  if (!_emotional) _emotional = isSupabase ? new SupabaseEmotionalAdapter(supabase) : new StaticEmotionalAdapter();
-  return _emotional;
+  return isUseSupabase() ? new SupabaseEmotionalAdapter(supabase) : new StaticEmotionalAdapter();
 }
 export function getRewardsAdapter(): IRewardsAdapter {
-  if (!_rewards) _rewards = isSupabase ? new SupabaseRewardsAdapter(supabase) : new StaticRewardsAdapter();
-  return _rewards;
+  return isUseSupabase() ? new SupabaseRewardsAdapter(supabase) : new StaticRewardsAdapter();
 }
 export function getProgressionAdapter(): IProgressionAdapter {
-  if (!_progression) _progression = isSupabase ? new SupabaseProgressionAdapter(supabase) : new StaticProgressionAdapter();
-  return _progression;
+  return isUseSupabase() ? new SupabaseProgressionAdapter(supabase) : new StaticProgressionAdapter();
 }
 export function getSparkAdapter(): ISparkAdapter {
-  if (!_sparks) _sparks = isSupabase ? new SupabaseSparkAdapter(supabase) : new StaticSparkAdapter();
-  return _sparks;
+  return isUseSupabase() ? new SupabaseSparkAdapter(supabase) : new StaticSparkAdapter();
 }
 

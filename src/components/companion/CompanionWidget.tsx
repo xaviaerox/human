@@ -86,22 +86,23 @@ export function CompanionWidget({
       <div className="relative">
         {/* Dialogue bubble */}
         <div
+          onClick={() => setShowBubble(false)}
           className={cn(
-            'absolute left-1/2 -translate-x-1/2 text-center transition-all duration-300 z-20',
+            'absolute left-1/2 -translate-x-1/2 text-center transition-all duration-300 z-30 cursor-pointer',
             showBubble && visibleText
               ? 'opacity-100 scale-100 translate-y-0'
               : 'opacity-0 scale-95 translate-y-4 pointer-events-none'
           )}
           style={{
-            bottom: hasTallAccessory ? 'calc(100% + 50px)' : 'calc(100% + 6px)',
+            bottom: hasTallAccessory ? 'calc(100% + 12px)' : 'calc(100% + 8px)',
             width: 'max-content',
-            maxWidth: '220px',
+            maxWidth: '190px',
           }}
           aria-live="polite"
           aria-atomic="true"
         >
-          <div className="bg-white rounded-3xl px-4 py-2.5 shadow-card border border-stone-100/80">
-            <p className="text-sm text-stone-700 leading-relaxed font-body">
+          <div className="bg-slate-900/95 text-slate-100 rounded-2xl px-3.5 py-2 shadow-xl border border-teal-500/30 backdrop-blur-md">
+            <p className="text-xs font-medium leading-snug font-body">
               {visibleText}
             </p>
           </div>
@@ -109,10 +110,9 @@ export function CompanionWidget({
           <div
             className="mx-auto w-0 h-0"
             style={{
-              borderLeft: '6px solid transparent',
-              borderRight: '6px solid transparent',
-              borderTop: '6px solid white',
-              filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.05))',
+              borderLeft: '5px solid transparent',
+              borderRight: '5px solid transparent',
+              borderTop: '5px solid rgba(15, 23, 42, 0.95)',
             }}
             aria-hidden="true"
           />

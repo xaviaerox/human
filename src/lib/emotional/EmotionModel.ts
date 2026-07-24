@@ -31,10 +31,10 @@ export function classifyEmotion(state: EmotionState): EmotionQuadrant {
 // Child may also type their own
 // ─────────────────────────────────────────
 export const EMOTION_WORD_SUGGESTIONS: Record<EmotionQuadrant, string[]> = {
-  high_energy_pleasant: ['happy', 'excited', 'energised', 'joyful', 'proud', 'playful'],
-  high_energy_unpleasant: ['worried', 'frustrated', 'angry', 'overwhelmed', 'restless', 'nervous'],
-  low_energy_pleasant: ['calm', 'content', 'peaceful', 'relaxed', 'cosy', 'safe'],
-  low_energy_unpleasant: ['sad', 'tired', 'lonely', 'flat', 'heavy', 'confused'],
+  high_energy_pleasant: ['Feliz', 'Entusiasmado/a', 'Alegre', 'Orgulloso/a', 'Animado/a', 'Juguetón/a'],
+  high_energy_unpleasant: ['Ansioso/a', 'Frustrado/a', 'Enojado/a', 'Abrumado/a', 'Inquieto/a', 'Nervioso/a'],
+  low_energy_pleasant: ['Tranquilo/a', 'Relajado/a', 'En paz', 'Seguro/a', 'A gusto', 'Cómodo/a'],
+  low_energy_unpleasant: ['Triste', 'Cansado/a', 'Desanimado/a', 'Solo/a', 'Confuso/a', 'Pesado/a'],
 };
 
 export function getSuggestedWords(state: Omit<EmotionState, 'emotion_word'>): string[] {

@@ -46,6 +46,11 @@ const StoryReaderModal = dynamic(
   { ssr: false }
 );
 
+const GoalProposalModal = dynamic(
+  () => import('@/components/goals/GoalProposalModal').then((mod) => mod.GoalProposalModal),
+  { ssr: false }
+);
+
 import { generateMicroStory, type MicroStory } from '@/lib/stories/StoryGenerator';
 import { cn } from '@/lib/utils';
 import { useHomeState } from '@/hooks/useHomeState';
@@ -281,48 +286,56 @@ export default function HomePage() {
             </h1>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-1.5 justify-end">
+        <div className="flex flex-wrap items-center gap-1.5 justify-end max-w-md">
           <button
             onClick={handleOpenStory}
-            className="text-xs font-semibold px-2.5 py-1.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800 hover:bg-amber-500/20 transition-all shadow-soft cursor-pointer flex items-center gap-1"
+            className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-200/70 hover:bg-amber-500/20 transition-all shadow-soft cursor-pointer flex items-center gap-1"
           >
             📖 Cuento
           </button>
           <button
             onClick={() => setShowCalmModal(true)}
-            className="text-xs font-semibold px-2.5 py-1.5 rounded-full bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-200/60 dark:border-teal-800 hover:bg-teal-500/20 transition-all shadow-soft cursor-pointer flex items-center gap-1"
+            className="text-xs font-semibold px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-200/60 hover:bg-teal-500/20 transition-all shadow-soft cursor-pointer flex items-center gap-1"
           >
             🌸 Respira
           </button>
           <button
+            onClick={() => setIsProposingGoal(true)}
+            className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-amber-300/80 hover:bg-amber-500/25 transition-all shadow-soft cursor-pointer flex items-center gap-1"
+          >
+            💡 Sugerir Meta
+          </button>
+          <button
             onClick={() => setShowCustomization(true)}
-            className="text-xs font-semibold px-2.5 py-1.5 rounded-full bg-white/95 border border-stone-100 hover:bg-white transition-colors shadow-soft cursor-pointer flex items-center gap-1"
+            className="text-xs font-semibold px-2 py-1 rounded-full bg-white/90 border border-stone-200 text-stone-700 hover:bg-white transition-colors shadow-soft cursor-pointer"
+            title="Armario"
           >
             🎨 Armario
           </button>
           <button
             onClick={() => setShowRewards(true)}
-            className="text-xs font-semibold px-2.5 py-1.5 rounded-full bg-white/95 border border-stone-100 hover:bg-white transition-colors shadow-soft cursor-pointer flex items-center gap-1"
+            className="text-xs font-semibold px-2 py-1 rounded-full bg-white/90 border border-stone-200 text-stone-700 hover:bg-white transition-colors shadow-soft cursor-pointer"
+            title="Canjear Recompensas"
           >
             🎁 Canjear
           </button>
           <button
             onClick={toggleSilentMode}
-            className={`text-xs font-semibold px-2.5 py-1.5 rounded-full border transition-all shadow-soft cursor-pointer flex items-center gap-1 ${
+            className={`p-1.5 rounded-full border transition-all shadow-soft cursor-pointer ${
               silentMode
                 ? 'bg-amber-100 text-amber-900 border-amber-300'
-                : 'bg-white/95 text-stone-700 border-stone-100 hover:bg-white'
+                : 'bg-white/90 text-stone-600 border-stone-200 hover:bg-white'
             }`}
-            title={silentMode ? 'Animaciones desactivadas (modo calma)' : 'Animaciones activadas'}
+            title={silentMode ? 'Animaciones desactivadas (modo calma)' : 'Activar modo menos animaciones'}
           >
-            {silentMode ? '🌙 Menos animaciones ✓' : '✨ Animaciones'}
+            {silentMode ? '🌙' : '✨'}
           </button>
           <button
             onClick={() => setShowFeedbackModal(true)}
-            className="text-xs font-semibold px-2.5 py-1.5 rounded-full bg-rose-500/10 text-rose-800 dark:text-rose-300 border border-rose-200/60 hover:bg-rose-500/20 transition-colors shadow-soft cursor-pointer flex items-center gap-1"
-            title="¿Algo no funcionó bien o tienes una idea?"
+            className="p-1.5 rounded-full bg-rose-500/10 text-rose-700 border border-rose-200 hover:bg-rose-500/20 transition-colors shadow-soft cursor-pointer"
+            title="Sugerencia o Ticket"
           >
-            💡 Ticket
+            💬
           </button>
           <SparkBadge count={sparkBalance} size="md" />
         </div>
@@ -1631,6 +1644,26 @@ export default function HomePage() {
         isOpen={showStoryModal}
         onClose={() => setShowStoryModal(false)}
         story={activeStory}
+      />
+      {/* Goal Proposal Modal */}
+      <GoalProposalModal
+        isOpen={isProposingGoal}
+        onClose={() => setIsProposingGoal(false)}
+        title={goalPropTitle}
+        setTitle={setGoalPropTitle}
+        why={goalPropWhy}
+        setWhy={setGoalPropWhy}
+        step1={goalPropStep1}
+        setStep1={setGoalPropStep1}
+        step2={goalPropStep2}
+        setStep2={setGoalPropStep2}
+        step3={goalPropStep3}
+        setStep3={setGoalPropStep3}
+        submitting={goalPropSubmitting}
+        error={goalPropError}
+        isGeneratingAI={isGeneratingAIDecompose}
+        onAIDecompose={handleAIDecomposeInModal}
+        onSubmit={handleProposeGoalSubmit}
       />
     </div>
   );

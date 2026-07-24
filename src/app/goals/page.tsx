@@ -99,15 +99,28 @@ export default function GoalsPage() {
 
   if (goals.length === 0) return (
     <div className="flex flex-col items-center justify-center min-h-dvh px-6 text-center gap-4">
-      <p className="font-display text-xl text-stone-600">Aún no hay objetivos</p>
-      <p className="text-stone-400 text-sm">Habla con un adulto para crear tu primer objetivo</p>
+      <p className="font-display text-2xl text-stone-700">Aún no tienes aventuras activas</p>
+      <p className="text-stone-400 text-sm">¡Proponle una nueva meta a tu familia y desintégrala con IA!</p>
+      <Button
+        onClick={() => router.push('/home')}
+        className="bg-amber-500 text-slate-950 font-bold hover:bg-amber-400"
+      >
+        💡 Proponer mi primera aventura
+      </Button>
     </div>
   );
 
   return (
     <div className="flex flex-col min-h-dvh">
-      <header className="px-5 pt-8 pb-4">
+      <header className="px-5 pt-8 pb-4 flex items-center justify-between">
         <h1 className="font-display text-2xl text-stone-800">Mi objetivo</h1>
+        <Button
+          onClick={() => router.push('/home')}
+          size="sm"
+          className="bg-amber-500/10 text-amber-900 border border-amber-200 text-xs"
+        >
+          💡 Sugerir Objetivo
+        </Button>
       </header>
 
       <main className="flex-1 px-4 pb-8 flex flex-col gap-4 max-w-lg mx-auto w-full">

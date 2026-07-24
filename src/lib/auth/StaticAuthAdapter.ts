@@ -91,6 +91,9 @@ export class StaticAuthAdapter implements IAuthAdapter {
   }
 
   async signOut(): Promise<Result<void>> {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('mira_demo_mode');
+    }
     this._session = null;
     this._emit();
     return { ok: true, data: undefined };
