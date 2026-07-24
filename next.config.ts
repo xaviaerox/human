@@ -23,8 +23,12 @@ const nextConfig: NextConfig = {
           value: 'strict-origin-when-cross-origin',
         },
         {
+          key: 'X-XSS-Protection',
+          value: '1; mode=block',
+        },
+        {
           key: 'Permissions-Policy',
-          value: 'camera=(), microphone=(), geolocation=()',
+          value: 'camera=(), microphone=(self), geolocation=()',
         },
       ],
     },

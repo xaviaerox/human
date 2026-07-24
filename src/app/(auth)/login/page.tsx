@@ -83,13 +83,30 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      <div className="mt-6 text-center text-sm text-stone-500 flex flex-col gap-2">
+      <div className="mt-6 text-center text-sm text-stone-500 flex flex-col gap-3">
         <Link href="/signup" className="text-bloom-600 hover:text-bloom-700 font-medium">
           Crear familia nueva
         </Link>
         <Link href="/join" className="text-stone-400 hover:text-stone-600">
           Unirme con un código de invitación
         </Link>
+
+        <div className="pt-2 border-t border-stone-100">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('mira_demo_mode', 'true');
+              }
+              router.push('/home');
+            }}
+            className="w-full text-teal-600 hover:text-teal-700 hover:bg-teal-50 font-medium"
+          >
+            ✨ Explorar Modo Demo al Instante (Sin Registro)
+          </Button>
+        </div>
       </div>
     </Card>
   );

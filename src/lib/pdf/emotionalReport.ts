@@ -1,8 +1,7 @@
 /**
  * MIRA — Emotional & Growth Summary Generator
- * Exports parent and therapist-friendly summary reports.
+ * Exports parent and therapist-friendly summary reports in TXT, JSON, and CSV.
  */
-
 
 export interface EmotionalReportData {
   childName: string;
@@ -51,6 +50,27 @@ export function downloadEmotionalSummaryFile(data: EmotionalReportData) {
   const link = document.createElement('a');
   link.href = url;
   link.download = `informe_mira_${data.childName.toLowerCase().replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.txt`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+export function downloadTherapistJsonExport(data: EmotionalReportData) {
+  const exportPayload = {
+    metadata: {
+      platform: 'MIRA',
+      version: '1.0.0',
+      compliance: 'GDPR / COPPA',
+      generatedAt: new Date().toISOString(),
+    },
+    data,
+  };
+  const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `mira_terapeutico_${data.childName.toLowerCase().replace(/\s+/g, '_')}.json`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
