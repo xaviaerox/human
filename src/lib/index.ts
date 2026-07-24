@@ -11,5 +11,8 @@ export * from './offline/OfflineQueue';
 export * from './progression/ProgressionProvider';
 export * from './sparks/SparkProvider';
 export * from './adapters';
+export * from './companion/VectorMemoryEngine';
+export * from './family/DataExporter';
+export * from './utils/telemetry';
 export { supabase } from './supabase';
 

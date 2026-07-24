@@ -196,14 +196,36 @@ export function CompanionChatModal({
 
       if (!fetchSuccess) {
         const inputClean = userText.toLowerCase();
-        let fallbackReply = 'Aquí estoy contigo, acompañándote. Crecemos juntos paso a paso.';
+        let fallbackReply = `¡Estoy aquí contigo, ${childName}! Me encanta charlar en el ${selectedWorldName}.`;
+
+        const lastCheckinEmotion = recentCheckins && recentCheckins[0]?.emotion_word;
+        const currentGoalTitle = activeGoal?.title || (activeGoals && activeGoals[0]?.title);
+        const currentTaskTitle = nextTask?.title;
 
         if (inputClean.includes('triste') || inputClean.includes('llorar') || inputClean.includes('mal') || inputClean.includes('asustado') || inputClean.includes('miedo')) {
-          fallbackReply = `Lamento mucho escuchar eso. Los sentimientos difíciles también son importantes y está bien sentirse así. Yo estoy aquí a tu lado para acompañarte.`;
+          fallbackReply = `Siento que te sientas así, ${childName}. Todos los sentimientos son valiosos y está bien tomarse un pausa. Estoy justo aquí a tu lado para acompañarte.`;
         } else if (inputClean.includes('enfadado') || inputClean.includes('rabia') || inputClean.includes('molesto') || inputClean.includes('odio')) {
-          fallbackReply = `Entiendo que sientas rabia ahora mismo. A veces las cosas son frustrantes. Tómate el tiempo que necesites, yo aquí me quedo contigo en calma.`;
-        } else if (inputClean.includes('hola') || inputClean.includes('buenos dias') || inputClean.includes('buenas tardes')) {
-          fallbackReply = `¡Hola! Me alegra mucho saludarte. Estaba esperando por ti para ver cómo va tu día.`;
+          fallbackReply = `Entiendo esa frustración. A veces las cosas se ponen difíciles, pero no tienes que solucionarlo todo ya. Vamos a respirar juntos en el ${selectedWorldName}.`;
+        } else if (inputClean.includes('feliz') || inputClean.includes('alegre') || inputClean.includes('bien') || inputClean.includes('genial') || inputClean.includes('contento')) {
+          fallbackReply = `¡Qué alegría escucharte tan contento, ${childName}! Tu buena energía hace brillar aún más todo el ${selectedWorldName}. 🌟`;
+        } else if (inputClean.includes('meta') || inputClean.includes('aventura') || inputClean.includes('reto') || inputClean.includes('paso') || inputClean.includes('hacer')) {
+          if (currentTaskTitle) {
+            fallbackReply = `¡Vas super bien en tu aventura "${currentGoalTitle || 'en curso'}"! Tu siguiente paso es "${currentTaskTitle}". ¡Estoy seguro de que lo harás genial! 🚀`;
+          } else if (currentGoalTitle) {
+            fallbackReply = `¡Me encanta tu aventura de "${currentGoalTitle}"! Cada pequeño paso cuenta mucho. ¡Vamos a por ello! 💪`;
+          } else {
+            fallbackReply = `¡Proponer y avanzar en tus propias aventuras es maravilloso! Puedes elegir una meta que te inspire en la pestaña de Objetivos.`;
+          }
+        } else if (inputClean.includes('chispa') || inputClean.includes('estrella') || inputClean.includes('premio') || inputClean.includes('armario')) {
+          fallbackReply = `¡Cada esfuerzo tuyo suma chispas de luz! Puedes usarlas en el Armario para personalizarme o pedir premios a tus padres. ✨`;
+        } else if (inputClean.includes('hola') || inputClean.includes('buenos dias') || inputClean.includes('buenas tardes') || inputClean.includes('buenas noches')) {
+          fallbackReply = `¡Hola ${childName}! Qué lindo saludarte. ¿Cómo te sientes en este momento o qué te gustaría explorar hoy?`;
+        } else if (inputClean.includes('quien eres') || inputClean.includes('tu nombre') || inputClean.includes('que haces')) {
+          fallbackReply = `¡Soy ${display.name}! Tu compañero mágico de crecimiento. Estoy aquí para acompañarte en tus rutinas, celebrar tus logros y escucharte siempre que quieras. 🌸`;
+        } else if (inputClean.includes('te quiero') || inputClean.includes('gracias') || inputClean.includes('amigo')) {
+          fallbackReply = `¡Yo también me siento muy feliz de ser tu compañero, ${childName}! Gracias por ser tan valiente y constante. ❤️`;
+        } else if (lastCheckinEmotion) {
+          fallbackReply = `Te escucho con mucha atención, ${childName}. Vi que te sentías "${lastCheckinEmotion}" hace poco. Recuerda que estoy aquí para lo que necesites en el ${selectedWorldName}.`;
         }
 
         setMessages(prev => [...prev, { role: 'assistant', content: fallbackReply }]);

@@ -17,6 +17,17 @@ export function useGoalProposals(familyId?: string, childId?: string, onSubmitte
   const [goalPropError, setGoalPropError] = useState('');
   const [isGeneratingAIDecompose, setIsGeneratingAIDecompose] = useState(false);
 
+  const resetGoalProposalForm = () => {
+    setGoalPropTitle('');
+    setGoalPropWhy('');
+    setGoalPropStep1('');
+    setGoalPropStep2('');
+    setGoalPropStep3('');
+    setGoalPropError('');
+    setGoalPropSubmitting(false);
+    setIsGeneratingAIDecompose(false);
+  };
+
   const handleAIDecomposeInModal = async () => {
     if (!goalPropTitle.trim()) return;
     setIsGeneratingAIDecompose(true);
@@ -74,13 +85,17 @@ export function useGoalProposals(familyId?: string, childId?: string, onSubmitte
       return;
     }
 
+    resetGoalProposalForm();
     setIsProposingGoal(false);
     onSubmitted?.();
   };
 
   return {
     isProposingGoal,
-    setIsProposingGoal,
+    setIsProposingGoal: (open: boolean) => {
+      if (open) resetGoalProposalForm();
+      setIsProposingGoal(open);
+    },
     goalPropTitle,
     setGoalPropTitle,
     goalPropWhy,
@@ -98,5 +113,6 @@ export function useGoalProposals(familyId?: string, childId?: string, onSubmitte
     isGeneratingAIDecompose,
     handleAIDecomposeInModal,
     handleProposeGoalSubmit,
+    resetGoalProposalForm,
   };
 }

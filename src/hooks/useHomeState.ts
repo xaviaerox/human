@@ -55,7 +55,25 @@ export function useHomeState() {
 
   // Navigation tabs: 'hogar' | 'routines' | 'goals' | 'checkin'
   const [activeTab, setActiveTab] = useState<'hogar' | 'routines' | 'goals' | 'checkin'>('hogar');
-  const [selectedWorld, setSelectedWorld] = useState<WorldTheme>(WORLD_THEMES[0]!);
+
+  // Load persisted world from localStorage
+  const [selectedWorld, setSelectedWorldState] = useState<WorldTheme>(() => {
+    if (typeof window !== 'undefined') {
+      const savedWorldId = localStorage.getItem('mira_selected_world_id');
+      if (savedWorldId) {
+        const found = WORLD_THEMES.find((w) => w.id === savedWorldId);
+        if (found) return found;
+      }
+    }
+    return WORLD_THEMES[0]!;
+  });
+
+  const setSelectedWorld = (world: WorldTheme) => {
+    setSelectedWorldState(world);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mira_selected_world_id', world.id);
+    }
+  };
 
   const [showRewards, setShowRewards] = useState(false);
   const [showCustomization, setShowCustomization] = useState(false);
@@ -64,8 +82,23 @@ export function useHomeState() {
   const [showWorldsModal, setShowWorldsModal] = useState(false);
   const [showCalmModal, setShowCalmModal] = useState(false);
 
-  // Silence vs Adventure mode
-  const [silentMode, setSilentMode] = useState(false);
+  // Silence vs Adventure mode (persisted in localStorage)
+  const [silentMode, setSilentModeState] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('mira_silent_mode') === 'true';
+    }
+    return false;
+  });
+
+  const toggleSilentMode = () => {
+    setSilentModeState((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('mira_silent_mode', String(next));
+      }
+      return next;
+    });
+  };
 
   // Routines status for 'Todo Listo' state
   const [allRoutinesDone, setAllRoutinesDone] = useState(false);
@@ -106,19 +139,12 @@ export function useHomeState() {
   // States for companion tapping
   const [tapLoading, setTapLoading] = useState(false);
 
-  // Load silent mode preferences
+  // Initialize prefers-reduced-motion automatically if set
   useEffect(() => {
-    const stored = localStorage.getItem('mira_silent_mode');
-    if (stored === 'true' || (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
-      queueMicrotask(() => setSilentMode(true));
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      queueMicrotask(() => setSilentModeState(true));
     }
   }, []);
-
-  const toggleSilentMode = () => {
-    const newValue = !silentMode;
-    setSilentMode(newValue);
-    localStorage.setItem('mira_silent_mode', String(newValue));
-  };
 
   // Check if routines are completed
   const checkRoutinesStatus = useCallback(() => {

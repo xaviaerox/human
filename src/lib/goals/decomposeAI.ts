@@ -1,4 +1,5 @@
 import type { EffortLevel } from '@/types';
+import { supabase } from '@/lib/supabase';
 
 export interface AIMicrotaskSuggestion {
   title: string;
@@ -41,26 +42,36 @@ Responde ÚNICAMENTE con un JSON válido con este formato:
 }`;
 
   try {
+    let rawText = '';
+
     const res = await fetch('/api/decompose', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt }),
-    });
+    }).catch(() => null);
 
-    if (res.ok) {
+    if (res && res.ok) {
       const data = await res.json();
-      const rawText = data.text;
-      if (rawText) {
-        const parsed = JSON.parse(rawText);
-        if (parsed.microtasks && Array.isArray(parsed.microtasks) && parsed.microtasks.length > 0) {
-          const validated: AIMicrotaskSuggestion[] = parsed.microtasks.slice(0, 3).map((item: Record<string, unknown>, idx: number) => ({
-            title: String(item.title || `Paso ${idx + 1}`),
-            effort: item.effort === 'easy' || item.effort === 'medium' || item.effort === 'stretch' ? (item.effort as EffortLevel) : idx === 0 ? 'easy' : idx === 1 ? 'medium' : 'stretch',
-            description: item.description ? String(item.description) : undefined,
-          }));
+      rawText = data.text || '';
+    } else if (process.env.NEXT_PUBLIC_DATA_SOURCE === 'supabase') {
+      const { data: edgeData, error } = await supabase.functions.invoke('decompose', {
+        body: { prompt },
+      });
+      if (!error && edgeData?.text) {
+        rawText = edgeData.text;
+      }
+    }
 
-          return { microtasks: validated, source: 'ai' };
-        }
+    if (rawText) {
+      const parsed = JSON.parse(rawText);
+      if (parsed.microtasks && Array.isArray(parsed.microtasks) && parsed.microtasks.length > 0) {
+        const validated: AIMicrotaskSuggestion[] = parsed.microtasks.slice(0, 3).map((item: Record<string, unknown>, idx: number) => ({
+          title: String(item.title || `Paso ${idx + 1}`),
+          effort: item.effort === 'easy' || item.effort === 'medium' || item.effort === 'stretch' ? (item.effort as EffortLevel) : idx === 0 ? 'easy' : idx === 1 ? 'medium' : 'stretch',
+          description: item.description ? String(item.description) : undefined,
+        }));
+
+        return { microtasks: validated, source: 'ai' };
       }
     }
   } catch (err) {

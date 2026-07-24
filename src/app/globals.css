@@ -1,5 +1,14 @@
-@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=Comic+Neue:wght@400;700&display=swap');
 @import "tailwindcss";
+
+/* OpenDyslexic & Dyslexic-friendly accessibility font overrides */
+body[data-font="dyslexic"],
+.font-dyslexic {
+  font-family: 'Comic Neue', 'OpenDyslexic', system-ui, sans-serif !important;
+  letter-spacing: 0.04em !important;
+  word-spacing: 0.08em !important;
+  line-height: 1.6 !important;
+}
 
 
 

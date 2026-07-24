@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { CompanionWidget } from '@/components/companion/CompanionWidget';
 import { RoutinesToday } from '@/components/routines/RoutinesToday';
 import { ActiveGoalStep } from '@/components/goals/ActiveGoalStep';
@@ -34,6 +35,18 @@ const BadgeCelebrationOverlay = dynamic(
   () => import('@/components/ui/BadgeCelebrationOverlay').then((mod) => mod.BadgeCelebrationOverlay),
   { ssr: false }
 );
+
+const ChildFeedbackModal = dynamic(
+  () => import('@/components/feedback/ChildFeedbackModal').then((mod) => mod.ChildFeedbackModal),
+  { ssr: false }
+);
+
+const StoryReaderModal = dynamic(
+  () => import('@/components/companion/StoryReaderModal').then((mod) => mod.StoryReaderModal),
+  { ssr: false }
+);
+
+import { generateMicroStory, type MicroStory } from '@/lib/stories/StoryGenerator';
 import { cn } from '@/lib/utils';
 import { useHomeState } from '@/hooks/useHomeState';
 import type { Reward } from '@/types';
@@ -209,6 +222,22 @@ export default function HomePage() {
     handleRedeem,
   } = useHomeState();
 
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [showStoryModal, setShowStoryModal] = useState(false);
+  const [activeStory, setActiveStory] = useState<MicroStory | null>(null);
+
+  const handleOpenStory = () => {
+    const story = generateMicroStory({
+      childName: profile?.display_name || 'amigo',
+      companionName: display?.name || 'Lumi',
+      worldName: selectedWorld.name,
+      recentEmotion: recentCheckins[0]?.emotion_word || 'tranquilo',
+      valueDimensionLabel: 'Constancia',
+    });
+    setActiveStory(story);
+    setShowStoryModal(true);
+  };
+
   if (authLoading) return (
     <div className="flex items-center justify-center min-h-dvh">
       <div className="w-6 h-6 border-2 border-stone-200 border-t-bloom-400 rounded-full animate-spin" />
@@ -252,31 +281,48 @@ export default function HomePage() {
             </h1>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 justify-end">
+          <button
+            onClick={handleOpenStory}
+            className="text-xs font-semibold px-2.5 py-1.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800 hover:bg-amber-500/20 transition-all shadow-soft cursor-pointer flex items-center gap-1"
+          >
+            📖 Cuento
+          </button>
           <button
             onClick={() => setShowCalmModal(true)}
-            className="text-xs font-semibold px-3 py-1.5 rounded-full bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-200/60 dark:border-teal-800 hover:bg-teal-500/20 transition-all shadow-soft cursor-pointer flex items-center gap-1"
+            className="text-xs font-semibold px-2.5 py-1.5 rounded-full bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-200/60 dark:border-teal-800 hover:bg-teal-500/20 transition-all shadow-soft cursor-pointer flex items-center gap-1"
           >
             🌸 Respira
           </button>
           <button
             onClick={() => setShowCustomization(true)}
-            className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white/95 border border-stone-100 hover:bg-white transition-colors shadow-soft cursor-pointer flex items-center gap-1"
+            className="text-xs font-semibold px-2.5 py-1.5 rounded-full bg-white/95 border border-stone-100 hover:bg-white transition-colors shadow-soft cursor-pointer flex items-center gap-1"
           >
             🎨 Armario
           </button>
           <button
             onClick={() => setShowRewards(true)}
-            className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white/95 border border-stone-100 hover:bg-white transition-colors shadow-soft cursor-pointer flex items-center gap-1"
+            className="text-xs font-semibold px-2.5 py-1.5 rounded-full bg-white/95 border border-stone-100 hover:bg-white transition-colors shadow-soft cursor-pointer flex items-center gap-1"
           >
             🎁 Canjear
           </button>
           <button
             onClick={toggleSilentMode}
-            className="w-8 h-8 rounded-full bg-white/95 border border-stone-100 hover:bg-white shadow-soft cursor-pointer flex items-center justify-center text-sm transition-all hover:scale-105 active:scale-95"
-            title={silentMode ? 'Activar modo Aventura (animaciones)' : 'Activar modo Calma (silencio visual)'}
+            className={`text-xs font-semibold px-2.5 py-1.5 rounded-full border transition-all shadow-soft cursor-pointer flex items-center gap-1 ${
+              silentMode
+                ? 'bg-amber-100 text-amber-900 border-amber-300'
+                : 'bg-white/95 text-stone-700 border-stone-100 hover:bg-white'
+            }`}
+            title={silentMode ? 'Animaciones desactivadas (modo calma)' : 'Animaciones activadas'}
           >
-            {silentMode ? '🌙' : '☀️'}
+            {silentMode ? '🌙 Menos animaciones ✓' : '✨ Animaciones'}
+          </button>
+          <button
+            onClick={() => setShowFeedbackModal(true)}
+            className="text-xs font-semibold px-2.5 py-1.5 rounded-full bg-rose-500/10 text-rose-800 dark:text-rose-300 border border-rose-200/60 hover:bg-rose-500/20 transition-colors shadow-soft cursor-pointer flex items-center gap-1"
+            title="¿Algo no funcionó bien o tienes una idea?"
+          >
+            💡 Ticket
           </button>
           <SparkBadge count={sparkBalance} size="md" />
         </div>
@@ -1571,6 +1617,21 @@ export default function HomePage() {
           onClose={() => setCurrentBadgeCelebration(null)}
         />
       )}
+
+      {/* CHILD FEEDBACK TICKET MODAL */}
+      <ChildFeedbackModal
+        isOpen={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
+        childId={profile?.id}
+        childName={profile?.display_name || 'amigo'}
+      />
+
+      {/* STORY READER MODAL */}
+      <StoryReaderModal
+        isOpen={showStoryModal}
+        onClose={() => setShowStoryModal(false)}
+        story={activeStory}
+      />
     </div>
   );
 }
