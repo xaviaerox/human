@@ -1,0 +1,62 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "MIRA Platform API & Supabase Edge Services",
+    "description": "API Specification for MIRA Neurodivergent Growth Platform Serverless Edge Functions",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/functions/v1/companion-chat": {
+      "post": {
+        "summary": "Companion Lumi SSE Chat Stream & LLM Proxy",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": { "type": "string" },
+                  "childName": { "type": "string" },
+                  "companionName": { "type": "string" },
+                  "stage": { "type": "string" },
+                  "worldName": { "type": "string" }
+                },
+                "required": ["message"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Realtime SSE stream or JSON response"
+          }
+        }
+      }
+    },
+    "/functions/v1/decompose": {
+      "post": {
+        "summary": "AI Microtask Decomposition",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "prompt": { "type": "string" }
+                },
+                "required": ["prompt"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Decomposed microtasks JSON"
+          }
+        }
+      }
+    }
+  }
+}
