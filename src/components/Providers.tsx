@@ -16,6 +16,7 @@ import {
 } from '@/lib/adapters';
 
 import { NotifierQueueProvider } from '@/components/ui/NotifierQueueProvider';
+import { ToastProvider } from '@/components/feedback/ToastProvider';
 
 const authAdapter      = getAuthAdapter();
 const familyAdapter    = getFamilyAdapter();
@@ -31,9 +32,11 @@ export function Providers({ children }: { children: ReactNode }) {
             <ProgressionProvider>
               <SparkProvider>
                 <RewardsProvider>
-                  <NotifierQueueProvider>
-                    {children}
-                  </NotifierQueueProvider>
+                  <ToastProvider>
+                    <NotifierQueueProvider>
+                      {children}
+                    </NotifierQueueProvider>
+                  </ToastProvider>
                 </RewardsProvider>
               </SparkProvider>
             </ProgressionProvider>
