@@ -39,7 +39,7 @@ export function ChildFeedbackModal({ isOpen, onClose, childId, childName = 'amig
           status: 'open',
           created_at: new Date().toISOString(),
         });
-      } else {
+      } else if (typeof window !== 'undefined') {
         // Local storage fallback for feedback tickets
         const tickets = JSON.parse(localStorage.getItem('mira_child_feedback_tickets') || '[]');
         tickets.push({

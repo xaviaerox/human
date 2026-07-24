@@ -11,7 +11,6 @@ import { supabase } from '@/lib/supabase';
 import { getRewardsAdapter, getGoalsAdapter, getRoutineAdapter } from '@/lib/adapters';
 import { WORLD_THEMES, type WorldTheme, getWorldPhase } from '@/components/worlds/worldThemes';
 import { getNextMicrotask } from '@/lib/goals/MicrotaskEngine';
-import { decomposeGoalWithAI } from '@/lib/goals/decomposeAI';
 import { getSuggestedWords } from '@/lib/emotional/EmotionModel';
 import type {
   Reward,
@@ -116,6 +115,34 @@ export function useHomeState() {
     parentNote: string;
   } | null>(null);
 
+  const fetchActiveGoal = useCallback(() => {
+    if (!profile?.id) return;
+    goalsAdapter.getGoals(profile.id).then(res => {
+      if (res.ok) {
+        const activeList = res.data.filter(g => g.status === 'active');
+        setActiveGoals(activeList);
+
+        const active = activeList[0] || null;
+        if (active) {
+          const isStuck = Date.now() - new Date(active.updated_at).getTime() > 48 * 60 * 60 * 1000;
+          const task = getNextMicrotask(active.microtasks);
+          if (task) {
+            (task as GoalMicrotask & { isStuck?: boolean }).isStuck = isStuck;
+          }
+          setActiveGoal(active);
+          setNextTask(task);
+        } else {
+          setActiveGoal(null);
+          setNextTask(null);
+        }
+      }
+    });
+  }, [profile]);
+
+  useEffect(() => {
+    fetchActiveGoal();
+  }, [fetchActiveGoal]);
+
   const goalProposalState = useGoalProposals(session?.family?.id, profile?.id, () => {
     fetchActiveGoal();
   });
@@ -189,34 +216,7 @@ export function useHomeState() {
     }
   }, [selectedWorld.id, profile?.id, display]);
 
-  const fetchActiveGoal = useCallback(() => {
-    if (!profile?.id) return;
-    goalsAdapter.getGoals(profile.id).then(res => {
-      if (res.ok) {
-        const activeList = res.data.filter(g => g.status === 'active');
-        setActiveGoals(activeList);
-
-        const active = activeList[0] || null;
-        if (active) {
-          // Check if active goal is stuck (no changes in last 48 hours)
-          const isStuck = Date.now() - new Date(active.updated_at).getTime() > 48 * 60 * 60 * 1000;
-          const task = getNextMicrotask(active.microtasks);
-          if (task) {
-            (task as GoalMicrotask & { isStuck?: boolean }).isStuck = isStuck;
-          }
-          setActiveGoal(active);
-          setNextTask(task);
-        } else {
-          setActiveGoal(null);
-          setNextTask(null);
-        }
-      }
-    });
-  }, [profile]);
-
-  useEffect(() => {
-    fetchActiveGoal();
-  }, [fetchActiveGoal]);
+  // Realtime subscription for goal updates
 
   async function handleCompanionTap() {
     if (tapLoading || !display) return;

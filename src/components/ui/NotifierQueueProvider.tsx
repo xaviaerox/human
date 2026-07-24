@@ -15,7 +15,7 @@ interface NotifierQueueContextType {
 const NotifierQueueContext = createContext<NotifierQueueContextType | undefined>(undefined);
 
 export function NotifierQueueProvider({ children }: { children: ReactNode }) {
-  const [queue, setQueue] = useState<NotificationItem[]>([]);
+  const [_queue, setQueue] = useState<NotificationItem[]>([]);
   const [currentItem, setCurrentItem] = useState<NotificationItem | null>(null);
 
   const processQueue = useCallback((updatedQueue: NotificationItem[]) => {

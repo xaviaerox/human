@@ -17,22 +17,21 @@ export function CalmModeModal({ isOpen, onClose, companionName = 'Lumi' }: CalmM
   const [phase, setPhase] = useState<Phase>('inhale');
   const [secondsLeft, setSecondsLeft] = useState(60);
   const [cycleCount, setCycleCount] = useState(0);
-  const [isDyslexicFont, setIsDyslexicFont] = useState(false);
-
-  useEffect(() => {
-    const active = typeof document !== 'undefined' && document.body.getAttribute('data-font') === 'dyslexic';
-    setIsDyslexicFont(active);
-  }, []);
+  const [isDyslexicFont, setIsDyslexicFont] = useState(() =>
+    typeof document !== 'undefined' && document.body.getAttribute('data-font') === 'dyslexic'
+  );
 
   const toggleDyslexicFont = () => {
     const next = !isDyslexicFont;
     setIsDyslexicFont(next);
-    if (next) {
-      document.body.setAttribute('data-font', 'dyslexic');
-      localStorage.setItem('mira_font', 'dyslexic');
-    } else {
-      document.body.removeAttribute('data-font');
-      localStorage.setItem('mira_font', 'standard');
+    if (typeof window !== 'undefined') {
+      if (next) {
+        document.body.setAttribute('data-font', 'dyslexic');
+        localStorage.setItem('mira_font', 'dyslexic');
+      } else {
+        document.body.removeAttribute('data-font');
+        localStorage.setItem('mira_font', 'standard');
+      }
     }
   };
 
@@ -47,15 +46,6 @@ export function CalmModeModal({ isOpen, onClose, companionName = 'Lumi' }: CalmM
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
-
-  // Reset state when opening modal
-  useEffect(() => {
-    if (isOpen) {
-      setPhase('inhale');
-      setSecondsLeft(60);
-      setCycleCount(0);
-    }
-  }, [isOpen]);
 
   // 60-second countdown timer
   useEffect(() => {
@@ -74,9 +64,11 @@ export function CalmModeModal({ isOpen, onClose, companionName = 'Lumi' }: CalmM
     return () => clearInterval(timer);
   }, [isOpen]);
 
+  const isTimeFinished = secondsLeft === 0;
+
   // Breathing cycle independent of secondsLeft timer (4s inhale -> 4s hold -> 6s exhale)
   useEffect(() => {
-    if (!isOpen || secondsLeft === 0) return;
+    if (!isOpen || isTimeFinished) return;
 
     let timeout: NodeJS.Timeout;
 
@@ -96,7 +88,7 @@ export function CalmModeModal({ isOpen, onClose, companionName = 'Lumi' }: CalmM
     }
 
     return () => clearTimeout(timeout);
-  }, [isOpen, phase, secondsLeft === 0]); // Notice secondsLeft === 0 instead of secondsLeft!
+  }, [isOpen, phase, isTimeFinished]);
 
   if (!isOpen) return null;
 
