@@ -1,147 +1,83 @@
-# Mira 🌟
+<p align="center">
+  <img src="public/mira-banner.jpg" alt="MIRA Product Hero Banner" width="100%" style="border-radius: 16px;" />
+</p>
 
-> **Plataforma de crecimiento emocional y autonomía para niños y familias neurodivergentes.**
+# MIRA 🌟
+> **La Plataforma Inteligente de Crecimiento, Autonomía y Autorregulación para Familias Neurodivergentes.**
 
-[![CI Verification](https://github.com/xaviaerox/mira-app/actions/workflows/ci.yml/badge.svg)](https://github.com/xaviaerox/mira-app/actions/workflows/ci.yml)
-[![TypeScript Strict](https://img.shields.io/badge/TypeScript-Strict-blue.svg)](https://www.typescriptlang.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-16.2-black.svg)](https://nextjs.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL%20%2B%20RLS-emerald.svg)](https://supabase.com/)
+<p align="left">
+  <img src="public/mira-avatar.jpg" alt="MIRA Logo Avatar Lumi" width="80" height="80" style="border-radius: 50%; vertical-align: middle;" />
+</p>
 
----
-
-## 📖 Visión del Proyecto
-
-**Mira** es un espacio digital diseñado bajo principios éticos no punitivos para apoyar a niños neurodivergentes (TEA, TDAH, altas capacidades) y a sus familias en el desarrollo de la autorregulación emocional, hábitos de autonomía y la gestión compartida de metas familiares.
-
----
-
-## 💎 Principios No Negociables de Diseño (Neurodiversity-First)
-
-1. **Sin Rachas (No Streaks)**: No existen contadores de días consecutivos que generen ansiedad o culpa por interrupciones.
-2. **Sin Comparación Social**: Cada niño avanza a su propio ritmo. No existen tablas de clasificación ni rankings familiares.
-3. **Sin Regresión del Companion**: El compañero mágico (*Lumi*) evoluciona con las interacciones positivas pero **nunca pierde su etapa alcanzada**.
-4. **Sin Mecánicas de Urgencia**: Sin temporizadores estresantes ni notificaciones intrusivas.
-5. **Sin Puntuaciones Negativas**: Todas las evaluaciones de valores y chispas son acumulativas e incrementales.
+[![Gold Release v1.0](https://img.shields.io/badge/Status-Gold%20Release%20v1.0-amber.svg)](https://github.com/xaviaerox/mira-app)
+[![Neurodiversity First](https://img.shields.io/badge/Design-Neurodiversity--First-teal.svg)](https://github.com/xaviaerox/mira-app)
+[![Privacy & GDPR](https://img.shields.io/badge/Privacy-GDPR%20Art.%2020%20Ready-emerald.svg)](https://github.com/xaviaerox/mira-app)
+[![Instant Demo](https://img.shields.io/badge/Live%20Demo-Modo%20Demo%201--Clic-rose.svg)](https://xaviaerox.github.io/mira-app/)
 
 ---
 
-## 🏗️ Arquitectura del Sistema
+## 🕊️ La Misión: Valor Real para Familias y Necesidades Especiales
 
-El proyecto sigue una arquitectura desacoplada mediante el **Adapter Pattern**:
+**MIRA** nace con un propósito profundo: **apoyar a niños neurodivergentes (TEA, TDAH, altas capacidades y sensibilidades sensoriales) y a sus familias** a cultivar la autorregulación emocional, la autonomía diaria y la complicidad familiar mediante un entorno digital respetuoso, no punitivo y empático.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        MIRA PLATFORM                            │
-│                                                                  │
-│   Vista Infantil                    Panel Parental (Dashboard)   │
-│   ──────────────────                ──────────────────────────   │
-│   • Companion Lumi (ambient)        • Gestión de miembros        │
-│   • Rutinas de hoy                  • Resumen emocional semanal  │
-│   • Metas y microtareas             • Asignación de objetivos    │
-│   • Check-in emocional              • Recompensas e insignias    │
-│                                                                  │
-│                   │                           │                  │
-│                   └───────────┬───────────────┘                  │
-│                               │                                  │
-│                    ┌──────────▼──────────────┐                   │
-│                    │   Next.js App Layer      │                   │
-│                    │   React Context Tree     │                   │
-│                    │   Adapter Pattern        │                   │
-│                    └──────────┬──────────────┘                   │
-│                               │                                  │
-│              ┌────────────────▼────────────────┐                 │
-│              │           Supabase               │                 │
-│              │  PostgreSQL + Auth + Realtime    │                 │
-│              │  Row Level Security (RLS)        │                 │
-│              │  Vector Memory (pgvector RAG)    │                 │
-│              └─────────────────────────────────┘                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+A diferencia de las aplicaciones convencionales basadas en la presión o la sobreestimulación, **MIRA coloca la salud mental y la tranquilidad familiar en el centro**, transformando los desafíos cotidianos (rutinas, hábitos, crisis emocionales) en aventuras compartidas de aprendizaje.
 
 ---
 
-## 🚀 Inicio Rápido
+## 💎 Pilares Neurodiversity-First (Diseño Ético y Amable)
 
-### Requisitos previos
-- Node.js 20+
-- npm 10+
-- Docker (opcional para ejecución containerizada o Supabase local)
-
-### Instalación local
-
-```bash
-# 1. Clonar el repositorio
-git clone https://github.com/xaviaerox/mira-app.git
-cd mira-app
-
-# 2. Instalar dependencias
-npm install
-
-# 3. Configurar variables de entorno
-cp .env.local.example .env.local
-
-# 4. Iniciar servidor de desarrollo (Modo estático in-memory por defecto)
-npm run dev
-```
-
-Navega a [http://localhost:3000](http://localhost:3000) en tu navegador.
+1. **Sin Rachas Estresantes (No Streaks)**: Eliminamos los contadores de días consecutivos que generan ansiedad, frustración o sentimiento de culpa ante interrupciones.
+2. **Sin Comparación Social**: Cada niño avanza a su propio ritmo. No existen tablas de clasificación, ránquines ni métricas competitivas.
+3. **Sin Regresión del Compañero**: El compañero mágico (*Lumi*) evoluciona con las interacciones positivas, pero **jamás pierde su nivel alcanzado** ni muestra abandono.
+4. **Baja Estimulación Sensorial Controlada**: Interfaz regulable con *Modo Calma* (inhabilitación de animaciones bruscas) y tonos armónicos de 432Hz en audio Web Audio API.
+5. **Refuerzo Positivo Incremental**: No existen puntos negativos ni penalizaciones. Todas las chispas y logros son acumulativos y celebran el esfuerzo.
 
 ---
 
-## ⚙️ Variables de Entorno
+## ✨ Experiencia del Producto
 
-| Variable | Tipo | Descripción |
-|---|---|---|
-| `NEXT_PUBLIC_DATA_SOURCE` | Obligatorio | `'static'` (demostración en memoria) o `'supabase'` (producción). |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase | URL del proyecto de Supabase. |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase | Clave pública anónima de Supabase. |
-| `GROQ_API_KEY` | Servidor | Clave de API de Groq para desintegración IA y Companion chat. |
-| `GEMINI_API_KEY` | Servidor | Clave de API de Google Gemini (fallback de IA). |
-| `ANTHROPIC_API_KEY` | Servidor | Clave de API de Anthropic Claude (fallback de IA). |
+### 1. Compañero Digital Mágico (*Lumi*)
+Un acompañante digital adaptativo que conversa de forma empática con el niño, le lee cuentos personalizados según su estado de ánimo y desintegra los objetivos complejos en micropasos alcanzables mediante Inteligencia Artificial adaptativa.
 
----
+### 2. Rincón de Calma y Autorregulación Sensorial
+Un espacio seguro accesible en 1-clic con la técnica de **Respiración Guiada *Box Breathing* (4-4-4-4)**, respaldada por ondas armónicas suaves para guiar la calma en momentos de sobrecarga sensorial o desregulación emocional.
 
-## 🧪 Testing y Verificación
+### 3. Aventuras Co-Creadas y Descomposición de Metas
+Niños y padres pueden sugerir y co-crear aventuras compartidas. La aplicación utiliza IA para transformar una meta grande (*"Aprender a atar mis cordones"*) en 3 microcapítulos simples y sin presión.
 
-```bash
-# Comprobación de tipos TypeScript en modo estricto
-npm run typecheck
-
-# Análisis estático de código con ESLint
-npm run lint
-
-# Pruebas unitarias con Vitest
-npm run test
-
-# Pruebas E2E con Playwright
-npm run test:e2e
-
-# Cobertura de código
-npm run test:coverage
-```
+### 4. Panel Parental y Terapéutico
+Un centro de control completo para las familias y profesionales de la salud:
+- **Exportación de Informes Terapéuticos (PDF, JSON y CSV)** con históricos de check-ins emocionales, energías y dimensiones de valor.
+- **Verificación de Seguridad PIN (4 dígitos)** para proteger acciones parentales sensibles.
+- **Gestión Multi-Hijo** para familias con varios pequeños.
 
 ---
 
-## 🐳 Despliegue con Docker
+## 🔒 Privacidad de Vanguardia y Procesamiento Local
 
-Para construir y levantar el contenedor de producción localmente:
-
-```bash
-docker-compose up --build
-```
-
-El servicio estará disponible en `http://localhost:3000`.
+- **Motor IA Local On-Device (WASM / WebLLM)**: Capaz de generar respuestas y cuentos de acompañamiento **100% offline y en el dispositivo del usuario**, sin enviar datos a servidores externos.
+- **Sanitización de PII (Datos de Identificación Personal)**: Filtrado automático de nombres, direcciones y teléfonos antes de procesar cualquier interacción.
+- **Portabilidad GDPR Art. 20**: Exportación completa de los datos de la familia en cualquier momento.
 
 ---
 
-## 🔒 Seguridad y Privacidad
+## 🏢 Propuesta de Valor para Organizaciones Terapéuticas y Clínicas
 
-- **Row Level Security (RLS)**: Enforzado en todas las tablas de PostgreSQL.
-- **Triggers Servidor**: El cálculo del saldo de chispas (`spark_ledger`) y la evolución del Companion están protegidos en el servidor mediante funciones `SECURITY DEFINER`.
-- **Sanitización de PII**: Las notas libres se desinfectan mediante `PiiSanitizer` antes de procesarse en modelos de lenguaje.
+**MIRA** está concebido como una herramienta de extensión terapéutica para:
+- **Centros de Atención Temprana y Terapia Ocupacional**: Seguimiento visual de la autorregulación en el hogar.
+- **Psicología Infantil y Gabinetes de Psicopedagogía**: Informes emocionales semanales estructurados.
+- **Asociaciones de Neurodiversidad y Familias**: Un recurso accesible desde cualquier dispositivo para mejorar la convivencia diaria.
 
 ---
 
-## 📄 Licencia
+## 🌟 Probar la Experiencia Interactiva (Live Product Demo)
 
-Este proyecto está bajo la Licencia **MIT**. Ver [LICENSE](file:///c:/Users/Xaviaerox/Documents/GitHub/mira-app/LICENSE) para más información.
+La aplicación cuenta con una demostración interactiva completa en 1-clic que permite explorar todas sus funcionalidades sin necesidad de registro previo ni configuración:
+
+👉 **[Explorar MIRA en Vivo (Modo Demo)](https://xaviaerox.github.io/mira-app/)**
+
+---
+
+<p align="center">
+  <sub>Desarrollado con amor, rigor técnico y empatía para acompañar el crecimiento de cada niño a su propio ritmo.</sub>
+</p>
