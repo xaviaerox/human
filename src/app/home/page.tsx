@@ -286,42 +286,10 @@ export default function HomePage() {
             </h1>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-1.5 justify-end max-w-md">
-          <button
-            onClick={handleOpenStory}
-            className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-200/70 hover:bg-amber-500/20 transition-all shadow-soft cursor-pointer flex items-center gap-1"
-          >
-            📖 Cuento
-          </button>
-          <button
-            onClick={() => setShowCalmModal(true)}
-            className="text-xs font-semibold px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-200/60 hover:bg-teal-500/20 transition-all shadow-soft cursor-pointer flex items-center gap-1"
-          >
-            🌸 Respira
-          </button>
-          <button
-            onClick={() => setIsProposingGoal(true)}
-            className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-amber-300/80 hover:bg-amber-500/25 transition-all shadow-soft cursor-pointer flex items-center gap-1"
-          >
-            💡 Sugerir Meta
-          </button>
-          <button
-            onClick={() => setShowCustomization(true)}
-            className="text-xs font-semibold px-2 py-1 rounded-full bg-white/90 border border-stone-200 text-stone-700 hover:bg-white transition-colors shadow-soft cursor-pointer"
-            title="Armario"
-          >
-            🎨 Armario
-          </button>
-          <button
-            onClick={() => setShowRewards(true)}
-            className="text-xs font-semibold px-2 py-1 rounded-full bg-white/90 border border-stone-200 text-stone-700 hover:bg-white transition-colors shadow-soft cursor-pointer"
-            title="Canjear Recompensas"
-          >
-            🎁 Canjear
-          </button>
+        <div className="flex items-center gap-2 justify-end">
           <button
             onClick={toggleSilentMode}
-            className={`p-1.5 rounded-full border transition-all shadow-soft cursor-pointer ${
+            className={`p-2 rounded-full border transition-all shadow-soft cursor-pointer ${
               silentMode
                 ? 'bg-amber-100 text-amber-900 border-amber-300'
                 : 'bg-white/90 text-stone-600 border-stone-200 hover:bg-white'
@@ -332,8 +300,8 @@ export default function HomePage() {
           </button>
           <button
             onClick={() => setShowFeedbackModal(true)}
-            className="p-1.5 rounded-full bg-rose-500/10 text-rose-700 border border-rose-200 hover:bg-rose-500/20 transition-colors shadow-soft cursor-pointer"
-            title="Sugerencia o Ticket"
+            className="p-2 rounded-full bg-rose-500/10 text-rose-700 border border-rose-200 hover:bg-rose-500/20 transition-colors shadow-soft cursor-pointer"
+            title="Sugerencia o Ticket de Soporte"
           >
             💬
           </button>
@@ -440,18 +408,24 @@ export default function HomePage() {
               </div>
 
               {/* Actions row */}
-              <div className="flex gap-3 mt-6">
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-6">
                 <button
                   onClick={() => setShowMemoriesModal(true)}
-                  className="text-xs font-semibold px-4 py-2.5 rounded-full bg-white/80 border border-stone-205 hover:bg-white text-stone-600 transition-colors shadow-soft flex items-center gap-1.5 cursor-pointer"
+                  className="text-xs font-semibold px-3 py-2 rounded-full bg-white/90 border border-stone-200 hover:bg-white text-stone-700 transition-colors shadow-soft flex items-center gap-1 cursor-pointer"
                 >
-                  📖 Recuerdos e Insignias
+                  🎖️ Recuerdos
+                </button>
+                <button
+                  onClick={handleOpenStory}
+                  className="text-xs font-semibold px-3 py-2 rounded-full bg-amber-500/15 border border-amber-300 text-amber-900 hover:bg-amber-500/25 transition-all shadow-soft flex items-center gap-1 cursor-pointer"
+                >
+                  📖 Cuento con {display?.name ?? 'Lumi'}
                 </button>
                 <button
                   onClick={() => setShowChatModal(true)}
-                  className="text-xs font-semibold px-4 py-2.5 rounded-full bg-bloom-50 hover:bg-bloom-100 border border-bloom-200 text-bloom-600 transition-all shadow-soft flex items-center gap-1.5 cursor-pointer hover:scale-[1.03]"
+                  className="text-xs font-semibold px-3.5 py-2 rounded-full bg-bloom-50 hover:bg-bloom-100 border border-bloom-200 text-bloom-600 transition-all shadow-soft flex items-center gap-1 cursor-pointer hover:scale-[1.03]"
                 >
-                  💬 Hablar con {display?.name ?? 'Compañero'}
+                  💬 Hablar con {display?.name ?? 'Lumi'}
                 </button>
               </div>
             </motion.div>
@@ -501,11 +475,19 @@ export default function HomePage() {
               transition={{ duration: 0.3 }}
               className="flex flex-col gap-4 py-4 w-full"
             >
-              <div className="text-center mb-1">
-                <h2 className="text-xl font-display text-stone-850">Aventuras</h2>
-                <p className="text-xs text-stone-400 font-body mt-1">
-                  Pasos significativos acompañados de tu compañero
-                </p>
+              <div className="flex items-center justify-between mb-1">
+                <div className="text-left">
+                  <h2 className="text-xl font-display text-stone-850">Aventuras y Objetivos</h2>
+                  <p className="text-xs text-stone-400 font-body mt-0.5">
+                    Pasos significativos acompañados de tu compañero
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsProposingGoal(true)}
+                  className="text-xs font-bold px-3 py-1.5 rounded-full bg-amber-500/15 text-amber-900 border border-amber-300 hover:bg-amber-500/25 transition-all shadow-soft flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                >
+                  💡 Sugerir Meta
+                </button>
               </div>
 
               {activeGoals.length > 0 ? (
@@ -572,6 +554,23 @@ export default function HomePage() {
                 <p className="text-xs text-stone-400 font-body mt-1">
                   Reflexiona sobre tus sentimientos y compártelo con tu compañero
                 </p>
+              </div>
+
+              {/* Rincón de Calma Access */}
+              <div className="p-3.5 bg-gradient-to-r from-teal-500/10 to-emerald-500/10 border border-teal-200/80 rounded-3xl flex items-center justify-between shadow-soft my-1">
+                <div className="flex items-center gap-3 text-left">
+                  <span className="text-2xl">🌸</span>
+                  <div>
+                    <h3 className="text-xs font-bold text-teal-900 font-display">Rincón de Calma</h3>
+                    <p className="text-[11px] text-teal-700/80 font-body">Respiración guiada (4-4-4-4) para autoregularte</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowCalmModal(true)}
+                  className="px-3.5 py-1.5 rounded-full bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold shadow-soft transition-all cursor-pointer whitespace-nowrap"
+                >
+                  Respira
+                </button>
               </div>
 
               {/* Cooldown Warning */}
@@ -918,13 +917,118 @@ export default function HomePage() {
             </motion.div>
           )}
 
+          {/* TAB 5: AJUSTES / PERFIL */}
+          {activeTab === 'profile' && (
+            <motion.div
+              key="profile"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.3 }}
+              className="flex flex-col gap-4 py-4 w-full max-w-sm mx-auto"
+            >
+              <div className="text-center mb-1">
+                <h2 className="text-xl font-display text-stone-850">Ajustes y Perfil</h2>
+                <p className="text-xs text-stone-400 font-body mt-1">
+                  Personalización, entorno y preferencias
+                </p>
+              </div>
+
+              {/* Profile Card */}
+              <div className="bg-white/95 rounded-3xl p-5 border border-stone-200 shadow-soft flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <ChildAvatar
+                    baseEmoji={profile?.avatar_base_emoji}
+                    accessory={profile?.avatar_accessory}
+                    size="lg"
+                  />
+                  <div className="text-left">
+                    <h3 className="font-display text-lg font-bold text-stone-800">{profile?.display_name}</h3>
+                    <p className="text-xs text-stone-400 font-body">Perfil Infantil</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowCustomization(true)}
+                  className="px-3.5 py-2 rounded-2xl bg-amber-500/15 text-amber-900 border border-amber-300 text-xs font-bold hover:bg-amber-500/25 transition-all cursor-pointer flex items-center gap-1"
+                >
+                  🎨 Armario
+                </button>
+              </div>
+
+              {/* Settings List */}
+              <div className="flex flex-col gap-2.5">
+                {/* World Theme */}
+                <button
+                  onClick={() => setShowWorldsModal(true)}
+                  className="p-4 bg-white/90 rounded-2xl border border-stone-200 flex items-center justify-between shadow-soft hover:bg-white transition-all cursor-pointer text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{selectedWorld.emoji}</span>
+                    <div>
+                      <p className="text-xs font-bold text-stone-700">Mundo Actual</p>
+                      <p className="text-xs text-stone-500">{selectedWorld.name}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs text-stone-400 font-semibold">Cambiar ▾</span>
+                </button>
+
+                {/* Rewards Catalog */}
+                <button
+                  onClick={() => setShowRewards(true)}
+                  className="p-4 bg-white/90 rounded-2xl border border-stone-200 flex items-center justify-between shadow-soft hover:bg-white transition-all cursor-pointer text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">🎁</span>
+                    <div>
+                      <p className="text-xs font-bold text-stone-700">Catálogo de Premios</p>
+                      <p className="text-xs text-stone-500">Canjear chispas acumuladas ({sparkBalance} ⚡)</p>
+                    </div>
+                  </div>
+                  <span className="text-xs text-stone-400 font-semibold">Ver Premios ›</span>
+                </button>
+
+                {/* Accessibility / Silent Mode */}
+                <div className="p-4 bg-white/90 rounded-2xl border border-stone-200 flex items-center justify-between shadow-soft text-left">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{silentMode ? '🌙' : '✨'}</span>
+                    <div>
+                      <p className="text-xs font-bold text-stone-700">Modo Menos Animaciones</p>
+                      <p className="text-xs text-stone-500">Entorno visual de baja estimulación</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={toggleSilentMode}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                      silentMode ? 'bg-amber-500 text-slate-950' : 'bg-stone-100 text-stone-600'
+                    }`}
+                  >
+                    {silentMode ? 'Activado ✓' : 'Desactivado'}
+                  </button>
+                </div>
+
+                {/* Logout */}
+                <button
+                  onClick={async () => {
+                    if (confirm('¿Quieres cerrar sesión?')) {
+                      await signOut();
+                      router.replace('/login');
+                    }
+                  }}
+                  className="p-4 bg-rose-500/10 rounded-2xl border border-rose-200/80 flex items-center justify-center gap-2 text-rose-700 text-xs font-bold hover:bg-rose-500/20 transition-all cursor-pointer mt-2"
+                >
+                  🚪 Cerrar Sesión
+                </button>
+              </div>
+            </motion.div>
+          )}
+
         </AnimatePresence>
 
       </main>
 
       {/* Bottom Nav */}
       <nav
-        className="fixed bottom-0 left-0 right-0 bg-white border-t border-stone-100 px-4 py-2 z-30"
+        className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-stone-200 px-2 py-1.5 z-30"
         aria-label="Navegación"
       >
         <div className="flex justify-around max-w-md mx-auto">
@@ -932,23 +1036,24 @@ export default function HomePage() {
             { tab: 'hogar', label: 'Inicio', icon: '⌂' },
             { tab: 'routines', label: 'Rutinas', icon: '◎' },
             { tab: 'goals', label: 'Objetivo', icon: '◈' },
-            { tab: 'checkin', label: 'Cómo estoy', icon: '♡' }
+            { tab: 'checkin', label: 'Cómo estoy', icon: '♡' },
+            { tab: 'profile', label: 'Ajustes', icon: '⚙' },
           ].map(item => {
             const isActive = activeTab === item.tab;
             return (
               <button
                 key={item.tab}
-                onClick={() => setActiveTab(item.tab as 'hogar' | 'routines' | 'goals' | 'checkin')}
+                onClick={() => setActiveTab(item.tab as 'hogar' | 'routines' | 'goals' | 'checkin' | 'profile')}
                 className={`
-                  flex flex-col items-center gap-0.5 px-3 py-2 rounded-2xl transition-all cursor-pointer
+                  flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-2xl transition-all cursor-pointer
                   ${isActive
-                    ? 'text-bloom-600 bg-bloom-50'
+                    ? 'text-bloom-600 bg-bloom-50 font-bold'
                     : 'text-stone-400 hover:text-stone-600'
                   }
                 `}
               >
                 <span className="text-lg" aria-hidden="true">{item.icon}</span>
-                <span className="text-xs font-medium">{item.label}</span>
+                <span className="text-[10px] font-medium">{item.label}</span>
               </button>
             );
           })}

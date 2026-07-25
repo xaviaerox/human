@@ -11,9 +11,9 @@ const STATIC_GOALS: GoalWithMicrotasks[] = [
     id: 'goal-1',
     family_id: 'static-family-1',
     child_id: 'static-child-1',
-    title: 'Learn to tie my shoes',
-    description: 'I want to do it by myself',
-    why: 'So I don\'t need help every morning',
+    title: 'Aprender a atar mis cordones',
+    description: 'Quiero hacerlo por mí mismo/a',
+    why: 'Para no necesitar ayuda todas las mañanas',
     status: 'active',
     value_dimensions: ['autonomy', 'courage'],
     total_sparks: 10,
@@ -27,7 +27,7 @@ const STATIC_GOALS: GoalWithMicrotasks[] = [
     microtasks: [
       {
         id: 'mt-1', goal_id: 'goal-1', position: 1,
-        title: 'Watch how it\'s done once',
+        title: 'Mirar cómo se hace una vez',
         effort_level: 'easy', spark_value: 1,
         value_dimensions: ['curiosity'],
         status: 'complete', ai_generated: false,
@@ -36,16 +36,50 @@ const STATIC_GOALS: GoalWithMicrotasks[] = [
       },
       {
         id: 'mt-2', goal_id: 'goal-1', position: 2,
-        title: 'Try making the first loop',
+        title: 'Intentar hacer el primer lazo',
         effort_level: 'medium', spark_value: 3,
         value_dimensions: ['courage'],
         status: 'in_progress', ai_generated: false,
       },
       {
         id: 'mt-3', goal_id: 'goal-1', position: 3,
-        title: 'Tie my shoes all the way through',
+        title: 'Atar mis cordones completamente',
         effort_level: 'stretch', spark_value: 6,
         value_dimensions: ['autonomy', 'courage'],
+        status: 'pending', ai_generated: false,
+      },
+    ],
+  },
+  {
+    id: 'goal-2',
+    family_id: 'static-family-1',
+    child_id: 'static-child-2',
+    title: 'Ordenar mis juguetes antes de cenar',
+    description: 'Guardar todo en sus cajones',
+    why: 'Para mantener mi habitación limpia y ganar chispas',
+    status: 'active',
+    value_dimensions: ['autonomy'],
+    total_sparks: 6,
+    visibility: 'child_and_parent',
+    co_created: true,
+    one_per_day: true,
+    created_by: 'static-parent-1',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    progress: 0,
+    microtasks: [
+      {
+        id: 'mt-201', goal_id: 'goal-2', position: 1,
+        title: 'Recoger las piezas de construcción',
+        effort_level: 'easy', spark_value: 2,
+        value_dimensions: ['autonomy'],
+        status: 'pending', ai_generated: false,
+      },
+      {
+        id: 'mt-202', goal_id: 'goal-2', position: 2,
+        title: 'Guardar los muñecos en su baúl',
+        effort_level: 'medium', spark_value: 4,
+        value_dimensions: ['autonomy'],
         status: 'pending', ai_generated: false,
       },
     ],
@@ -59,9 +93,12 @@ export class StaticGoalsAdapter implements IGoalsAdapter {
   private _nextId(): string { return `static-${++this._idCounter}`; }
 
   async getGoals(childId: string): Promise<Result<GoalWithMicrotasks[]>> {
-    const results = this._goals.filter(
+    let results = this._goals.filter(
       g => g.child_id === childId && g.status !== 'archived'
     );
+    if (results.length === 0) {
+      results = this._goals.filter(g => g.status !== 'archived');
+    }
     return { ok: true, data: results };
   }
 

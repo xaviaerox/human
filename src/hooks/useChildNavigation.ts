@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { WORLD_THEMES, type WorldTheme } from '@/components/worlds/worldThemes';
 
 export function useChildNavigation() {
-  const [activeTab, setActiveTab] = useState<'hogar' | 'routines' | 'goals' | 'checkin'>('hogar');
+  const [activeTab, setActiveTab] = useState<'hogar' | 'routines' | 'goals' | 'checkin' | 'profile'>('hogar');
 
   const [selectedWorld, setSelectedWorldState] = useState<WorldTheme>(() => {
     if (typeof window !== 'undefined') {
