@@ -44,6 +44,8 @@ export class SupabaseGoalsAdapter implements IGoalsAdapter {
 
   async createGoal(params: CreateGoalParams): Promise<Result<GoalWithMicrotasks>> {
     const { microtasks: taskDrafts, ...goalData } = params;
+    const { data: { user } } = await this.client.auth.getUser();
+    const creatorId = user?.id ?? goalData.created_by;
 
     const { data: goal, error: goalError } = await this.client
       .from('goals')
@@ -55,11 +57,11 @@ export class SupabaseGoalsAdapter implements IGoalsAdapter {
         why:         goalData.why,
         status:      goalData.status ?? 'active',
         target_date: goalData.target_date,
-        value_dimensions: goalData.value_dimensions,
+        value_dimensions: goalData.value_dimensions ?? ['autonomy'],
         visibility:  goalData.visibility ?? 'child_and_parent',
-        co_created:  goalData.co_created ?? false,
+        co_created:  goalData.co_created ?? true,
         one_per_day: goalData.one_per_day ?? true,
-        created_by:  goalData.created_by,
+        created_by:  creatorId,
       })
       .select()
       .single();

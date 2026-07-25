@@ -68,7 +68,9 @@ export function useGoalProposals(familyId?: string, childId?: string, onSubmitte
       created_by: childId,
       title: goalPropTitle.trim(),
       why: goalPropWhy.trim() || undefined,
+      co_created: true,
       one_per_day: true,
+      status: 'active',
       microtasks: stepsToUse.map((t, idx) => ({
         title: t,
         position: idx + 1,

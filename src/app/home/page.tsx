@@ -288,22 +288,23 @@ export default function HomePage() {
         </div>
         <div className="flex items-center gap-2 justify-end">
           <button
-            onClick={toggleSilentMode}
-            className={`p-2 rounded-full border transition-all shadow-soft cursor-pointer ${
-              silentMode
-                ? 'bg-amber-100 text-amber-900 border-amber-300'
-                : 'bg-white/90 text-stone-600 border-stone-200 hover:bg-white'
-            }`}
-            title={silentMode ? 'Animaciones desactivadas (modo calma)' : 'Activar modo menos animaciones'}
+            onClick={() => setShowRewards(true)}
+            className="text-xs font-bold px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-stone-200/80 hover:border-amber-300 text-stone-700 hover:bg-white shadow-soft transition-all hover:scale-[1.02] active:scale-95 cursor-pointer flex items-center gap-1.5"
+            title="Catálogo de Premios y Recompensas"
           >
-            {silentMode ? '🌙' : '✨'}
+            <span>🎁</span>
+            <span>Canjear</span>
           </button>
           <button
-            onClick={() => setShowFeedbackModal(true)}
-            className="p-2 rounded-full bg-rose-500/10 text-rose-700 border border-rose-200 hover:bg-rose-500/20 transition-colors shadow-soft cursor-pointer"
-            title="Sugerencia o Ticket de Soporte"
+            onClick={toggleSilentMode}
+            className={`p-1.5 px-2.5 rounded-full border backdrop-blur-md transition-all shadow-soft cursor-pointer text-xs font-semibold flex items-center gap-1 hover:scale-[1.02] active:scale-95 ${
+              silentMode
+                ? 'bg-amber-100/90 text-amber-900 border-amber-300'
+                : 'bg-white/90 text-stone-600 border-stone-200/80 hover:bg-white'
+            }`}
+            title={silentMode ? 'Modo Calma activado (menos animaciones)' : 'Activar Modo Calma'}
           >
-            💬
+            <span>{silentMode ? '🌙' : '✨'}</span>
           </button>
           <SparkBadge count={sparkBalance} size="md" />
         </div>
@@ -411,21 +412,24 @@ export default function HomePage() {
               <div className="flex flex-wrap items-center justify-center gap-2 mt-6">
                 <button
                   onClick={() => setShowMemoriesModal(true)}
-                  className="text-xs font-semibold px-3 py-2 rounded-full bg-white/90 border border-stone-200 hover:bg-white text-stone-700 transition-colors shadow-soft flex items-center gap-1 cursor-pointer"
+                  className="text-xs font-bold px-3.5 py-2 rounded-full bg-white/90 backdrop-blur-md border border-stone-200/80 hover:border-amber-300 text-stone-700 hover:bg-white shadow-soft transition-all hover:scale-[1.03] active:scale-95 cursor-pointer flex items-center gap-1.5"
                 >
-                  🎖️ Recuerdos
+                  <span>🎖️</span>
+                  <span>Recuerdos</span>
                 </button>
                 <button
                   onClick={handleOpenStory}
-                  className="text-xs font-semibold px-3 py-2 rounded-full bg-amber-500/15 border border-amber-300 text-amber-900 hover:bg-amber-500/25 transition-all shadow-soft flex items-center gap-1 cursor-pointer"
+                  className="text-xs font-bold px-3.5 py-2 rounded-full bg-amber-500/15 backdrop-blur-md border border-amber-300/80 text-amber-900 hover:bg-amber-500/25 shadow-soft transition-all hover:scale-[1.03] active:scale-95 cursor-pointer flex items-center gap-1.5"
                 >
-                  📖 Cuento con {display?.name ?? 'Lumi'}
+                  <span>📖</span>
+                  <span>Cuento con {display?.name ?? 'Lumi'}</span>
                 </button>
                 <button
                   onClick={() => setShowChatModal(true)}
-                  className="text-xs font-semibold px-3.5 py-2 rounded-full bg-bloom-50 hover:bg-bloom-100 border border-bloom-200 text-bloom-600 transition-all shadow-soft flex items-center gap-1 cursor-pointer hover:scale-[1.03]"
+                  className="text-xs font-bold px-4 py-2 rounded-full bg-bloom-50/90 backdrop-blur-md hover:bg-bloom-100 border border-bloom-200/90 text-bloom-700 shadow-soft transition-all hover:scale-[1.03] active:scale-95 cursor-pointer flex items-center gap-1.5"
                 >
-                  💬 Hablar con {display?.name ?? 'Lumi'}
+                  <span>💬</span>
+                  <span>Hablar con {display?.name ?? 'Lumi'}</span>
                 </button>
               </div>
             </motion.div>
@@ -484,9 +488,10 @@ export default function HomePage() {
                 </div>
                 <button
                   onClick={() => setIsProposingGoal(true)}
-                  className="text-xs font-bold px-3 py-1.5 rounded-full bg-amber-500/15 text-amber-900 border border-amber-300 hover:bg-amber-500/25 transition-all shadow-soft flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                  className="text-xs font-bold px-3.5 py-2 rounded-full bg-amber-500/15 backdrop-blur-md text-amber-950 border border-amber-300/90 hover:bg-amber-500/25 shadow-soft transition-all hover:scale-[1.03] active:scale-95 cursor-pointer whitespace-nowrap flex items-center gap-1.5"
                 >
-                  💡 Sugerir Meta
+                  <span>💡</span>
+                  <span>Sugerir Meta</span>
                 </button>
               </div>
 
@@ -567,7 +572,7 @@ export default function HomePage() {
                 </div>
                 <button
                   onClick={() => setShowCalmModal(true)}
-                  className="px-3.5 py-1.5 rounded-full bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold shadow-soft transition-all cursor-pointer whitespace-nowrap"
+                  className="px-4 py-2 rounded-full bg-teal-600/90 backdrop-blur-md hover:bg-teal-500 text-white text-xs font-bold shadow-soft transition-all hover:scale-[1.03] active:scale-95 cursor-pointer whitespace-nowrap"
                 >
                   Respira
                 </button>
@@ -988,7 +993,7 @@ export default function HomePage() {
                 </button>
 
                 {/* Accessibility / Silent Mode */}
-                <div className="p-4 bg-white/90 rounded-2xl border border-stone-200 flex items-center justify-between shadow-soft text-left">
+                <div className="p-4 bg-white/90 backdrop-blur-md rounded-2xl border border-stone-200/80 flex items-center justify-between shadow-soft text-left">
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">{silentMode ? '🌙' : '✨'}</span>
                     <div>
@@ -998,13 +1003,28 @@ export default function HomePage() {
                   </div>
                   <button
                     onClick={toggleSilentMode}
-                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                      silentMode ? 'bg-amber-500 text-slate-950' : 'bg-stone-100 text-stone-600'
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer hover:scale-105 active:scale-95 ${
+                      silentMode ? 'bg-amber-500 text-slate-950 shadow-soft' : 'bg-stone-100 text-stone-600'
                     }`}
                   >
                     {silentMode ? 'Activado ✓' : 'Desactivado'}
                   </button>
                 </div>
+
+                {/* Feedback / Support Ticket */}
+                <button
+                  onClick={() => setShowFeedbackModal(true)}
+                  className="p-4 bg-white/90 backdrop-blur-md rounded-2xl border border-stone-200/80 flex items-center justify-between shadow-soft hover:bg-white hover:border-rose-300 transition-all hover:scale-[1.01] active:scale-98 cursor-pointer text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">💬</span>
+                    <div>
+                      <p className="text-xs font-bold text-stone-700">Sugerencia o Ticket de Soporte</p>
+                      <p className="text-xs text-stone-500">¿Tienes una idea o algo no funciona bien?</p>
+                    </div>
+                  </div>
+                  <span className="text-xs text-rose-600 font-semibold">Crear Ticket ›</span>
+                </button>
 
                 {/* Logout */}
                 <button
