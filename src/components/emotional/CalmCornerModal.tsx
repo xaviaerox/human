@@ -8,6 +8,7 @@ import { useSensoryAudio } from '@/hooks/useSensoryAudio';
 interface CalmCornerModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onComplete?: () => void;
 }
 
 type BreathPhase = 'inhale' | 'hold1' | 'exhale' | 'hold2';
@@ -43,11 +44,18 @@ const PHASE_CONFIG: Record<BreathPhase, { text: string; duration: number; next: 
   },
 };
 
-export function CalmCornerModal({ isOpen, onClose }: CalmCornerModalProps) {
+export function CalmCornerModal({ isOpen, onClose, onComplete }: CalmCornerModalProps) {
   const [phase, setPhase] = useState<BreathPhase>('inhale');
   const [secondsLeft, setSecondsLeft] = useState(4);
   const [completedCycles, setCompletedCycles] = useState(0);
   const { isMuted, toggleMute, playCalmTone } = useSensoryAudio();
+
+  const handleFinish = () => {
+    if (completedCycles > 0) {
+      onComplete?.();
+    }
+    onClose();
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -95,7 +103,7 @@ export function CalmCornerModal({ isOpen, onClose }: CalmCornerModalProps) {
               {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5 text-teal-400" />}
             </button>
             <button
-              onClick={onClose}
+              onClick={handleFinish}
               className="rounded-full p-2 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
               aria-label="Cerrar Rincón de Calma"
             >
@@ -158,7 +166,7 @@ export function CalmCornerModal({ isOpen, onClose }: CalmCornerModalProps) {
 
           {/* Affirmative Bottom Action */}
           <button
-            onClick={onClose}
+            onClick={handleFinish}
             className="w-full rounded-2xl bg-teal-500/20 py-3.5 px-6 font-semibold text-teal-300 border border-teal-500/30 hover:bg-teal-500/30 transition-all duration-200"
           >
             Siento más calma, volver al reino 🌸

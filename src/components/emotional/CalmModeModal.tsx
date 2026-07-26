@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -8,18 +8,26 @@ import { Button } from '@/components/ui/Button';
 interface CalmModeModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onComplete?: () => void;
   companionName?: string;
 }
 
 type Phase = 'inhale' | 'hold' | 'exhale';
 
-export function CalmModeModal({ isOpen, onClose, companionName = 'Lumi' }: CalmModeModalProps) {
+export function CalmModeModal({ isOpen, onClose, onComplete, companionName = 'Lumi' }: CalmModeModalProps) {
   const [phase, setPhase] = useState<Phase>('inhale');
   const [secondsLeft, setSecondsLeft] = useState(60);
   const [cycleCount, setCycleCount] = useState(0);
   const [isDyslexicFont, setIsDyslexicFont] = useState(() =>
     typeof document !== 'undefined' && document.body.getAttribute('data-font') === 'dyslexic'
   );
+
+  const handleFinish = useCallback(() => {
+    if (cycleCount > 0 || secondsLeft < 55 || secondsLeft === 0) {
+      onComplete?.();
+    }
+    onClose();
+  }, [cycleCount, secondsLeft, onComplete, onClose]);
 
   const toggleDyslexicFont = () => {
     const next = !isDyslexicFont;
@@ -40,12 +48,12 @@ export function CalmModeModal({ isOpen, onClose, companionName = 'Lumi' }: CalmM
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        handleFinish();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, handleFinish]);
 
   // 60-second countdown timer
   useEffect(() => {
@@ -145,7 +153,7 @@ export function CalmModeModal({ isOpen, onClose, companionName = 'Lumi' }: CalmM
 
           {/* Close Button */}
           <button
-            onClick={onClose}
+            onClick={handleFinish}
             className="absolute top-4 right-4 p-2 text-teal-200/70 hover:text-white hover:bg-white/10 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300 cursor-pointer"
             aria-label="Cerrar modo calma"
           >
@@ -202,7 +210,7 @@ export function CalmModeModal({ isOpen, onClose, companionName = 'Lumi' }: CalmM
 
           {/* Exit / Done Button */}
           <Button
-            onClick={onClose}
+            onClick={handleFinish}
             className="w-full bg-teal-500 hover:bg-teal-400 text-teal-950 font-bold py-3 rounded-2xl transition-all shadow-lg shadow-teal-500/20 focus:ring-2 focus:ring-teal-300 cursor-pointer"
           >
             {secondsLeft === 0 ? 'Me siento mejor 🌸' : 'Terminar sesión'}

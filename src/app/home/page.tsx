@@ -205,6 +205,7 @@ export default function HomePage() {
     setCheckinDialogue,
     checkinSuggestedWords,
     isCooldown,
+    submitCheckin,
     handleCheckinSubmit,
     redeemingId,
     rewards,
@@ -1723,6 +1724,24 @@ export default function HomePage() {
       <CalmModeModal
         isOpen={showCalmModal}
         onClose={() => setShowCalmModal(false)}
+        onComplete={async () => {
+          if (!isCooldown) {
+            setCurrentCelebration({
+              id: Math.random().toString(),
+              delta: 1,
+              note: '¡Ganaste 1 chispa por autorregularte y respirar! 🌸'
+            });
+          }
+          await submitCheckin(
+            { energy_level: 3, valence: 4, emotion_word: 'Tranquilo/a' },
+            'free',
+            undefined,
+            'Respiración guiada en Rincón de Calma 🌸',
+            'child'
+          );
+          if (display) setDialogue(getDialogue('checkin_response'));
+          await interact('emotional_checkin', { energy: 3, valence: 4, word: 'Tranquilo/a' });
+        }}
         companionName={display?.name}
       />
 
