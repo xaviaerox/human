@@ -59,6 +59,7 @@ export function useHomeState() {
 
   // Active goal context for companion chat
   const [activeGoals, setActiveGoals] = useState<GoalWithMicrotasks[]>([]);
+  const [proposedGoals, setProposedGoals] = useState<GoalWithMicrotasks[]>([]);
   const [activeGoal, setActiveGoal] = useState<GoalWithMicrotasks | null>(null);
   const [nextTask, setNextTask] = useState<GoalMicrotask | null>(null);
 
@@ -75,7 +76,9 @@ export function useHomeState() {
     goalsAdapter.getGoals(profile.id).then(res => {
       if (res.ok) {
         const activeList = res.data.filter(g => g.status === 'active');
+        const proposedList = res.data.filter(g => g.status === 'paused' && g.co_created);
         setActiveGoals(activeList);
+        setProposedGoals(proposedList);
 
         const active = activeList[0] || null;
         if (active) {
@@ -347,6 +350,7 @@ export function useHomeState() {
     allRoutinesDone,
     checkRoutinesStatus,
     activeGoals,
+    proposedGoals,
     activeGoal,
     nextTask,
     fetchActiveGoal,

@@ -45,8 +45,8 @@ export default function GoalsPage() {
     goalsAdapter.getGoals(profile.id).then(result => {
       if (result.ok) {
         setGoals(result.data);
-        const active = result.data.find(g => g.status === 'active');
-        if (active) setSelectedGoal(active);
+        const selected = result.data.find(g => g.status === 'active') ?? result.data[0];
+        if (selected) setSelectedGoal(selected);
       }
       setLoading(false);
     });
@@ -126,20 +126,20 @@ export default function GoalsPage() {
       <main className="flex-1 px-4 pb-8 flex flex-col gap-4 max-w-lg mx-auto w-full">
 
         {/* Goal selector if multiple */}
-        {goals.filter(g => g.status === 'active').length > 1 && (
+        {goals.length > 1 && (
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {goals.filter(g => g.status === 'active').map(g => (
+            {goals.map(g => (
               <button
                 key={g.id}
                 onClick={() => setSelectedGoal(g)}
                 className={cn(
                   'flex-shrink-0 px-4 py-2 rounded-full text-sm border transition-all',
                   selectedGoal?.id === g.id
-                    ? 'bg-lavender-50 border-lavender-300 text-lavender-700'
+                    ? 'bg-lavender-50 border-lavender-300 text-lavender-700 font-semibold'
                     : 'bg-white border-stone-200 text-stone-500'
                 )}
               >
-                {g.title}
+                {g.title} {g.status === 'completed' ? '🏆' : ''}
               </button>
             ))}
           </div>

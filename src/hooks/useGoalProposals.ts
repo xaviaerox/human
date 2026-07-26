@@ -70,7 +70,7 @@ export function useGoalProposals(familyId?: string, childId?: string, onSubmitte
       why: goalPropWhy.trim() || undefined,
       co_created: true,
       one_per_day: true,
-      status: 'active',
+      status: 'paused',
       microtasks: stepsToUse.map((t, idx) => ({
         title: t,
         position: idx + 1,

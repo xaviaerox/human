@@ -96,7 +96,43 @@ export function ActiveGoalStep({ onComplete, goal: initialGoal }: ActiveGoalStep
     }
   }
 
-  if (!goal || !nextTask) return null;
+  if (!goal) return null;
+
+  const isAllComplete = goal.microtasks.length > 0 && goal.microtasks.every(t => t.status === 'complete');
+
+  if (isAllComplete || goal.status === 'completed') {
+    return (
+      <Card variant="bordered" className="p-5 border-emerald-200/80 bg-gradient-to-br from-emerald-50/80 to-teal-50/50 shadow-soft">
+        <div className="flex items-center gap-3 mb-3">
+          <span className="text-3xl">🏆</span>
+          <div>
+            <span className="text-[10px] uppercase font-extrabold tracking-widest text-emerald-700 block">
+              ¡Aventura Completada!
+            </span>
+            <h3 className="font-display font-bold text-stone-800 text-base">{goal.title}</h3>
+          </div>
+        </div>
+        <ProgressBar value={100} color="moss" />
+        <p className="text-xs text-emerald-800 font-medium mt-3 leading-relaxed">
+          ¡Felicidades! Has completado todos los capítulos de esta aventura. ¡Excelente trabajo! ✨
+        </p>
+      </Card>
+    );
+  }
+
+  if (!nextTask || goal.microtasks.length === 0) {
+    return (
+      <Card variant="bordered" className="p-5 border-amber-200 bg-amber-50/50 shadow-soft">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">🗺️</span>
+          <div>
+            <h3 className="font-display font-bold text-amber-900 text-sm">{goal.title}</h3>
+            <p className="text-xs text-amber-700 mt-1">Aún no se han definido capítulos para esta aventura.</p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   const nextTaskIndex = goal.microtasks.findIndex(t => t.id === nextTask.id);
   const chapterNumber = nextTaskIndex !== -1 ? nextTaskIndex + 1 : 1;

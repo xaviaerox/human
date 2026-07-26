@@ -165,6 +165,7 @@ export default function HomePage() {
     allRoutinesDone,
     checkRoutinesStatus,
     activeGoals,
+    proposedGoals,
     activeGoal,
     nextTask,
     fetchActiveGoal,
@@ -495,6 +496,30 @@ export default function HomePage() {
                 </button>
               </div>
 
+              {proposedGoals.length > 0 && (
+                <div className="flex flex-col gap-3 w-full mb-1">
+                  {proposedGoals.map(p => (
+                    <div key={p.id} className="bg-amber-50/80 border border-amber-200/80 rounded-3xl p-4 shadow-soft flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <span className="text-2xl mt-0.5">⏳</span>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-display font-semibold text-stone-800 text-sm">{p.title}</h4>
+                            <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
+                              Esperando aprobación
+                            </span>
+                          </div>
+                          {p.why && <p className="text-xs text-stone-500 italic mt-0.5">"{p.why}"</p>}
+                          <p className="text-[11px] text-amber-700 mt-1">
+                            Tus papás lo revisarán pronto para que podáis empezar la aventura juntos.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {activeGoals.length > 0 ? (
                 <div className="flex flex-col gap-4 w-full">
                   {activeGoals.map(g => (
@@ -515,7 +540,7 @@ export default function HomePage() {
                     />
                   ))}
                 </div>
-              ) : (
+              ) : proposedGoals.length === 0 ? (
                 <div className="bg-white rounded-3xl p-6 border border-stone-150 shadow-soft text-center flex flex-col gap-4 max-w-sm mx-auto w-full mt-2">
                   <span className="text-3xl">🗺️</span>
                   <div className="flex flex-col gap-1.5">
@@ -540,7 +565,7 @@ export default function HomePage() {
                     <span>◈</span> Proponer una aventura
                   </button>
                 </div>
-              )}
+              ) : null}
             </motion.div>
           )}
 

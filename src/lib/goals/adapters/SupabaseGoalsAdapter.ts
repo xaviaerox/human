@@ -172,6 +172,21 @@ export class SupabaseGoalsAdapter implements IGoalsAdapter {
     if (error || !data) {
       return { ok: false, error: { code: 'complete_failed', message: error?.message ?? 'Failed' } };
     }
+
+    if (data.goal_id) {
+      const { data: allTasks } = await this.client
+        .from('goal_microtasks')
+        .select('status')
+        .eq('goal_id', data.goal_id);
+
+      if (allTasks && allTasks.length > 0 && allTasks.every(t => t.status === 'complete')) {
+        await this.client
+          .from('goals')
+          .update({ status: 'completed' })
+          .eq('id', data.goal_id);
+      }
+    }
+
     return { ok: true, data };
   }
 
@@ -186,6 +201,15 @@ export class SupabaseGoalsAdapter implements IGoalsAdapter {
     if (error || !data) {
       return { ok: false, error: { code: 'uncomplete_failed', message: error?.message ?? 'Failed' } };
     }
+
+    if (data.goal_id) {
+      await this.client
+        .from('goals')
+        .update({ status: 'active' })
+        .eq('id', data.goal_id)
+        .eq('status', 'completed');
+    }
+
     return { ok: true, data };
   }
 
