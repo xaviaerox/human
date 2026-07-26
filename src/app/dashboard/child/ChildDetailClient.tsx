@@ -181,13 +181,23 @@ export default function ChildDetailClient() {
 
     if (DATA_SOURCE === 'supabase') {
       const channel = supabase
-        .channel(`child_detail_sparks:${childId}`)
+        .channel(`child_detail_realtime:${childId}`)
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'spark_ledger', filter: `child_id=eq.${childId}` },
           () => {
             fetchBalanceAndLedger();
             fetchPendingRequests();
+            fetchProgressionData();
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'emotional_checkins', filter: `child_id=eq.${childId}` },
+          () => {
+            emotionalAdapter.getWeeklySummaries(childId, 8).then(s => {
+              if (s.ok) setSummaries(s.data);
+            });
           }
         )
         .subscribe();

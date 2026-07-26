@@ -126,6 +126,9 @@ export default function FamilySettingsPage() {
                 </div>
               </div>
             ))}
+            {parentMembers.length === 0 && (
+              <p className="text-xs text-stone-400 py-2 italic text-center">No hay tutores registrados en la familia.</p>
+            )}
           </CardContent>
         </Card>
       </div>

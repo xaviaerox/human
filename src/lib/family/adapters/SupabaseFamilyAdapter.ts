@@ -108,10 +108,18 @@ export class SupabaseFamilyAdapter implements IFamilyAdapter {
   }
 
   subscribeToFamily(familyId: string, callback: (members: Profile[]) => void): () => void {
+    const fetchAllMembers = async () => {
+      const { data, error } = await this.client
+        .from('profiles')
+        .select('*')
+        .eq('family_id', familyId)
+        .order('role', { ascending: false });
+
+      if (!error && data) callback(data);
+    };
+
     // Initial fetch
-    this.getChildren(familyId).then(result => {
-      if (result.ok) callback(result.data);
-    });
+    fetchAllMembers();
 
     // Realtime subscription
     const channel = this.client
@@ -119,9 +127,8 @@ export class SupabaseFamilyAdapter implements IFamilyAdapter {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'profiles', filter: `family_id=eq.${familyId}` },
-        async () => {
-          const result = await this.getChildren(familyId);
-          if (result.ok) callback(result.data);
+        () => {
+          fetchAllMembers();
         }
       )
       .subscribe();

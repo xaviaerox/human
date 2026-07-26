@@ -59,10 +59,62 @@ export class SupabaseEmotionalAdapter implements IEmotionalAdapter {
     return { ok: true, data };
   }
 
-  async getWeeklySummaries(childId: string, weeksBack = 4): Promise<Result<EmotionalWeeklySummary[]>> {
+  async getWeeklySummaries(childId: string, weeksBack = 8): Promise<Result<EmotionalWeeklySummary[]>> {
     const since = new Date();
     since.setDate(since.getDate() - weeksBack * 7);
 
+    // Fetch directly from emotional_checkins table so live data is always included
+    const { data: checkins, error: checkinError } = await this.client
+      .from('emotional_checkins')
+      .select('*')
+      .eq('child_id', childId)
+      .gte('occurred_at', since.toISOString())
+      .order('occurred_at', { ascending: true });
+
+    if (!checkinError && checkins && checkins.length > 0) {
+      const weekMap = new Map<string, EmotionalCheckin[]>();
+
+      checkins.forEach((c: EmotionalCheckin) => {
+        const d = new Date(c.occurred_at);
+        const day = d.getDay();
+        const diff = d.getDate() - day;
+        const weekStart = new Date(d);
+        weekStart.setDate(diff);
+        weekStart.setHours(0, 0, 0, 0);
+        const weekKey = weekStart.toISOString().split('T')[0]!;
+
+        if (!weekMap.has(weekKey)) {
+          weekMap.set(weekKey, []);
+        }
+        weekMap.get(weekKey)!.push(c);
+      });
+
+      const summaries: EmotionalWeeklySummary[] = [];
+      weekMap.forEach((list, week_start) => {
+        const avgEnergy = list.reduce((s, c) => s + c.energy_level, 0) / list.length;
+        const avgValence = list.reduce((s, c) => s + c.valence, 0) / list.length;
+
+        const wordCounts: Record<string, number> = {};
+        list.forEach(c => {
+          if (c.emotion_word) wordCounts[c.emotion_word] = (wordCounts[c.emotion_word] ?? 0) + 1;
+        });
+        const mostCommon = Object.entries(wordCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+
+        summaries.push({
+          child_id: childId,
+          week_start,
+          avg_energy: Math.round(avgEnergy * 10) / 10,
+          avg_valence: Math.round(avgValence * 10) / 10,
+          checkin_count: list.length,
+          most_common_emotion: mostCommon,
+        });
+      });
+
+      summaries.sort((a, b) => a.week_start.localeCompare(b.week_start));
+      return { ok: true, data: summaries };
+    }
+
+    // Fallback to materialized view query
     const { data, error } = await this.client
       .from('emotional_weekly_summary' as never)
       .select('*')
