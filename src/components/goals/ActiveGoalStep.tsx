@@ -34,8 +34,10 @@ interface ActiveGoalStepProps {
 export function ActiveGoalStep({ onComplete, goal: initialGoal }: ActiveGoalStepProps) {
   const { profile } = useAuth();
   const { interact } = useCompanion();
-  const [goal, setGoal] = useState<GoalWithMicrotasks | null>(null);
-  const [nextTask, setNextTask] = useState<GoalMicrotask | null>(null);
+  const [goal, setGoal] = useState<GoalWithMicrotasks | null>(initialGoal ?? null);
+  const [nextTask, setNextTask] = useState<GoalMicrotask | null>(
+    initialGoal ? getNextMicrotask(initialGoal.microtasks) : null
+  );
   const [completing, setCompleting] = useState(false);
   const [justDone, setJustDone] = useState(false);
 
