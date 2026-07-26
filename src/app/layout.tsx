@@ -13,8 +13,11 @@ export const metadata: Metadata = {
     images: [{ url: '/mira-banner.jpg', width: 1200, height: 630, alt: 'MIRA Hero Banner' }],
   },
   icons: {
-    icon: '/mira-avatar.jpg',
-    apple: '/mira-avatar.jpg',
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: '/icon-192x192.png',
   },
 };
 
