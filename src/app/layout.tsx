@@ -10,14 +10,16 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'MIRA 🌟 — Crecimiento y Autorregulación Familiar',
     description: 'Plataforma inteligente y amable para apoyar la autonomía de niños neurodivergentes.',
-    images: [{ url: '/mira-banner.jpg', width: 1200, height: 630, alt: 'MIRA Hero Banner' }],
+    images: [{ url: '/human/mira-banner.jpg', width: 1200, height: 630, alt: 'MIRA Hero Banner' }],
   },
   icons: {
     icon: [
-      { url: '/icon.svg', type: 'image/svg+xml' },
-      { url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/human/icon.svg', type: 'image/svg+xml' },
+      { url: '/human/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/human/favicon.ico', sizes: 'any' },
     ],
-    apple: '/icon-192x192.png',
+    shortcut: '/human/favicon.ico',
+    apple: '/human/icon-192x192.png',
   },
 };
 
@@ -31,6 +33,12 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className="h-full">
+      <head>
+        <link rel="icon" href="/human/icon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/human/icon-192x192.png" sizes="192x192" type="image/png" />
+        <link rel="shortcut icon" href="/human/favicon.ico" />
+        <link rel="apple-touch-icon" href="/human/icon-192x192.png" />
+      </head>
       <body className="h-full antialiased font-body bg-background text-text-primary">
         <Providers>
           {children}
