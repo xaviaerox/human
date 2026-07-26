@@ -44,14 +44,25 @@ const STATIC_CHILD: Profile = {
 };
 
 export class StaticAuthAdapter implements IAuthAdapter {
-  private _session: AuthSession | null = {
-    user_id: STATIC_CHILD.id,
-    email: 'demo@mira.app',
-    profile: STATIC_CHILD,
-    family: STATIC_FAMILY,
-  };
-
+  private _session: AuthSession | null = null;
   private _listeners: Array<(session: AuthSession | null) => void> = [];
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      const isDemo = localStorage.getItem('mira_demo_mode') === 'true';
+      const storedRole = localStorage.getItem('mira_static_role');
+      if (isDemo) {
+        const isParent = storedRole === 'parent';
+        const profile = isParent ? STATIC_PARENT : STATIC_CHILD;
+        this._session = {
+          user_id: profile.id,
+          email: isParent ? 'parent@mira.app' : 'child@mira.app',
+          profile,
+          family: STATIC_FAMILY,
+        };
+      }
+    }
+  }
 
   async getSession(): Promise<AuthSession | null> {
     return this._session;
@@ -70,6 +81,10 @@ export class StaticAuthAdapter implements IAuthAdapter {
     const profile: Profile = { ...STATIC_PARENT, display_name: params.display_name };
     const family: Family = { ...STATIC_FAMILY, name: params.family_name };
     this._session = { user_id: profile.id, email: params.email, profile, family };
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mira_demo_mode', 'true');
+      localStorage.setItem('mira_static_role', 'parent');
+    }
     this._emit();
     return { ok: true, data: this._session };
   }
@@ -77,15 +92,23 @@ export class StaticAuthAdapter implements IAuthAdapter {
   async signUpWithInvite(params: SignUpChildParams): Promise<Result<AuthSession>> {
     const profile: Profile = { ...STATIC_CHILD, display_name: params.display_name };
     this._session = { user_id: profile.id, email: params.email, profile, family: STATIC_FAMILY };
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mira_demo_mode', 'true');
+      localStorage.setItem('mira_static_role', 'child');
+    }
     this._emit();
     return { ok: true, data: this._session };
   }
 
   async signIn(params: SignInParams): Promise<Result<AuthSession>> {
     // Static: role determined by email convention (parent@... vs child@...)
-    const isParent = params.email.startsWith('parent');
+    const isParent = params.email.startsWith('parent') || params.email.includes('parent');
     const profile = isParent ? STATIC_PARENT : STATIC_CHILD;
     this._session = { user_id: profile.id, email: params.email, profile, family: STATIC_FAMILY };
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mira_demo_mode', 'true');
+      localStorage.setItem('mira_static_role', isParent ? 'parent' : 'child');
+    }
     this._emit();
     return { ok: true, data: this._session };
   }
@@ -93,6 +116,7 @@ export class StaticAuthAdapter implements IAuthAdapter {
   async signOut(): Promise<Result<void>> {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('mira_demo_mode');
+      localStorage.removeItem('mira_static_role');
     }
     this._session = null;
     this._emit();

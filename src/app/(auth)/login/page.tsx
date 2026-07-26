@@ -96,10 +96,8 @@ export default function LoginPage() {
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => {
-              if (typeof window !== 'undefined') {
-                localStorage.setItem('mira_demo_mode', 'true');
-              }
+            onClick={async () => {
+              await signIn({ email: 'child@demo.app', password: 'demo' });
               router.push('/home');
             }}
             className="w-full text-teal-600 hover:text-teal-700 hover:bg-teal-50 font-medium"
