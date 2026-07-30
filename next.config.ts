@@ -6,6 +6,20 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   basePath: '/human',
+  redirects: async () => [
+    {
+      source: '/',
+      destination: '/human',
+      basePath: false,
+      permanent: false,
+    },
+    {
+      source: '/brandbook',
+      destination: '/human/brandbook',
+      basePath: false,
+      permanent: false,
+    },
+  ],
   headers: async () => [
     {
       source: '/:path*',

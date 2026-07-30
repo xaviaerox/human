@@ -91,7 +91,7 @@ export default function LoginPage() {
           Unirme con un código de invitación
         </Link>
 
-        <div className="pt-2 border-t border-stone-100">
+        <div className="pt-2 border-t border-stone-100 flex flex-col gap-2">
           <Button
             type="button"
             variant="ghost"
@@ -104,6 +104,13 @@ export default function LoginPage() {
           >
             ✨ Explorar Modo Demo al Instante (Sin Registro)
           </Button>
+
+          <Link
+            href="/brandbook"
+            className="text-xs text-sky-700 hover:text-sky-900 hover:underline font-medium pt-1 text-center block"
+          >
+            📖 Explorar Brand Book Oficial (Solutech · MIRATEA)
+          </Link>
         </div>
       </div>
     </Card>
