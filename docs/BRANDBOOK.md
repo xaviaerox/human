@@ -125,10 +125,15 @@ El tono de **MIRATEA** se define en 4 pilares:
 
 # 7. Identidad visual & Marcas gráficas
 
-## 1. Marca Principal MIRATEA
-* **Isotipo**: Estrella de 4 puntas de autorregulación y destello emocional rodeada por la aureola de contención y equilibrio (*Moss Green*).
-* **Logotipo**: "miratea" en caja baja con la font display neo-grotesca acompañada del descriptor "by Solutech".
-* **Versiones**: Positiva en fondo Soft Stone (`#FAF9F7`) y Negativa en fondo Deep Slate (`#1B3A52`).
+## 1. Icono Oficial e Isotipo Canónico MIRATEA (*Beacon Star*)
+* **Nombre gráfico**: *Beacon Star* / Estrella Guía de Autorregulación MIRATEA.
+* **Geometría y Composición**:
+  - **Base de azulejo acolchado**: Cuadrado redondeado (`rx=128px`) en degradado Teal de calma sensorial (`#14b8a6` a `#115e59`).
+  - **Aureola de contención**: Anillo circular concéntrico dorado (`stroke="#fef08a"`, opacidad 0.35) que simboliza equilibrio y protección emocional.
+  - **Estrella de 4 puntas**: Rayos curvos en degradado cálido Ámbar-Sol (`#fef08a` → `#f59e0b` → `#d97706`), representando los micropasos de avance personal.
+  - **Núcleo central de claridad**: Círculo blanco puro (`#ffffff`) centrado en el origen geométrico.
+* **Archivo maestro de assets**: `public/icon.svg` y accesible en web mediante `src/components/ui/MiraLogo.tsx` y `src/components/ui/BrandLogos.tsx`.
+* **Logotipo oficial**: Tipografía "miratea" en caja baja neo-grotesca acompañada del subtexto institucional "by Solutech".
 
 ## 2. Marca Corporativa Solutech
 * **Emblema**: Polígono hexagonal con trazo en "S" estilizada que representa solidez tecnológica, estabilidad y desarrollo de software de vanguardia.

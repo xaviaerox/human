@@ -13,7 +13,10 @@ interface CalmCornerModalProps {
 
 type BreathPhase = 'inhale' | 'hold1' | 'exhale' | 'hold2';
 
-const PHASE_CONFIG: Record<BreathPhase, { text: string; duration: number; next: BreathPhase; scale: number; color: string }> = {
+const PHASE_CONFIG: Record<
+  BreathPhase,
+  { text: string; duration: number; next: BreathPhase; scale: number; color: string }
+> = {
   inhale: {
     text: 'Inhala suavemente...',
     duration: 4,
@@ -48,14 +51,23 @@ export function CalmCornerModal({ isOpen, onClose, onComplete }: CalmCornerModal
   const [phase, setPhase] = useState<BreathPhase>('inhale');
   const [secondsLeft, setSecondsLeft] = useState(4);
   const [completedCycles, setCompletedCycles] = useState(0);
-  const { isMuted, toggleMute, playCalmTone } = useSensoryAudio();
+  const { isMuted, initAudio, toggleMute, playCalmTone, playCompletionChime } = useSensoryAudio();
 
   const handleFinish = () => {
     if (completedCycles > 0) {
+      playCompletionChime();
       onComplete?.();
     }
     onClose();
   };
+
+  // Inicializar audio y tono al abrir el modal
+  useEffect(() => {
+    if (isOpen) {
+      initAudio();
+      playCalmTone();
+    }
+  }, [isOpen, initAudio, playCalmTone]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -85,25 +97,42 @@ export function CalmCornerModal({ isOpen, onClose, onComplete }: CalmCornerModal
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
+      <div
+        onClick={initAudio}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md"
+      >
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
+          onClick={(e) => {
+            e.stopPropagation();
+            initAudio();
+          }}
           className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-teal-500/20 bg-slate-900/90 p-8 text-center shadow-2xl shadow-teal-500/10"
         >
           {/* Controls */}
           <div className="absolute top-4 right-4 flex items-center gap-1">
             <button
-              onClick={toggleMute}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleMute();
+              }}
               className="rounded-full p-2 text-slate-400 hover:bg-slate-800 hover:text-teal-300 transition-colors"
               aria-label={isMuted ? 'Activar sonido sensorial' : 'Silenciar sonido sensorial'}
               title={isMuted ? 'Sonido desactivado' : 'Sonido activado'}
             >
-              {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5 text-teal-400" />}
+              {isMuted ? (
+                <VolumeX className="h-5 w-5" />
+              ) : (
+                <Volume2 className="h-5 w-5 text-teal-400" />
+              )}
             </button>
             <button
-              onClick={handleFinish}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleFinish();
+              }}
               className="rounded-full p-2 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
               aria-label="Cerrar Rincón de Calma"
             >
@@ -166,7 +195,10 @@ export function CalmCornerModal({ isOpen, onClose, onComplete }: CalmCornerModal
 
           {/* Affirmative Bottom Action */}
           <button
-            onClick={handleFinish}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleFinish();
+            }}
             className="w-full rounded-2xl bg-teal-500/20 py-3.5 px-6 font-semibold text-teal-300 border border-teal-500/30 hover:bg-teal-500/30 transition-all duration-200"
           >
             Siento más calma, volver al reino 🌸

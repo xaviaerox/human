@@ -396,7 +396,7 @@ export default function BrandbookPage() {
                 </div>
               </div>
               <p className="text-xs text-stone-500 leading-relaxed">
-                El isotipo oficial integra la estrella de 4 puntas de autorregulación sobre la aureola teal, acompañado del descriptor <em>by Solutech</em>.
+                <strong>Icono Canónico Oficial:</strong> La estrella <em>Beacon Star</em> de 4 rayos curvos con aureola dorada sobre azulejo Teal de calma sensorial, acompañada del descriptor <em>by Solutech</em>.
               </p>
             </div>
 

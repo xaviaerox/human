@@ -145,7 +145,7 @@ function EditGoalClient() {
       let fetchSuccess = false;
 
       try {
-        const res = await fetch('/human/api/decompose', {
+        const res = await fetch('/miratea/api/decompose', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt }),

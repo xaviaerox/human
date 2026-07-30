@@ -5,17 +5,17 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  basePath: '/human',
+  basePath: '/miratea',
   redirects: async () => [
     {
       source: '/',
-      destination: '/human',
+      destination: '/miratea',
       basePath: false,
       permanent: false,
     },
     {
       source: '/brandbook',
-      destination: '/human/brandbook',
+      destination: '/miratea/brandbook',
       basePath: false,
       permanent: false,
     },

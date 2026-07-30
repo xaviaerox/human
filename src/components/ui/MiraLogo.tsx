@@ -52,7 +52,7 @@ export function MiraLogo({ size = 'md', showText = false, className = '' }: Mira
 
       {showText && (
         <span className={`font-display font-semibold text-stone-800 tracking-tight ${textClass}`}>
-          mira
+          miratea
         </span>
       )}
     </div>

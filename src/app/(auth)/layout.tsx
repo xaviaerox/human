@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { type ReactNode } from 'react';
 import { MiraLogo } from '@/components/ui/MiraLogo';
 
@@ -12,14 +11,6 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           <p className="mt-2 text-stone-500 text-sm">un espacio de calma para crecer juntos</p>
         </div>
         {children}
-        <div className="mt-8 text-center">
-          <Link
-            href="/brandbook"
-            className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
-          >
-            Brand Book Definitivo — Solutech · MIRATEA
-          </Link>
-        </div>
       </div>
     </div>
   );

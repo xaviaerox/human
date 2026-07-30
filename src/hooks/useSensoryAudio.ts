@@ -9,16 +9,27 @@ export function useSensoryAudio() {
   const getAudioContext = useCallback(() => {
     if (typeof window === 'undefined') return null;
     if (!audioCtxRef.current) {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (AudioCtx) {
         audioCtxRef.current = new AudioCtx();
       }
     }
     if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
-      audioCtxRef.current.resume();
+      audioCtxRef.current.resume().catch(() => {
+        // Safe catch for autoplay restrictions
+      });
     }
     return audioCtxRef.current;
   }, []);
+
+  const initAudio = useCallback(() => {
+    const ctx = getAudioContext();
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+  }, [getAudioContext]);
 
   const playCalmTone = useCallback(() => {
     if (isMuted) return;
@@ -26,24 +37,45 @@ export function useSensoryAudio() {
     if (!ctx) return;
 
     try {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
 
-      // Soft 432Hz harmonic wave (Calming frequency)
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(432, ctx.currentTime);
+      const now = ctx.currentTime;
 
-      gain.gain.setValueAtTime(0.001, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.5);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 3.0);
+      // Primary oscillator: 432Hz (Calming harmonic frequency)
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(432, now);
 
-      osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain1.gain.setValueAtTime(0.001, now);
+      gain1.gain.exponentialRampToValueAtTime(0.25, now + 0.4);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 2.8);
 
-      osc.start();
-      osc.stop(ctx.currentTime + 3.1);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+
+      osc1.start(now);
+      osc1.stop(now + 2.9);
+
+      // Warm sub-octave: 216Hz for depth and fullness
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(216, now);
+
+      gain2.gain.setValueAtTime(0.001, now);
+      gain2.gain.exponentialRampToValueAtTime(0.12, now + 0.4);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 2.8);
+
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+
+      osc2.start(now);
+      osc2.stop(now + 2.9);
     } catch {
-      // AudioContext play fallback silent handling
+      // AudioContext silent fallback
     }
   }, [isMuted, getAudioContext]);
 
@@ -53,6 +85,10 @@ export function useSensoryAudio() {
     if (!ctx) return;
 
     try {
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
+
       const now = ctx.currentTime;
       const notes = [523.25, 659.25, 783.99]; // C5, E5, G5 major triad
 
@@ -61,17 +97,17 @@ export function useSensoryAudio() {
         const gain = ctx.createGain();
 
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+        osc.frequency.setValueAtTime(freq, now + idx * 0.12);
 
-        gain.gain.setValueAtTime(0.001, now + idx * 0.1);
-        gain.gain.exponentialRampToValueAtTime(0.05, now + idx * 0.1 + 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.4);
+        gain.gain.setValueAtTime(0.001, now + idx * 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.2, now + idx * 0.12 + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.5);
 
         osc.connect(gain);
         gain.connect(ctx.destination);
 
-        osc.start(now + idx * 0.1);
-        osc.stop(now + idx * 0.1 + 0.45);
+        osc.start(now + idx * 0.12);
+        osc.stop(now + idx * 0.12 + 0.55);
       });
     } catch {
       // AudioContext fallback
@@ -80,10 +116,12 @@ export function useSensoryAudio() {
 
   const toggleMute = useCallback(() => {
     setIsMuted((prev) => !prev);
-  }, []);
+    initAudio();
+  }, [initAudio]);
 
   return {
     isMuted,
+    initAudio,
     toggleMute,
     playCalmTone,
     playCompletionChime,

@@ -1,43 +1,28 @@
-# Security Policy & Child Privacy (COPPA / GDPR Compliance)
+# Política de Seguridad y Privacidad
 
-MIRA is a neurodiversity-affirming growth platform designed specifically for children and their families. Safeguarding children's personal information and ensuring robust infrastructure security are our highest priorities.
-
----
-
-## 1. Child Data Privacy & Compliance (COPPA / GDPR-K)
-
-### PII Obfuscation & Minimization
-- **Pre-LLM Sanitization**: All prompts sent to third-party LLM APIs (Groq, Google Gemini, Anthropic) pass through our `PiiSanitizer` middleware (`src/lib/security/PiiSanitizer.ts`). Real child names, family surnames, and sensitive personal markers are replaced with opaque tokens (`[CHILD_NAME]`, `[FAMILY_NAME]`) before leaving our server.
-- **De-obfuscation**: Tokens are mapped back to actual names locally on our server when rendering responses back to the client interface.
-- **Zero Third-Party Training**: Provider APIs are configured with zero data-retention for training models.
-
-### Data Storage & Isolation
-- **Row Level Security (RLS)**: Database tables in Supabase Postgres operate under strict RLS policies. A child's records (routines, emotional check-ins, microtasks, sparks) can only be accessed by authenticated members belonging to the same `family_id`.
-- **Search Path Isolation**: All database functions (`SECURITY DEFINER`) enforce an explicit `search_path = public, extensions, pg_temp` to eliminate schema confusion and privilege escalation attacks.
+**MIRATEA by Solutech** es una plataforma orientada al desarrollo, la autorregulación emocional y el acompañamiento familiar en entornos neurodivergentes. La protección de los menores y la seguridad de los datos de salud son nuestra máxima prioridad.
 
 ---
 
-## 2. API Security & Rate Limiting
+## 1. Privacidad Infantil & Protección de Datos
 
-- **Rate Limiting**: Endpoints (`/api/companion/chat`, check-ins) are protected by a hybrid sliding-window rate limiter (`src/lib/security/RateLimiter.ts`). In production Serverless environments (Vercel), requests are throttled via Upstash Redis REST pipelines. In local/static environments, an in-memory sliding-window fallback is enforced.
-- **HTTPS & Content Security**: Production deployments require TLS 1.3 encryption for all data in transit.
+### Sanitización PII Automática
+- **Middleware PiiSanitizer**: Toda interacción o texto procesado por IA pasa previamente por nuestro middleware (`src/lib/security/PiiSanitizer.ts`), anonimizando nombres propios y datos identificativos por tokens opacos (`[CHILD_NAME]`, `[FAMILY_NAME]`).
+- **Anonimización en Servidor**: Los datos sensibles no abandonan el entorno sin anonimizar y se restauran localmente en la interfaz del usuario.
 
----
-
-## 3. Vulnerability Reporting
-
-If you discover a potential security vulnerability within MIRA, please report it to our team immediately:
-
-- **Email**: `security@mira-app.org`
-- **Response SLA**: We acknowledge receipt of vulnerability reports within **24 hours** and aim to provide a resolution or patch within **7 business days**.
-
-Please refrain from publicly disclosing vulnerabilities prior to coordinated resolution.
+### Aislamiento de Datos por Familia
+- **Row Level Security (RLS)**: En bases de datos PostgreSQL/Supabase, las políticas RLS garantizan aislamiento estricto por `family_id`. Ninguna familia o tercero puede acceder a datos ajenos.
 
 ---
 
-## 4. Supported Versions
+## 2. Reporte de Incidencias de Seguridad
 
-| Version | Supported |
-|---|---|
-| 1.0.x | Yes |
-| < 1.0 | No |
+Si detectas cualquier fallo de seguridad en la plataforma, por favor repórtalo de forma privada a nuestro equipo de ingeniería:
+
+- **Contacto Directo**: `xavi@solutech.blog`
+- **SLA de Respuesta**: Acuse de recibo en menos de 24 horas y resolución prioritaria.
+
+---
+
+## 3. Propiedad Privada
+Este software es propiedad exclusiva de **Solutech**. No está autorizada la publicación de exploits, pruebas públicas de vulnerabilidad ni ingeniería inversa sin consentimiento explícito.

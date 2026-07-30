@@ -28,7 +28,7 @@ export function PwaUpdater() {
 
     const registerSW = async () => {
       try {
-        const reg = await navigator.serviceWorker.register('/human/sw.js');
+        const reg = await navigator.serviceWorker.register('/miratea/sw.js');
         console.log('[PWA] Service Worker registrado con éxito:', reg.scope);
 
         // Caso 1: Hay un SW esperando desde antes

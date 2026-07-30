@@ -41,7 +41,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Top bar */}
       <header className="bg-white border-b border-stone-100 px-5 py-3 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-3">
-          <span className="font-display text-xl text-stone-800">mira</span>
+          <span className="font-display text-xl text-stone-800">miratea</span>
           <span className="text-stone-300">·</span>
           <span className="text-sm text-stone-500">{profile?.display_name}</span>
         </div>
