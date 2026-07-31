@@ -51,6 +51,18 @@ export function sanitizePii(
     '[PHONE]'
   );
 
+  // 5. Obfuscate Spanish DNI/NIE or SSN
+  sanitized = sanitized.replace(
+    /\b[0-9]{8}[A-Z]\b|\b[XYZ][0-9]{7}[A-Z]\b/gi,
+    '[NATIONAL_ID]'
+  );
+
+  // 6. Obfuscate Dates of Birth (DD/MM/YYYY or YYYY-MM-DD)
+  sanitized = sanitized.replace(
+    /\b(0?[1-9]|[12][0-9]|3[01])[\/\.-](0?[1-9]|1[012])[\/\.-]\d{4}\b|\b\d{4}[\/\.-](0?[1-9]|1[012])[\/\.-](0?[1-9]|[12][0-9]|3[01])\b/g,
+    '[DATE_OF_BIRTH]'
+  );
+
   return {
     sanitizedText: sanitized,
     replacements,

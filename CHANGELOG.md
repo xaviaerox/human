@@ -4,6 +4,30 @@ All notable changes to the MIRA project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-07-31
+
+### Added
+- **Playwright E2E Test Suite Expansion**: Added `calm_corner.spec.ts` and `emotional_checkin.spec.ts` to test full user journeys for guided breathing and emotional check-in.
+- **Sensory & Reduced Motion Controls**: Enhanced accessible sensory response options for children with hyper-sensory visual profiles.
+
+---
+
+## [1.2.0] - 2026-07-31
+
+### Added
+- **Modular Domain Stores**: Extracted state domain logic into `routineStore.ts` and `goalStore.ts` to unburden `useHomeState.ts` and prevent unnecessary UI re-evaluations.
+- **Enhanced PII NER Patterns**: Upgraded `PiiSanitizer.ts` with Named Entity Recognition patterns for Spanish DNI/NIE/SSN (`[NATIONAL_ID]`) and Dates of Birth (`[DATE_OF_BIRTH]`).
+- **WAI-ARIA Accessibility**: Integrated `Escape` key handling and `role="dialog"` modal accessibility in `CalmCornerModal.tsx`.
+
+---
+
+## [1.1.0] - 2026-07-31
+
+### Added
+- **Content Security Policy (CSP)**: Added strict CSP headers in `next.config.ts` protecting against XSS and unauthorized script injection.
+- **Automated Pre-Commit DX**: Configured `husky` prepare script and `lint-staged` execution in `package.json`.
+- **GitHub Contribution Templates**: Added `.github/ISSUE_TEMPLATE/bug_report.md`, `feature_request.md`, and `.github/PULL_REQUEST_TEMPLATE.md`.
+
 ---
 
 ## [1.0.0] - 2026-07-23

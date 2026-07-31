@@ -53,13 +53,25 @@ export function CalmCornerModal({ isOpen, onClose, onComplete }: CalmCornerModal
   const [completedCycles, setCompletedCycles] = useState(0);
   const { isMuted, initAudio, toggleMute, playCalmTone, playCompletionChime } = useSensoryAudio();
 
-  const handleFinish = () => {
+  const handleFinish = React.useCallback(() => {
     if (completedCycles > 0) {
       playCompletionChime();
       onComplete?.();
     }
     onClose();
-  };
+  }, [completedCycles, playCompletionChime, onComplete, onClose]);
+
+  // Manejo accesible de la tecla Escape para cerrar el modal
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleFinish();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, handleFinish]);
 
   // Inicializar audio y tono al abrir el modal
   useEffect(() => {
@@ -99,6 +111,9 @@ export function CalmCornerModal({ isOpen, onClose, onComplete }: CalmCornerModal
     <AnimatePresence>
       <div
         onClick={initAudio}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Rincón de Calma"
         className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md"
       >
         <motion.div

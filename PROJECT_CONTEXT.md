@@ -16,8 +16,8 @@
 * **Estado del proyecto**: Producción / Gold Release v1.0 (Producto Comercial Privado).
 * **Nivel de madurez**: Alto (9.8/10) — 100% verificado sin errores TypeScript, 0 warnings ESLint y suite de pruebas unitarias 50/50 pasadas.
 * **Repositorio**: `xaviaerox/miratea-app` (Ruta local: `c:\Users\Xaviaerox\Documents\GitHub\mira-app`).
-* **Versión actual**: `0.1.0` (Gold Release v1.0).
-* **Última actualización**: 2026-07-30.
+* **Versión actual**: `1.3.0` (Enterprise Release v1.3).
+* **Última actualización**: 2026-07-31.
 
 ---
 
@@ -302,11 +302,11 @@ DATABASE_URL=postgresql://postgres.tu-proyecto:password@aws-0-eu-west-1.pooler.s
   - **Alternativas descartadas**: Requerir autenticación obligatoria y base de datos activa para todas las vistas.
   - **Consecuencias**: Capacidad de ejecutar el producto 100% offline o en modo demo local sin fricción.
 
-* **2026-07-31 — Rediseño del Flujo de Sugerencias y Aprobación de Premios por los Padres**:
-  - **Descripción**: Implementación del modal de aprobación interactivo `ApprovalModal` en el panel parental (`/dashboard/rewards`), permitiendo a los padres asignar/ajustar directamente la cantidad exacta de Sparks ✦ para las sugerencias de los niños, guardarlas en el catálogo permanente y cobrarlas según el saldo sin obligar a borrar y recrear la recompensa.
-  - **Motivo**: Eliminar la asignación rígida de costes por defecto que obligaba a los padres a eliminar las sugerencias y volver a crearlas desde cero.
-  - **Alternativas descartadas**: Asignar un coste fijo inmutable o forzar la navegación fuera del dashboard para editar cada propuesta.
-  - **Consecuencias**: Proceso de aprobación fluido en 1-clic con asignación transparente de Sparks y experiencia libre de frustración para padres e hijos.
+* **2026-07-31 — Evolución Acumulativa v1.3.0 (Sub-Stores Modulares, CSP & NER PII)**:
+  - **Descripción**: Refactorización de la capa de estado en sub-stores modulares (`routineStore.ts`, `goalStore.ts`), inserción de cabeceras Content Security Policy (CSP), extensión del reconocedor NER en `PiiSanitizer` y accesibilidad WAI-ARIA.
+  - **Motivo**: Desacoplar el hook monolítico `useHomeState`, mejorar la protección infantil COPPA/GDPR-K y blindar la aplicación frente a vulnerabilidades Web.
+  - **Alternativas descartadas**: Mantener toda la lógica de negocio acumulada dentro de un único hook masivo de React.
+  - **Consecuencias**: Código modular, escalable, cero advertencias de linter y registro de evolución acumulativo garantizado.
 
 ---
 
