@@ -217,6 +217,8 @@ export default function HomePage() {
     setRequestTitle,
     requestEmoji,
     setRequestEmoji,
+    requestSuggestedCost,
+    setRequestSuggestedCost,
     requestError,
     setRequestError,
     requestSubmitting,
@@ -1336,6 +1338,23 @@ export default function HomePage() {
                         </div>
                       </div>
                     </div>
+
+                    <label className="flex flex-col gap-1.5 font-body">
+                      <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider font-body">
+                        Sugerir chispas (Opcional)
+                      </span>
+                      <input
+                        type="number"
+                        value={requestSuggestedCost}
+                        onChange={e => setRequestSuggestedCost(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))}
+                        placeholder="Tus padres decidirán el valor final en Sparks ✦"
+                        min={1}
+                        className="w-full px-4 py-2.5 rounded-2xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-bloom-200 text-sm text-stone-700 bg-stone-50/50"
+                      />
+                      <p className="text-[10px] text-stone-400">
+                        Tus padres decidirán cuántas Sparks ✦ cuesta este premio al aprobarlo.
+                      </p>
+                    </label>
                   </div>
 
                   {requestError && (

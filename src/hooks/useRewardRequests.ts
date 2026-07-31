@@ -9,6 +9,7 @@ export function useRewardRequests(familyId?: string, childId?: string, onSubmitt
   const [isRequesting, setIsRequesting] = useState(false);
   const [requestTitle, setRequestTitle] = useState('');
   const [requestEmoji, setRequestEmoji] = useState('☆');
+  const [requestSuggestedCost, setRequestSuggestedCost] = useState<number | ''>('');
   const [requestError, setRequestError] = useState('');
   const [requestSubmitting, setRequestSubmitting] = useState(false);
 
@@ -26,9 +27,12 @@ export function useRewardRequests(familyId?: string, childId?: string, onSubmitt
     setRequestSubmitting(true);
     setRequestError('');
 
+    const costNum = typeof requestSuggestedCost === 'number' && requestSuggestedCost > 0 ? requestSuggestedCost : 0;
+
     const res = await rewardsAdapter.createRewardRequest(familyId, childId, {
       title: requestTitle.trim(),
       emoji: requestEmoji,
+      cost: costNum,
     });
 
     setRequestSubmitting(false);
@@ -40,6 +44,7 @@ export function useRewardRequests(familyId?: string, childId?: string, onSubmitt
 
     setIsRequesting(false);
     setRequestTitle('');
+    setRequestSuggestedCost('');
     onSubmitted?.();
   };
 
@@ -50,6 +55,8 @@ export function useRewardRequests(familyId?: string, childId?: string, onSubmitt
     setRequestTitle,
     requestEmoji,
     setRequestEmoji,
+    requestSuggestedCost,
+    setRequestSuggestedCost,
     requestError,
     setRequestError,
     requestSubmitting,

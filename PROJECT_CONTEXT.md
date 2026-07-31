@@ -302,11 +302,11 @@ DATABASE_URL=postgresql://postgres.tu-proyecto:password@aws-0-eu-west-1.pooler.s
   - **Alternativas descartadas**: Requerir autenticación obligatoria y base de datos activa para todas las vistas.
   - **Consecuencias**: Capacidad de ejecutar el producto 100% offline o en modo demo local sin fricción.
 
-* **2026-07-30 — Optimización y Corrección de Autoplay en Audio Sensorial (`useSensoryAudio`)**:
-  - **Descripción**: Ajuste de volumen audible claro (ganancia 0.25) con doble oscilador armónico (432Hz + 216Hz sub-octava), reanudación explícita mediante gestos de usuario (`initAudio`) y chime final de completado en `CalmCornerModal.tsx`.
-  - **Motivo**: Resolver el bloqueo estricto de las políticas de reproducción automática (*Autoplay Policy*) de navegadores modernos (Chrome/Edge/Safari) que silenciaban el `AudioContext` en llamadas asíncronas de `setInterval`.
-  - **Alternativas descartadas**: Intentar reanudar el contexto únicamente desde bucles asíncronos en segundo plano sin gestos de usuario.
-  - **Consecuencias**: Sonido ambiental armónico 100% audible, inmediato y reconfortante en cada fase de respiración guiada.
+* **2026-07-31 — Rediseño del Flujo de Sugerencias y Aprobación de Premios por los Padres**:
+  - **Descripción**: Implementación del modal de aprobación interactivo `ApprovalModal` en el panel parental (`/dashboard/rewards`), permitiendo a los padres asignar/ajustar directamente la cantidad exacta de Sparks ✦ para las sugerencias de los niños, guardarlas en el catálogo permanente y cobrarlas según el saldo sin obligar a borrar y recrear la recompensa.
+  - **Motivo**: Eliminar la asignación rígida de costes por defecto que obligaba a los padres a eliminar las sugerencias y volver a crearlas desde cero.
+  - **Alternativas descartadas**: Asignar un coste fijo inmutable o forzar la navegación fuera del dashboard para editar cada propuesta.
+  - **Consecuencias**: Proceso de aprobación fluido en 1-clic con asignación transparente de Sparks y experiencia libre de frustración para padres e hijos.
 
 ---
 

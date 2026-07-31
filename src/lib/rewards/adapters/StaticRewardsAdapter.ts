@@ -74,7 +74,7 @@ export class StaticRewardsAdapter implements IRewardsAdapter {
       child_id: childId,
       title: request.title,
       emoji: request.emoji,
-      cost: request.cost ?? 10,
+      cost: request.cost ?? 0,
       status: 'pending',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),

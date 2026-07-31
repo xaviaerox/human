@@ -69,6 +69,13 @@ function NewRewardForm() {
   return (
     <Card>
       <form onSubmit={handleSubmit} className="flex flex-col gap-5 p-1">
+        {paramRequestId && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 text-xs text-amber-800 flex items-center gap-2">
+            <span className="text-base">✨</span>
+            <span>Estás aprobando la sugerencia de tu hijo. Elige la cantidad de Sparks ✦ que consideres justa.</span>
+          </div>
+        )}
+
         <Input
           label="Título del premio"
           value={title}
