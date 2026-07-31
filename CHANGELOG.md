@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Playwright E2E Test Suite Expansion**: Added `calm_corner.spec.ts` and `emotional_checkin.spec.ts` to test full user journeys for guided breathing and emotional check-in.
 - **Sensory & Reduced Motion Controls**: Enhanced accessible sensory response options for children with hyper-sensory visual profiles.
 
+### Fixed
+- **CI/CD Prepare Fix**: Added `husky` and `lint-staged` explicitly to `devDependencies` in `package.json` and guarded `"prepare": "husky || true"` script to prevent `npm ci` pipeline failures in CI environments.
+
 ---
 
 ## [1.2.0] - 2026-07-31
