@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Sensory & Reduced Motion Controls**: Enhanced accessible sensory response options for children with hyper-sensory visual profiles.
 
 ### Fixed
-- **CI/CD Prepare Fix**: Added `husky` and `lint-staged` explicitly to `devDependencies` in `package.json` and guarded `"prepare": "husky || true"` script to prevent `npm ci` pipeline failures in CI environments.
+- **CI/CD Prepare & package-lock.json Fix**: Updated `package-lock.json` with `husky` & `lint-staged` dependencies and implemented cross-platform Node.js CI-guard script `"prepare": "node -e \"if (!process.env.CI) ...\""` in `package.json` to guarantee failure-proof `npm ci` runs across Linux/Windows.
 
 ---
 
